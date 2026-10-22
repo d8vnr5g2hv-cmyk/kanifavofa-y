@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Kani Favorite デモ5</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Quicksand:wght@300;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --teal:#20999C; --tabH:64px; --pink:#ffc6d9; --sky:#bfe9ff; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+  html,body { height:100%; background:#000; font-family:'Noto Sans JP',sans-serif; overflow:hidden; color:#fff; }
+
+  /* ===== メモロビ ===== */
+  #lobby { position:fixed; inset:0; }
+  .slides { display:flex; height:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .slides::-webkit-scrollbar { display:none; }
+  .slide { flex:0 0 100%; height:100%; scroll-snap-align:center; position:relative; overflow:hidden; background:#111; }
+  .slide video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .ph { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        color:rgba(255,255,255,.7); font-size:14px; text-align:center; line-height:1.8;
+        background:linear-gradient(160deg,#1b3d3e,#0d1b1c); }
+
+  body.land #lobby { width:100vh; height:100vw; inset:auto; top:0; left:100vw; transform-origin:0 0; transform:rotate(90deg); }
+  body.land .slides { overflow-x:hidden; }
+  @media (orientation:landscape) { body.land #lobby { width:100vw; height:100vh; left:0; transform:none; } }
+
+  /* ===== 時計（夏ホシノ：白×淡いピンク×空色、細めの丸い数字） ===== */
+  .clock { position:absolute; z-index:5; pointer-events:none;
+           top:calc(env(safe-area-inset-top) + 14px); left:20px;
+           font-family:'Quicksand',sans-serif; color:#fff;
+           text-shadow:0 2px 14px rgba(30,90,150,.45), 0 0 2px rgba(30,90,150,.25); }
+  body.land .clock { top:16px; left:calc(env(safe-area-inset-top) + 22px); }
+  .clock .date { font-size:13px; font-weight:600; letter-spacing:.22em; display:flex; align-items:center; gap:8px; opacity:.95; }
+  .clock .date .dow { color:var(--pink); }
+  .clock .date .wave { width:22px; height:8px; }
+  .clock .time { display:flex; align-items:baseline; margin-top:2px; line-height:1; }
+  .clock .hm { font-size:58px; font-weight:300; letter-spacing:.02em; }
+  .clock .colon { display:inline-block; transform:translateY(-4px); margin:0 1px; animation:breathe 2s ease-in-out infinite; }
+  .clock .sec { font-size:20px; font-weight:500; margin-left:6px; color:var(--pink); min-width:2ch; }
+  .clock .line { margin-top:8px; width:118px; height:2px; border-radius:2px;
+                 background:linear-gradient(90deg, var(--pink), var(--sky), transparent); opacity:.9; }
+  @keyframes breathe { 50% { opacity:.35; } }
+
+  /* ===== 右上アイコン（ぼかし・控えめ、数秒で消える） ===== */
+  .icons { position:absolute; z-index:5; top:calc(env(safe-area-inset-top) + 14px); right:16px;
+           display:flex; gap:10px; transition:opacity .6s; }
+  body.land .icons { top:14px; right:20px; }
+  .icons button { width:34px; height:34px; border-radius:50%; border:none;
+                  background:rgba(255,255,255,.16); backdrop-filter:blur(14px) saturate(140%); -webkit-backdrop-filter:blur(14px) saturate(140%);
+                  display:flex; align-items:center; justify-content:center; opacity:.75; }
+  .icons button:active { transform:scale(.92); }
+  .icons svg { width:16px; height:16px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  body.idle .icons { opacity:0; pointer-events:none; }
+
+  /* キャラ切替の目印：スワイプ時だけ出る */
+  .dots { position:fixed; left:0; right:0; bottom:calc(var(--tabH) + env(safe-area-inset-bottom) + 16px);
+          display:flex; justify-content:center; gap:8px; z-index:5; pointer-events:none; opacity:0; transition:opacity .4s; }
+  .dots.show { opacity:1; }
+  body.tabsHidden .dots { bottom:calc(env(safe-area-inset-bottom) + 24px); }
+  .dots span { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.5); transition:.2s; }
+  .dots span.on { background:#fff; width:16px; border-radius:4px; }
+  body.land .dots, body.land .tabs, body.land .handle { display:none; }
+
+  /* ===== タブ（ボイス中は隠れる） ===== */
+  .tabs { position:fixed; left:0; right:0; bottom:0; z-index:9; display:flex;
+          height:calc(var(--tabH) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom);
+          background:rgba(0,0,0,.22); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+          border-top:1px solid rgba(255,255,255,.12);
+          transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .45s; }
+  body.tabsHidden .tabs { transform:translateY(100%); opacity:0; pointer-events:none; }
+  .tabs.light { background:rgba(255,255,255,.94); border-top-color:#e5e5e5; }
+  .tabs button { flex:1; border:none; background:none; font-family:inherit; font-size:11px; color:rgba(255,255,255,.6); }
+  .tabs.light button { color:#999; }
+  .tabs button.on { color:#fff; font-weight:700; }
+  .tabs.light button.on { color:var(--teal); }
+  .tabs .ic { display:block; font-size:20px; margin-bottom:2px; }
+
+  /* タブを戻すフック：下端のつまみ（タップ or 上スワイプ） */
+  .handle { position:fixed; left:0; right:0; bottom:0; z-index:8; height:calc(env(safe-area-inset-bottom) + 64px);
+            display:none; align-items:flex-end; justify-content:center; padding-bottom:calc(env(safe-area-inset-bottom) + 12px); }
+  body.tabsHidden .handle { display:flex; }
+  .handle i { width:44px; height:4px; border-radius:2px; background:rgba(255,255,255,.55);
+              box-shadow:0 1px 6px rgba(0,0,0,.2); }
+
+  /* 他タブ */
+  .page { position:fixed; inset:0; background:#fff; color:#333; z-index:7; display:none;
+          padding:calc(env(safe-area-inset-top) + 20px) 16px calc(var(--tabH) + 40px); overflow-y:auto; }
+  .page.show { display:block; }
+  .page h2 { color:var(--teal); font-size:20px; margin-bottom:12px; }
+  .page p { color:#555; font-size:14px; line-height:1.8; }
+
+  /* 起動画面（本番ではFace ID＋スプラッシュ） */
+  #start { position:fixed; inset:0; z-index:20; background:#0b1a1b; display:flex; flex-direction:column;
+           align-items:center; justify-content:center; gap:18px; transition:opacity .6s; }
+  #start.hide { opacity:0; pointer-events:none; }
+  #start .big { font-size:24px; font-weight:700; }
+  #start .tap { font-size:12px; opacity:.6; }
+  #start .load { font-size:11px; opacity:.5; }
+
+  .toast { position:fixed; left:50%; top:42%; transform:translate(-50%,-50%); z-index:30;
+           background:rgba(0,0,0,.6); color:#fff; padding:9px 16px; border-radius:20px; font-size:12px;
+           opacity:0; transition:opacity .2s; pointer-events:none; white-space:nowrap; }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<div id="start">
+  <div class="big">タップしてはじめる</div>
+  <div class="tap">（本番ではここがFace ID＋スプラッシュになります）</div>
+  <div class="load" id="loadState">読み込み中…</div>
+</div>
+
+<div id="lobby">
+  <div class="slides" id="slides"></div>
+
+  <div class="clock" id="clock">
+    <div class="date">
+      <span class="dow" id="dow">FRI</span><span id="md">10.23</span>
+      <svg class="wave" viewBox="0 0 22 8"><path d="M1 5c3-4 5-4 7 0s4 4 6 0 5-4 7 0" fill="none" stroke="#bfe9ff" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </div>
+    <div class="time"><span class="hm"><span id="hh">00</span><span class="colon">:</span><span id="mm">00</span></span><span class="sec" id="ss">00</span></div>
+    <div class="line"></div>
+  </div>
+
+  <div class="icons">
+    <button id="bgmBtn" aria-label="BGM"></button>
+    <button id="landBtn" aria-label="横持ち"></button>
+  </div>
+</div>
+
+<div class="dots" id="dots"></div>
+<div class="handle" id="handle"><i></i></div>
+
+<div class="page" id="page-todo"><h2>Todo</h2><p>別途設計（デモでは中身なし）</p></div>
+<div class="page" id="page-love"><h2>Love</h2><p>別途設計（デモでは中身なし）</p></div>
+<div class="page" id="page-accounts"><h2>Accounts</h2><p>別途設計（デモでは中身なし）</p></div>
+<div class="page" id="page-profile"><h2>Profile</h2><p>別途設計（デモでは中身なし）</p></div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="todo"><span class="ic">✓</span>Todo</button>
+  <button data-tab="love"><span class="ic">♡</span>Love</button>
+  <button data-tab="favorite" class="on"><span class="ic">★</span>Favorite</button>
+  <button data-tab="accounts"><span class="ic">🔑</span>Accounts</button>
+  <button data-tab="profile"><span class="ic">👤</span>Profile</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 素材（キャラごとに動画・BGM・ボイス） =====
+const range = (n, f) => Array.from({ length:n }, (_, i) => f(i + 1));
+const chars = [
+  { tall:'lobby_tall_h264.mp4', tallPoster:'lobby_tall_poster.jpg',
+    wide:'lobby_h264.mp4', widePoster:'lobby_poster.jpg',
+    bgm:{ src:'bgm.mp3', loopStart:0.2, loopEnd:0.2 + 117.25 },   // 前後0.2秒は継ぎ目用の余白
+    voices: range(12, i => `c1_v${String(i).padStart(2,'0')}.mp3`) },
+  // ミカ
+  { tall:'mika_tall_h264.mp4', tallPoster:'mika_tall_poster.jpg',
+    wide:'mika_h264.mp4', widePoster:'mika_poster.jpg',
+    bgm:{ src:'c2_bgm.mp3', loopStart:0.2, loopEnd:0.2 + 67.54 },
+    voices: range(10, i => `c2_v${String(i).padStart(2,'0')}.mp3`) },
+  { voices:[] }, { voices:[] }, { voices:[] },
+];
+
+const $ = id => document.getElementById(id);
+const slidesEl = $('slides'), dotsEl = $('dots');
+let current = 0, tab = 'favorite', started = false;
+
+// ===== 時計（秒までリアルタイム） =====
+const DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const p2 = n => String(n).padStart(2, '0');
+function tick() {
+  const d = new Date();
+  $('dow').textContent = DOW[d.getDay()];
+  $('md').textContent = `${p2(d.getMonth() + 1)}.${p2(d.getDate())}`;
+  $('hh').textContent = p2(d.getHours());
+  $('mm').textContent = p2(d.getMinutes());
+  $('ss').textContent = p2(d.getSeconds());
+  setTimeout(tick, 1000 - d.getMilliseconds() + 5);
+}
+tick();
+
+// ===== 音（Web Audio） =====
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const bgmGain = ctx.createGain(); bgmGain.connect(ctx.destination);
+const voiceGain = ctx.createGain(); voiceGain.connect(ctx.destination);
+const BGM_VOL = 0.55, DUCK_VOL = 0.18;
+const buffers = {};
+let bgmNode = null, bgmOwner = -1, bgmOn = true, voiceNode = null, bgmTimer = null;
+const recent = [];
+
+async function loadBuf(url) {
+  if (buffers[url]) return buffers[url];
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('not found: ' + url);
+  const ab = await res.arrayBuffer();
+  const buf = await new Promise((ok, ng) => ctx.decodeAudioData(ab, ok, ng));
+  return (buffers[url] = buf);
+}
+function ramp(to, sec) {
+  const t = ctx.currentTime;
+  bgmGain.gain.cancelScheduledValues(t);
+  bgmGain.gain.setValueAtTime(bgmGain.gain.value, t);
+  bgmGain.gain.linearRampToValueAtTime(to, t + sec);
+}
+async function startBgm() {
+  const b = chars[current].bgm;
+  if (!started || !bgmOn || tab !== 'favorite' || !b) return;
+  if (bgmNode && bgmOwner === current) return;
+  stopBgm(0.3);
+  const owner = current;
+  let buf; try { buf = await loadBuf(b.src); } catch(e) { toast('BGMが見つかりません'); return; }
+  if (owner !== current || tab !== 'favorite' || !bgmOn) return;
+  const n = ctx.createBufferSource();
+  n.buffer = buf; n.loop = true; n.loopStart = b.loopStart; n.loopEnd = b.loopEnd;
+  n.connect(bgmGain);
+  bgmGain.gain.setValueAtTime(0, ctx.currentTime);
+  ramp(voiceNode ? DUCK_VOL : BGM_VOL, 1.2);
+  n.start(0, b.loopStart);
+  bgmNode = n; bgmOwner = owner;
+}
+function stopBgm(sec = 0.4) {
+  clearTimeout(bgmTimer);
+  if (!bgmNode) return;
+  const n = bgmNode; bgmNode = null; bgmOwner = -1;
+  ramp(0, sec); n.stop(ctx.currentTime + sec + 0.05);
+}
+// スワイプ後0.5秒でそのキャラのBGMへ
+function queueBgm() {
+  clearTimeout(bgmTimer);
+  if (bgmNode && bgmOwner !== current) stopBgm(0.35);
+  bgmTimer = setTimeout(startBgm, 500);
+}
+
+async function playVoice() {
+  const list = chars[current].voices;
+  if (!list.length) { toast('ボイス未登録'); return; }
+  const pool = list.filter(v => !recent.includes(v));
+  const src = pool.length ? pool : list;
+  const pick = src[Math.floor(Math.random() * src.length)];
+  recent.push(pick); if (recent.length > Math.min(5, list.length - 1)) recent.shift();
+  try {
+    const buf = await loadBuf(pick);
+    if (voiceNode) { try { voiceNode.stop(); } catch(e){} }
+    const n = ctx.createBufferSource(); n.buffer = buf; n.connect(voiceGain);
+    voiceNode = n;
+    if (bgmNode) ramp(DUCK_VOL, 0.25);
+    hideTabs();
+    n.onended = () => { if (voiceNode === n) { voiceNode = null; if (bgmNode) ramp(BGM_VOL, 0.8); } };
+    n.start();
+  } catch(e) { toast('ボイスを読み込めませんでした'); }
+}
+
+// ===== タブの表示・非表示 =====
+function hideTabs() { if (tab === 'favorite') document.body.classList.add('tabsHidden'); }
+function showTabs() { document.body.classList.remove('tabsHidden'); }
+const handle = $('handle');
+let hy = 0;
+handle.addEventListener('pointerdown', e => { hy = e.clientY; e.stopPropagation(); });
+handle.addEventListener('pointerup', e => { e.stopPropagation(); showTabs(); wake(); });
+handle.addEventListener('pointermove', e => { if (hy && hy - e.clientY > 20) { showTabs(); wake(); hy = 0; } });
+
+// ===== スライド =====
+chars.forEach((c, i) => {
+  const s = document.createElement('div');
+  s.className = 'slide';
+  slidesEl.appendChild(s);
+  dotsEl.appendChild(document.createElement('span'));
+  loadChar(i);
+});
+function loadChar(i) {
+  const c = chars[i], s = slidesEl.children[i];
+  const land = document.body.classList.contains('land');
+  const src = land ? (c.wide || c.tall) : (c.tall || c.wide);
+  const poster = land ? (c.widePoster || c.tallPoster) : (c.tallPoster || c.widePoster);
+  if (!src) { s.innerHTML = `<div class="ph">キャラ${i + 1}<br>メモロビ未登録</div>`; return; }
+  s.innerHTML = '';
+  const v = document.createElement('video');
+  v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true; v.preload = 'auto';
+  v.setAttribute('playsinline',''); v.setAttribute('muted','');
+  if (poster) v.poster = poster;
+  v.src = src;
+  s.appendChild(v);
+  if (i === current) v.play().catch(()=>{});
+}
+function updateVideos() {
+  [...dotsEl.children].forEach((d, i) => d.classList.toggle('on', i === current));
+  [...slidesEl.children].forEach((s, i) => {
+    const v = s.querySelector('video');
+    if (v) i === current ? v.play().catch(()=>{}) : v.pause();
+  });
+}
+let dotTimer;
+slidesEl.addEventListener('scroll', () => {
+  dotsEl.classList.add('show'); clearTimeout(dotTimer);
+  dotTimer = setTimeout(() => dotsEl.classList.remove('show'), 1200);
+  const i = Math.round(slidesEl.scrollLeft / slidesEl.clientWidth);
+  if (i !== current) { current = i; updateVideos(); queueBgm(); }
+}, { passive:true });
+
+// タップ（スワイプと区別）でボイス
+let tx = 0, ty = 0, tt = 0;
+slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
+slidesEl.addEventListener('pointerup', e => {
+  if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); }
+});
+
+// ===== 右上アイコンは4秒で消える =====
+let idleTimer;
+function wake() {
+  document.body.classList.remove('idle');
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => document.body.classList.add('idle'), 4000);
+}
+document.addEventListener('pointerdown', wake, { passive:true, capture:true });
+
+const ICON = {
+  on:'<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+  off:'<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M3 3l18 18"/></svg>',
+  land:'<svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M2 9a10 10 0 0 0 3 8M22 15a10 10 0 0 0-3-8"/></svg>',
+};
+function drawIcons() { $('bgmBtn').innerHTML = bgmOn ? ICON.on : ICON.off; $('landBtn').innerHTML = ICON.land; }
+$('bgmBtn').addEventListener('click', e => {
+  e.stopPropagation(); bgmOn = !bgmOn; drawIcons();
+  bgmOn ? startBgm() : stopBgm();
+});
+$('landBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.body.classList.toggle('land');
+  chars.forEach((c, i) => loadChar(i));
+  requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * current; });
+});
+document.querySelectorAll('.icons button').forEach(b => ['pointerdown','pointerup'].forEach(ev => b.addEventListener(ev, e => e.stopPropagation())));
+
+// ===== タブ =====
+const tabs = $('tabs');
+tabs.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  [...tabs.children].forEach(x => x.classList.toggle('on', x === b));
+  tab = b.dataset.tab;
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('show', p.id === 'page-' + tab));
+  tabs.classList.toggle('light', tab !== 'favorite');
+  if (tab === 'favorite') { updateVideos(); startBgm(); }
+  else { stopBgm(); showTabs(); slidesEl.querySelectorAll('video').forEach(v => v.pause()); }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!started) return;
+  if (document.hidden) { stopBgm(0.1); ctx.suspend(); }
+  else ctx.resume().then(() => { updateVideos(); startBgm(); });
+});
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 1300);
+}
+
+// ===== 起動：Favoriteを開いたらBGM（ボイスはタップした時だけ） =====
+// マナーモード中は鳴らない（iPhoneの仕様）。鳴らしたい場合は次の行の // を外す
+// try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch(e) {}
+const preload = loadBuf(chars[0].bgm.src).then(() => { $('loadState').textContent = '準備OK'; })
+  .catch(() => { $('loadState').textContent = 'BGMが見つかりません（bgm.mp3）'; });
+chars[0].voices.slice(0, 3).forEach(v => loadBuf(v).catch(()=>{}));
+
+$('start').addEventListener('click', async () => {
+  await ctx.resume();
+  started = true;
+  $('start').classList.add('hide');
+  await preload;
+  updateVideos();
+  startBgm();
+  wake();
+}, { once:true });
+
+drawIcons();
+updateVideos();
+</script>
+</body>
+</html>
