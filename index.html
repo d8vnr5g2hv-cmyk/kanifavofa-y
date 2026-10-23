@@ -13,7 +13,7 @@
 <title>Kani Favorite</title>
 <link rel="preload" href="bgm_title.mp3" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@600&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@400;600&display=block" rel="stylesheet">
 <style>html,body{background:#fbeaf2}</style>
 <!-- 起動したときの画面（白く光らないように、ロック画面と同じ見た目を出す） -->
 <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="launch-1170x2532.png">
@@ -31,7 +31,7 @@
   <div class="sbgw"><img class="sbg" src="splash_bg.jpg" alt=""></div>
   <div class="glow"></div>
   <div id="scs"></div>
-  <div class="slogo"><div class="word" id="sword"></div><div class="tts">TAP TO START</div></div>
+  <div class="slogo"><div class="kani">KANI</div><div class="word" id="sword"></div><div class="tts">TAP TO START</div></div>
   <div class="flashIn"></div>
   <button class="gear" id="gearBtn" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   <div class="lock" id="lock">
@@ -65,8 +65,8 @@
   <div class="wall"><img class="wallimg" src="todo_wall.jpg" alt=""></div>
   <div class="frame"><div class="head" id="todoHead"></div><div class="scroll" id="todoList"></div><button class="addBtn" id="todoAdd" aria-label="追加">＋</button></div>
   <div class="band left"><h2>Todo<small>THINGS TO DO</small></h2></div>
-  <div class="chibi real" data-char="hoshino" data-name="ホシノ" data-x="458.6" data-y="1250.5" data-w="310.2" data-h="333.4" data-ww="853" data-wh="1844">
-    <div class="shadow"></div><div class="body"><img class="c-normal" src="hoshino_chibi.png" alt=""></div>
+  <div class="chibi real" data-char="hoshino" data-name="ホシノ" data-x="449.7" data-y="1250.5" data-w="328.1" data-h="333.4" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="hoshino_chibi.webp" alt=""></div>
   </div>
 </div>
 
@@ -74,8 +74,8 @@
 <div class="page bandTop" id="page-love">
   <div class="wall"><img class="wallimg" src="love_wall.jpg" alt=""></div>
   <div class="band right"><h2>Love<small>MY FAVORITE THINGS</small></h2></div>
-  <div class="chibi real" id="loveChibi" data-char="mika" data-name="ミカ" data-x="28.2" data-y="124.2" data-w="285.6" data-h="353.2" data-ww="853" data-wh="1844">
-    <div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.png" alt=""></div>
+  <div class="chibi real" id="loveChibi" data-char="mika" data-name="ミカ" data-x="28.7" data-y="124.2" data-w="284.7" data-h="353.2" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.webp" alt=""></div>
   </div>
   <div class="frame"><div class="head" id="loveHead"></div><div class="scroll" id="loveList"></div><button class="addBtn" id="loveAdd" aria-label="追加">＋</button></div>
 </div>
@@ -85,11 +85,11 @@
   <div class="wall"><img class="wallimg" src="accounts_wall.jpg" alt=""></div>
   <div class="frame"><div class="head" id="accHead"></div><div class="scroll" id="accList"></div><button class="addBtn" id="accAdd" aria-label="追加" hidden>＋</button></div>
   <div class="band right"><h2>Accounts<small>KEEP IT SAFE</small></h2></div>
-  <div class="chibi real" data-char="hina" data-name="ヒナ" data-x="6.2" data-y="1279.2" data-w="324.3" data-h="326.2" data-ww="853" data-wh="1844">
-    <div class="shadow"></div><div class="body"><img class="c-normal" src="hina_chibi.png" alt=""></div>
+  <div class="chibi real" data-char="hina" data-name="ヒナ" data-x="5.3" data-y="1279.2" data-w="326.2" data-h="326.2" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="hina_chibi.webp" alt=""></div>
   </div>
-  <div class="chibi real" data-char="miyako" data-name="ミヤコ" data-x="276.2" data-y="1257.4" data-w="220.6" data-h="359.5" data-ww="853" data-wh="1844">
-    <div class="shadow"></div><div class="body"><img class="c-normal" src="miyako_chibi.png" alt=""></div>
+  <div class="chibi real" data-char="miyako" data-name="ミヤコ" data-x="284.2" data-y="1257.4" data-w="204.6" data-h="359.5" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="miyako_chibi.webp" alt=""></div>
   </div>
 </div>
 
@@ -97,8 +97,8 @@
 <div class="page bandTop" id="page-profile">
   <div class="wall"><img class="wallimg" src="profile_wall.jpg" alt=""></div>
   <div class="band left"><h2>Profile<small>ABOUT ME</small></h2></div>
-  <div class="chibi real" data-char="mari" data-name="マリー" data-x="506.0" data-y="117.7" data-w="278.0" data-h="441.3" data-ww="853" data-wh="1844">
-    <div class="shadow"></div><div class="body"><img class="c-normal" src="mari_chibi.png" alt=""></div>
+  <div class="chibi real" data-char="mari" data-name="マリー" data-x="519.0" data-y="117.7" data-w="252.0" data-h="441.3" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="mari_chibi.webp" alt=""></div>
   </div>
   <div class="frame"><div class="head" id="profHead"></div><div class="scroll" id="profList"></div><button class="addBtn" id="profAdd" aria-label="追加">＋</button></div>
 </div>

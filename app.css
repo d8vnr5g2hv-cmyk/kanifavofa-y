@@ -472,3 +472,13 @@ body.dragging, body.dragging * { cursor:grabbing; }
 #appInfo div.w span { display:inline; font-size:12px; } #appInfo div.w b { display:inline; font-size:12px; margin:0; color:#7a6a73; font-family:'Noto Sans JP',sans-serif; }
 #appInfo div.ver { background:none; padding:2px 4px; } #appInfo div.ver b { color:#c9b5bf; }
 .pwin .inp { flex:1; min-width:0; } .pwin .btnP { width:auto; padding:0 20px; }
+/* 新しい壁紙の上でもタイトルが読めるように */
+.band h2 { text-shadow:0 0 2px #fff, 0 0 10px rgba(255,255,255,.95), 0 2px 14px rgba(255,255,255,.8); }
+#page-love .band h2 { text-shadow:0 0 2px rgba(90,60,150,.5), 0 2px 14px rgba(90,60,150,.55); }
+
+/* タイトルロゴ：細めのA案 */
+.slogo .word { font-weight:400; font-size:16.5vw; letter-spacing:.005em; }
+.slogo .ch .bk { -webkit-text-stroke:.13em #fff; filter:drop-shadow(0 3px 8px rgba(150,110,200,.32)); }
+.slogo .kani { font:600 11px 'Quicksand',sans-serif; letter-spacing:.6em; color:#8f9cc6; margin:0 0 6px .6em; opacity:0; text-shadow:0 0 6px #fff; }
+#splash.run .slogo .kani { animation:fadeIn .6s ease 1.0s forwards; }
+.slogo .star { width:.3em; height:.3em; }
