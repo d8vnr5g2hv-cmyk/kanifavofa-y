@@ -129,7 +129,8 @@ function trimBgmCache() {
   if (bgmNode) keep.add(bgmNode._src);
   [current - 1, current, current + 1].forEach(i => keep.add(chars[(i + chars.length) % chars.length].bgm.src));
   if (TAB_BGM[tab]) keep.add(TAB_BGM[tab].src);
-  const all = new Set([...chars.map(c => c.bgm.src), ...Object.values(TAB_BGM).map(b => b.src), TITLE_BGM.src]);
+  const all = new Set([...chars.map(c => c.bgm.src), ...Object.values(TAB_BGM).map(b => b.src), TITLE_BGM.src, ...Ops.allBgm().map(b => b.src)]);
+  if (Ops.active()) Ops.allBgm().forEach(b => keep.add(b.src));
   Object.keys(buffers).forEach(u => { if (all.has(u) && !keep.has(u)) delete buffers[u]; });
 }
 function ramp(to, sec) {
@@ -139,6 +140,7 @@ function ramp(to, sec) {
 function wantedBgm() {
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
+  const ob = typeof Ops !== 'undefined' && Ops.bgm(); if (ob) return ob;   // 作戦室
   if (tab === 'favorite') return bgmOn ? chars[current].bgm : null;
   return TAB_BGM[tab] || null;
 }
@@ -207,14 +209,18 @@ function loadChar(i) {
   const land = document.body.classList.contains('land');
   const src = land ? c.wide : c.tall, poster = land ? c.widePoster : c.tallPoster;
   s.innerHTML = '';
-  s.style.background = `#111 url(${poster}) center/cover`;   // 動画が届くまでは止まった絵
+  // 動画が実際に動き出すまでは、止まった絵を見せる（iPhoneは再生前の動画を黒く描くため、動画は隠しておく）
+  const pi = document.createElement('img'); pi.className = 'lposter'; pi.src = poster; pi.alt = ''; pi.decoding = 'async';
+  s.appendChild(pi);
   const mk = (cls, loop) => {
     const v = document.createElement('video'); if (cls) v.className = cls;
     v.muted = true; v.loop = loop; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
     return v;
   };
-  const v = mk('', true);
-  v.preload = i === current ? 'auto' : 'metadata'; v.poster = poster; v.src = src;
+  const v = mk('lv', true);
+  v.preload = Math.abs(i - current) <= 1 ? 'auto' : 'metadata'; v.src = src;
+  const show = () => { if (!v.classList.contains('ready') && v.currentTime > 0) v.classList.add('ready'); };
+  v.addEventListener('timeupdate', show); v.addEventListener('playing', () => setTimeout(show, 60));
   s.appendChild(v);
   if (c.pat) {   // なでなで：反応の動画（上に重ねて、撫でたときだけ見せる）と頭の範囲
     const pv = mk('patv', false); pv.preload = i === current ? 'auto' : 'none'; pv.src = land ? c.pat.wide : c.pat.tall;
@@ -227,8 +233,9 @@ function loadChar(i) {
 function updateVideos() {
   [...dotsEl.children].forEach((d, i) => d.classList.toggle('on', i === current));
   [...slidesEl.children].forEach((s, i) => {
-    const v = s.querySelector('video'); if (!v) return;
+    const v = s.querySelector('video.lv'); if (!v) return;
     if (i === current) { v.preload = 'auto'; if (tab === 'favorite') v.play().catch(() => {}); } else v.pause();
+    if (Math.abs(i - current) === 1 && v.preload !== 'auto') v.preload = 'auto';   // となりも先に読んでおく
     const pv = s.querySelector('.patv');
     if (pv) { if (i === current) { if (pv.preload !== 'auto') pv.preload = 'auto'; } else Pat.stop(s); }
   });
@@ -383,10 +390,10 @@ function toast(msg, ms = 1400) {
 
 // ===== データ保存（IndexedDB：この端末の中だけ） =====
 const DB = (() => {
-  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings'];
+  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings', 'ops'];
   let dbp;
   const open = () => dbp || (dbp = new Promise((ok, ng) => {
-    const r = indexedDB.open('kani-favorite', 1);
+    const r = indexedDB.open('kani-favorite', 2);
     r.onupgradeneeded = () => STORES.forEach(s => { if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, { keyPath:'id' }); });
     r.onsuccess = () => ok(r.result); r.onerror = () => ng(r.error);
   }));
@@ -526,6 +533,7 @@ const App = {
     titleReady.then(() => loadBuf(chars[current].bgm.src).catch(() => {}));
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
+    Ops.makeDoor();
     chars.forEach((c, i) => loadChar(i));
     slidesEl.scrollLeft = slidesEl.clientWidth * current;
     requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * current; });
@@ -535,13 +543,16 @@ const App = {
     slidesEl.addEventListener('scroll', () => {
       if (phase !== 'app') return;
       dotsEl.classList.add('show'); clearTimeout(dotTimer);
-      dotTimer = setTimeout(() => dotsEl.classList.remove('show'), 1200);
-      const i = Math.round(slidesEl.scrollLeft / slidesEl.clientWidth);
+      dotTimer = setTimeout(() => { dotsEl.classList.remove('show'); updateVideos(); }, 1200);   // 止まったら、今のメモロビ以外は止める
+      const f = slidesEl.scrollLeft / slidesEl.clientWidth, nb = f > current ? current + 1 : current - 1;
+      if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slidesEl.children[nb], nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
+      const i = Math.round(f);
+      Ops.setDoor(i === chars.length);   // 右端の先は作戦室のドア
       if (i !== current && i >= 0 && i < chars.length) { current = i; updateVideos(); syncBgm(250); prefetchNear(); setTimeout(trimBgmCache, 1500); }
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
     slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
-    slidesEl.addEventListener('pointerup', e => { if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
+    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
     document.addEventListener('pointerdown', wake, { passive:true, capture:true });
 
     const handle = $('handle'); let hy = 0;
