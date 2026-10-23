@@ -148,7 +148,7 @@ const Ops = (() => {
     o.querySelectorAll('.room').forEach((r, ri) => {
       const box = r.querySelector('.rbox');
       SEATS[ri].forEach(([k, cx, by, hh]) => {
-        const c = h(`<div class="oc" data-k="${k}" style="left:${cx}%;bottom:${100 - by}%;height:${hh}%"><img src="${img(k, 'sit')}" alt=""><i class="obub"></i></div>`);
+        const c = h(`<div class="oc" data-k="${k}" style="left:${cx}%;bottom:${100 - by}%;height:${(hh * HEIGHT[k] / 152).toFixed(2)}%"><img src="${img(k, 'sit')}" alt=""><i class="obub"></i></div>`);
         box.appendChild(c);
       });
     });
@@ -300,7 +300,12 @@ const Ops = (() => {
   }
 
   // ===== 会議室 =====
-  const POS = [ { l:-2, b:2, h:23 }, { l:22, b:8, h:19 }, { r:22, b:8, h:19 }, { r:-2, b:2, h:23 } ];
+  const POS = [ { l:-2, b:2 }, { l:22, b:8 }, { r:22, b:8 }, { r:-2, b:2 } ];
+  const BASE = 21;   // 身長156cmの子の「頭から足まで」が画面の高さの何%か
+  // 公式の身長（cm）
+  const HEIGHT = { hoshino:145, mika:157, hina:142, miyako:156, mari:151, serina:156, yuuka:156, noa:161, seia:149, kisaki:142, hikari:147, nico:160 };
+  // 立ち絵の上にある、頭より上の飾り（ヘイロー・耳・帽子）の割合
+  const TOP = { hoshino:.06, mika:.08, hina:.12, miyako:.13, mari:.10, serina:.08, yuuka:.06, noa:.07, seia:.12, kisaki:.10, nico:.13 };
   async function toMeeting() {
     busy = true;
     const cv = $('ocover'); cv.classList.add('on');
@@ -311,7 +316,9 @@ const Ops = (() => {
     $('mStamp').className = 'stamp'; stage('話し合い中');
     $('mLog').innerHTML = ''; $('chat').classList.remove('big');
     $('mMem').innerHTML = op.members.map((k, i) => { const p = POS[i];
-      const hh = k === 'hikari' ? p.h * .5 : p.h, ar = k === 'hikari' ? 1.4 : .62;
+      // 身長（cm）に合わせる。画像の上の余白（ヘイロー・耳など）の分はTOPで差し引く
+      const d = i === 1 || i === 2 ? .94 : 1;   // 奥の2人は少しだけ小さく（遠近）
+      const hh = d * (k === 'hikari' ? BASE * HEIGHT.hikari / 156 / 1.26 : BASE * HEIGHT[k] / 156 / (1 - TOP[k])), ar = k === 'hikari' ? 1.4 : .62;
       return `<div class="mc" data-k="${k}" style="${p.l != null ? 'left:' + p.l + '%' : 'right:' + p.r + '%'};bottom:${p.b}%;height:${hh}%;aspect-ratio:${ar}"><img class="s" src="${img(k, 'stand')}" alt=""><img class="t" src="${img(k, 'talk')}" alt=""></div>`; }).join('');
     syncBgm(0, .8);
     setTimeout(() => cv.classList.remove('on'), 200);
