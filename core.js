@@ -207,6 +207,7 @@ function loadChar(i) {
   const land = document.body.classList.contains('land');
   const src = land ? c.wide : c.tall, poster = land ? c.widePoster : c.tallPoster;
   s.innerHTML = '';
+  s.style.background = `#111 url(${poster}) center/cover`;   // 動画が届くまでは止まった絵
   const mk = (cls, loop) => {
     const v = document.createElement('video'); if (cls) v.className = cls;
     v.muted = true; v.loop = loop; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
@@ -259,7 +260,7 @@ const Pat = (() => {
                 { transform:`translate(${-50 + (Math.random() - .5) * 120}%,-260%) scale(.8)`, opacity:0 }], { duration:900, easing:'ease-out' }).finished.then(() => el.remove());
   }
   function start(s, pv) {
-    if (s._patting) return; s._patting = true;
+    if (s._patting) return; s._patting = true; haptic();
     try { pv.currentTime = 0; } catch(e) {}
     const go = () => {
       pv.classList.add('on');
@@ -359,7 +360,10 @@ function switchTab(next) {
   if (TabHooks[prev] && TabHooks[prev].leave) TabHooks[prev].leave();
   tab = next;
   [...$('tabs').children].forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+  const leaving = $('page-' + prev);
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('show', p.id === 'page-' + tab));
+  if (leaving) { leaving.classList.add('leaving'); clearTimeout(leaving._lt); leaving._lt = setTimeout(() => leaving.classList.remove('leaving'), 260); }
+  haptic();
   $('tabs').classList.toggle('light', tab !== 'favorite');
   $('tabs').style.setProperty('--tabAccent', TAB_ACCENT[tab] || '');
   layoutChibis();
@@ -368,6 +372,7 @@ function switchTab(next) {
   syncBgm(120);
   setTimeout(trimBgmCache, 1500);
   if (TabHooks[tab] && TabHooks[tab].enter) TabHooks[tab].enter(prev);
+  if (tab !== 'favorite') stagger($('page-' + tab).querySelector('.scroll'));
 }
 
 // ===== トースト =====
@@ -423,10 +428,22 @@ async function exportData() {
   const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
   const file = new File([blob], name, { type:'application/json' });
   try {
-    if (navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:name }); return toast('書き出しました'); }
+    if (navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ files:[file], title:name }); LS.set('kf-lastExport', Date.now()); fillInfo(); return toast('書き出しました'); }
   } catch(e) { if (e.name === 'AbortError') return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('書き出しました');
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
+}
+// 設定の下の情報（件数・容量・最後に書き出した日）
+const VERSION = '2.1';
+async function fillInfo() {
+  const el = $('appInfo'); if (!el) return;
+  const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
+  let size = '';
+  try { const e = await navigator.storage.estimate(); size = `${(e.usage / 1048576).toFixed(1)} MB`; } catch(e) {}
+  const last = LS.get('kf-lastExport');
+  el.innerHTML = `<div><span>Todo</span><b>${n.todos}</b></div><div><span>Love</span><b>${n.loves}</b></div><div><span>Profile</span><b>${n.profile}</b></div><div><span>Accounts</span><b>${n.accounts}</b></div>
+    <div class="w"><span>最後に書き出した日</span><b>${last ? new Date(+last).toLocaleDateString('ja-JP') : 'まだありません'}</b></div>${size ? `<div class="w"><span>使っている容量</span><b>${size}</b></div>` : ''}
+    <div class="w ver"><span>Kani Favorite</span><b>v${VERSION}</b></div>`;
 }
 async function importData(file) {
   try {
@@ -452,8 +469,8 @@ function loadImg(src) { return new Promise(ok => { const im = new Image(); im.on
 async function buildSplash() {
   const box = $('scs');
   const order = shuffle([0, 1, 2, 3, 4]);   // 入ってくる順番もばらばら
-  const ims = await Promise.all(pick5.map(p => loadImg(`${p.n}_jump.png`)));
-  pick5.forEach((p, k) => { const im = ims[k]; imgRatio[p.n] = im ? im.naturalWidth / im.naturalHeight : .9; loadImg(`${p.n}_chibi.png`); });
+  const ims = await Promise.all(pick5.map(p => loadImg(`${p.n}_jump.webp`)));
+  pick5.forEach((p, k) => { const im = ims[k]; imgRatio[p.n] = im ? im.naturalWidth / im.naturalHeight : .9; loadImg(`${p.n}_chibi.webp`); });
   const place = () => {
     const W = innerWidth, H = innerHeight;
     [...box.children].forEach(el => {
@@ -469,7 +486,7 @@ async function buildSplash() {
     el.style.setProperty('--od', (order.indexOf(k) * 0.05) + 's');
     el.style.setProperty('--bd', (-Math.random() * 2.6) + 's');
     el.style.setProperty('--fx', s.fx); el.style.setProperty('--fy', s.fy); el.style.setProperty('--fr', s.fr);
-    el.innerHTML = `<div class="inner"><img class="j" src="${p.n}_jump.png" alt=""><img class="l" src="${p.n}_chibi.png" alt=""><div class="dust"><i></i><i></i></div></div>`;
+    el.innerHTML = `<div class="inner"><img class="j" src="${p.n}_jump.webp" alt=""><img class="l" src="${p.n}_chibi.webp" alt=""><div class="dust"><i></i><i></i></div></div>`;
     el.addEventListener('animationend', e => { if (e.animationName === 'flyin') el.classList.add('landed'); });
     box.appendChild(el);
   });
@@ -556,7 +573,7 @@ const App = {
 
     // 設定
     const sheet = $('sheet'), sheetBg = $('sheetBg');
-    const openSheet = () => { sheet.classList.add('show'); sheetBg.classList.add('show'); };
+    const openSheet = () => { sheet.classList.add('show'); sheetBg.classList.add('show'); fillInfo(); };
     const closeSheet = () => { sheet.classList.remove('show'); sheetBg.classList.remove('show'); };
     ['pointerdown','click'].forEach(ev => $('gearBtn').addEventListener(ev, e => e.stopPropagation()));
     $('gearBtn').addEventListener('click', openSheet);

@@ -12,7 +12,16 @@
 <link rel="icon" href="icon-192.png">
 <title>Kani Favorite</title>
 <link rel="preload" href="bgm_title.mp3" as="fetch" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@600&display=block" rel="stylesheet">
+<style>html,body{background:#fbeaf2}</style>
+<!-- 起動したときの画面（白く光らないように、ロック画面と同じ見た目を出す） -->
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="launch-1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="launch-1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" href="launch-1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="launch-1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="launch-1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" href="launch-1320x2868.png">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -111,6 +120,7 @@
   <div class="grab"></div>
   <h3>設定</h3>
   <p class="note2">データはこのiPhoneの中だけに保存されています。機種変更やデータ消去に備えて、ときどき書き出しておくと安心です。</p>
+  <div id="appInfo"></div>
   <button class="row" id="exportBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを書き出す<small>Todo・Love・Profile・Accountsをまとめて保存（JSON）</small></span></button>
   <button class="row" id="importBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 10l5 5 5-5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを読み込む<small>書き出したJSONから復元（今のデータは置き換わります）</small></span></button>
   <button class="close" id="sheetClose">閉じる</button>

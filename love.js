@@ -21,7 +21,7 @@ const Love = (() => {
     head().querySelectorAll('button').forEach(b => b.onclick = () => { cat = b.dataset.c; render(); });
     const list = shown();
     box().innerHTML = list.length ? `<div class="pgrid">${list.map(card).join('')}</div>`
-      : '<div class="empty" style="color:#7a3a52"><b>♡</b>好きなもの、ここに集めよう☆<br>＋からカードを作れるよ</div>';
+      : '<div class="empty" style="color:#7a3a52"><img class="emc" src="m_mika_think.webp" alt="">好きなもの、ここに集めよう☆<br>＋からカードを作れるよ</div>';
   }
 
   // 拡大表示（左右スワイプで前後）

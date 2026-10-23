@@ -97,25 +97,31 @@ const Accounts = (() => {
     const COL = ['#4cb3e4', '#7aa7f0', '#5cc6c0', '#9b8cf0', '#f39bbd', '#f2b05e', '#6cc28f'];
     box().innerHTML = rows.length ? rows.map(e => `<div class="arow" data-id="${e.id}"><div class="ic" style="background:${COL[hashN(e.name, COL.length)]}">${esc(([...(e.name || '?')][0] || '?').toUpperCase())}</div>
         <div class="tx">${esc(e.name)}<small>${esc(e.user || '　')}</small></div>${a.ids.has(e.id) ? '<i class="warn" title="要チェック"></i>' : ''}</div>`).join('')
-      : `<div class="empty">${list.length ? '見つかりませんでした' : '<b>🔑</b>まだ何も登録されていません。<br>＋からアカウントを追加してください'}</div>`;
+      : `<div class="empty"><img class="emc" src="m_miyako_scopeL.webp" alt="">${list.length ? '見つかりませんでした' : 'まだ何も登録されていません。<br>＋からアカウントを追加してください'}</div>`;
   }
+  // 検問所ふうの見た目（斜めのテープ・回るリング・Face IDの印）
+  const FACE_SVG = '<svg viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 15.5c1.4 1.2 3.6 1.2 5 0"/></svg>';
+  const TAPE = '<div class="tape"><span>SECURITY CHECKPOINT　✦　検問中　✦　SECURITY CHECKPOINT　✦　検問中　✦　SECURITY CHECKPOINT　✦　検問中　✦　</span></div>';
+  const badge = ico => `<div class="gbadge"><i class="ring"></i><i class="ring r2"></i><div class="gcore">${ico}</div></div>`;
   function renderSetup() {
     head().innerHTML = '';
     const pk = canPasskey();
-    box().innerHTML = `<div class="lockp"><div class="lk">${LOCK_SVG}</div><h3>パスワード金庫をつくる</h3>
-      <p>ここに入れたパスワードは、すべて暗号化してこのiPhoneの中だけに保存します。</p>
+    box().innerHTML = `<div class="gate">${TAPE}<div class="gcard">${badge(LOCK_SVG)}
+      <div class="gt">CREATE VAULT</div><h3>パスワード金庫をつくる</h3>
+      <p>入れたパスワードは、すべて暗号化して<br>このiPhoneの中だけに保存します。</p>
       <input class="inp" id="pw1" type="password" placeholder="マスターパスワード（8文字以上）" autocomplete="new-password">
       <input class="inp" id="pw2" type="password" placeholder="もう一度" autocomplete="new-password">
       ${pk ? '<label class="chkline"><input type="checkbox" id="useFace" checked>Face IDで開けるようにする</label>' : ''}
       <div class="note"><b>⚠ 大事なこと</b><br>マスターパスワードを忘れて、Face IDも使えなくなる（機種変更など）と、中身は取り出せません。紙に書くなどして、なくさないようにしてください。</div>
-      <button class="btnP" id="mk">はじめる</button></div>`;
+      <button class="btnP" id="mk">はじめる</button></div></div>`;
     $('mk').onclick = setup;
   }
   function renderLocked() {
     head().innerHTML = '';
-    box().innerHTML = `<div class="lockp"><div class="lk">${LOCK_SVG}</div><h3>ロック中</h3><p>ヒナが見張っています。</p>
-      ${vault.prf ? '<button class="btnP" id="faceBtn">Face IDで開く</button>' : ''}
-      <div class="pwin"><input class="inp" id="mpw" type="password" placeholder="マスターパスワード" autocomplete="current-password"><button class="btnP" id="pwBtn" style="width:auto;padding:0 18px">開く</button></div></div>`;
+    box().innerHTML = `<div class="gate">${TAPE}<div class="gcard">${badge(LOCK_SVG)}
+      <div class="gt">ACCOUNTS LOCKED</div><h3>検問中</h3><p>ヒナが見張っています。</p>
+      ${vault.prf ? `<button class="faceBtn" id="faceBtn">${FACE_SVG}<span>Face IDで開く</span></button><div class="orl"><span>または</span></div>` : ''}
+      <div class="pwin"><input class="inp" id="mpw" type="password" placeholder="マスターパスワード" autocomplete="current-password"><button class="btnP" id="pwBtn">開く</button></div></div></div>`;
     if (vault.prf) $('faceBtn').onclick = () => unlockFace(true);
     $('pwBtn').onclick = unlockPw;
     $('mpw').onkeydown = e => { if (e.key === 'Enter') unlockPw(); };
@@ -152,7 +158,7 @@ const Accounts = (() => {
     try {
       const out = await assertPrf(unb64(vault.prf.credId), unb64(vault.prf.salt));
       await useRaw(await unseal(await prfKey(out), vault.prf.box));
-      await opened();
+      haptic(); await opened();
     } catch(e) {
       console.warn(e);
       if (fromButton || e.name !== 'NotAllowedError') { toast('Face IDで開けませんでした'); Motion.pout('hina'); }
@@ -163,7 +169,7 @@ const Accounts = (() => {
     $('pwBtn').disabled = true;
     try {
       await useRaw(await unseal(await pwKey(pw, unb64(vault.salt), vault.iter), vault.pw));
-      i.blur(); await opened();
+      i.blur(); haptic(); await opened();
     } catch(e) {
       i.value = ''; i.classList.add('shake'); setTimeout(() => i.classList.remove('shake'), 400);
       toast('パスワードが違います'); Motion.pout('hina');

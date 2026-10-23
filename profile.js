@@ -53,7 +53,7 @@ const Profile = (() => {
     }).join('')}</div></div>`;
     if (se.length) html += `<div class="lst" data-k="section">${se.map(s => `<div class="pblock sblk" data-id="${s.id}"><div class="sec"><span>${esc(s.title)}</span><button class="ed" aria-label="セクションを編集">…</button></div>
       <div class="pcard" data-sid="${s.id}">${(s.rows || []).map(r => `<div class="prow" data-rid="${r.id}"><span class="k">${esc(r.label)}</span><span class="v">${esc(r.value)}</span></div>`).join('')}<div class="prow add" data-add="${s.id}">＋ 項目を追加</div></div></div>`).join('')}</div>`;
-    if (!an.length && !pe.length && !se.length) html = (html || '') + '<div class="empty"><b>✿</b>まだ何もありません。<br>＋から、記念日・人物・自分のことを<br>書き足してくださいね</div>';
+    if (!an.length && !pe.length && !se.length) html = (html || '') + '<div class="empty"><img class="emc" src="m_mari_pray.webp" alt="">まだ何もありません。<br>＋から、記念日・人物・自分のことを<br>書き足してくださいね</div>';
     box().innerHTML = html;
   }
 

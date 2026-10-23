@@ -4,6 +4,30 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&am
 const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const hashN = (s, n) => { let x = 0; for (const c of String(s)) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x % n; };
 
+// ===== 軽い振動（iPhoneは「スイッチ」を押したときの振動を借りる） =====
+const haptic = (() => {
+  let lb = null;
+  return () => {
+    try {
+      if (navigator.vibrate) { navigator.vibrate(8); return; }
+      if (!lb) {
+        lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true');
+        lb.style.cssText = 'position:fixed;left:-200px;top:0;width:1px;height:1px;opacity:0;pointer-events:none';
+        const i = document.createElement('input'); i.type = 'checkbox'; i.setAttribute('switch', ''); i.tabIndex = -1;
+        lb.appendChild(i); document.body.appendChild(lb);
+      }
+      lb.click();
+    } catch(e) {}
+  };
+})();
+// ===== タブを開いたとき、中身が上から順にふわっと出る =====
+function stagger(box) {
+  if (!box) return;
+  const els = [...box.querySelectorAll('.today, .sec, .trow, .pc, .arow, .anv, .person, .pcard, .empty, .lockp > *, .gate > *, .doneToggle')].slice(0, 16);
+  els.forEach((el, i) => el.animate([{ opacity:0, translate:'0 14px' }, { opacity:1, translate:'0 0' }],
+    { duration:420, delay:40 + i * 35, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' }));
+}
+
 // ===== 元に戻す（下に出る帯） =====
 const Snack = (() => {
   let t, fn;
@@ -37,7 +61,7 @@ const Editor = (() => {
       body.appendChild(opts.body);
       if (opts.del) {
         const d = h(`<button class="del">${esc(opts.delLabel || '削除する')}</button>`);
-        d.onclick = async () => { if (!confirm(opts.delConfirm || 'このデータを削除しますか？')) return; await opts.del(); close(); };
+        d.onclick = async () => { if (!confirm(opts.delConfirm || 'このデータを削除しますか？')) return; haptic(); await opts.del(); close(); };
         body.appendChild(d);
       }
       const sv = e.querySelector('.save'); sv.textContent = opts.saveLabel || '保存'; sv.style.visibility = opts.save ? '' : 'hidden';
@@ -53,7 +77,7 @@ const Editor = (() => {
       bg().onclick = close;
       ed().querySelector('.save').onclick = async () => {
         if (!onSave) return close();
-        const ok = await onSave(); if (ok !== false) close();
+        const ok = await onSave(); if (ok !== false) { haptic(); close(); }
       };
     },
   };
@@ -149,7 +173,7 @@ const Sortable = (() => {
       el.classList.add('dragHole');
       drag = { el, ghost, dx:x - r.left, dy:y - r.top, x, y, startIndex:null, moved:false };
       drag.startIndex = siblings().indexOf(el);
-      document.body.classList.add('dragging');
+      document.body.classList.add('dragging'); haptic();
       ghost.animate([{ transform:'scale(1)' }, { transform:'scale(1.05)' }], { duration:160, fill:'forwards', easing:'ease-out' });
       if (navigator.vibrate) navigator.vibrate(10);
       if (opts.onStart) opts.onStart(el, ghost);
