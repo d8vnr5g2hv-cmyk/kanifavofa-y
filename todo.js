@@ -45,7 +45,7 @@ const Todo = (() => {
     head().querySelectorAll('button').forEach(b => b.onclick = () => { list = b.dataset.l; render(); box().scrollTop = 0; });
     const cur = open(list).sort(byOrder);
     let html = '';
-    if (!cur.length) html += list === 'do' ? '<div class="empty"><img class="emc" src="hoshino_chibi.png" alt="">やることは、ぜんぶおしまい。<br>のんびりしよ〜</div>' : '<div class="empty"><img class="emc" src="m_hoshino_notice.webp" alt="">考えごとは、ここに置いておこう。<br>＋から追加できるよ</div>';
+    if (!cur.length) html += list === 'do' ? '<div class="empty"><img class="emc" src="hoshino_chibi.webp" alt="">やることは、ぜんぶおしまい。<br>のんびりしよ〜</div>' : '<div class="empty"><img class="emc" src="m_hoshino_notice.webp" alt="">考えごとは、ここに置いておこう。<br>＋から追加できるよ</div>';
     else if (list === 'do') {
       GROUPS.forEach(([g, label]) => {
         const gs = cur.filter(t => group(t) === g); if (!gs.length) return;
