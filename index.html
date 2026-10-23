@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Favorite">
+<meta name="theme-color" content="#fde3ee">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Kani Favorite</title>
+<link rel="preload" href="bgm_title.mp3" as="fetch" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===== スプラッシュ ===== -->
+<div id="splash">
+  <div class="sbgw"><img class="sbg" src="splash_bg.jpg" alt=""></div>
+  <div class="glow"></div>
+  <div id="scs"></div>
+  <div class="slogo"><div class="word" id="sword"></div><div class="tts">TAP TO START</div></div>
+  <div class="flashIn"></div>
+  <button class="gear" id="gearBtn" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  <div class="lock" id="lock">
+    <div class="lring"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+    <span>TAP TO UNLOCK</span><small id="loadState">読み込み中…</small>
+  </div>
+  <div class="flash"></div>
+</div>
+
+<!-- ===== Favorite（メモロビ） ===== -->
+<div id="lobby">
+  <div class="slides" id="slides"></div>
+  <div class="clock" id="clock">
+    <div class="date">
+      <span class="dow" id="dow">FRI</span><span id="md">10.23</span>
+      <svg class="wave" viewBox="0 0 22 8"><path d="M1 5c3-4 5-4 7 0s4 4 6 0 5-4 7 0" fill="none" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </div>
+    <div class="time"><span class="hm"><span id="hh">00</span><span class="colon">:</span><span id="mm">00</span></span><span class="sec" id="ss">00</span></div>
+    <div class="line"></div>
+  </div>
+  <div class="icons">
+    <button id="bgmBtn" aria-label="BGM"></button>
+    <button id="landBtn" aria-label="横持ち"></button>
+  </div>
+</div>
+<div class="dots" id="dots"></div>
+<div class="handle" id="handle"><i></i></div>
+
+<!-- ===== Todo：ホシノ右下 ===== -->
+<div class="page bandBottom" id="page-todo">
+  <div class="wall"><img class="wallimg" src="todo_wall.jpg" alt=""></div>
+  <div class="frame"><div class="head" id="todoHead"></div><div class="scroll" id="todoList"></div><button class="addBtn" id="todoAdd" aria-label="追加">＋</button></div>
+  <div class="band left"><h2>Todo<small>THINGS TO DO</small></h2></div>
+  <div class="chibi real" data-char="hoshino" data-name="ホシノ" data-x="458.6" data-y="1250.5" data-w="310.2" data-h="333.4" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="hoshino_chibi.png" alt=""></div>
+  </div>
+</div>
+
+<!-- ===== Love：ミカ左上 ===== -->
+<div class="page bandTop" id="page-love">
+  <div class="wall"><img class="wallimg" src="love_wall.jpg" alt=""></div>
+  <div class="band right"><h2>Love<small>MY FAVORITE THINGS</small></h2></div>
+  <div class="chibi real" id="loveChibi" data-char="mika" data-name="ミカ" data-x="28.2" data-y="124.2" data-w="285.6" data-h="353.2" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.png" alt=""></div>
+  </div>
+  <div class="frame"><div class="head" id="loveHead"></div><div class="scroll" id="loveList"></div><button class="addBtn" id="loveAdd" aria-label="追加">＋</button></div>
+</div>
+
+<!-- ===== Accounts：ヒナ＋ミヤコ左下 ===== -->
+<div class="page bandBottom" id="page-accounts">
+  <div class="wall"><img class="wallimg" src="accounts_wall.jpg" alt=""></div>
+  <div class="frame"><div class="head" id="accHead"></div><div class="scroll" id="accList"></div><button class="addBtn" id="accAdd" aria-label="追加" hidden>＋</button></div>
+  <div class="band right"><h2>Accounts<small>KEEP IT SAFE</small></h2></div>
+  <div class="chibi real" data-char="hina" data-name="ヒナ" data-x="6.2" data-y="1279.2" data-w="324.3" data-h="326.2" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="hina_chibi.png" alt=""></div>
+  </div>
+  <div class="chibi real" data-char="miyako" data-name="ミヤコ" data-x="276.2" data-y="1257.4" data-w="220.6" data-h="359.5" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="miyako_chibi.png" alt=""></div>
+  </div>
+</div>
+
+<!-- ===== Profile：マリー右上 ===== -->
+<div class="page bandTop" id="page-profile">
+  <div class="wall"><img class="wallimg" src="profile_wall.jpg" alt=""></div>
+  <div class="band left"><h2>Profile<small>ABOUT ME</small></h2></div>
+  <div class="chibi real" data-char="mari" data-name="マリー" data-x="506.0" data-y="117.7" data-w="278.0" data-h="441.3" data-ww="853" data-wh="1844">
+    <div class="shadow"></div><div class="body"><img class="c-normal" src="mari_chibi.png" alt=""></div>
+  </div>
+  <div class="frame"><div class="head" id="profHead"></div><div class="scroll" id="profList"></div><button class="addBtn" id="profAdd" aria-label="追加">＋</button></div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="todo"><span class="ic"><img src="icon_hoshino.png" alt=""></span>Todo</button>
+  <button data-tab="love"><span class="ic"><img src="icon_mika.png" alt=""></span>Love</button>
+  <button data-tab="favorite" class="on"><span class="ic"><img src="icon_miyako.png" alt=""></span>Favorite</button>
+  <button data-tab="accounts"><span class="ic"><img src="icon_hina.png" alt=""></span>Accounts</button>
+  <button data-tab="profile"><span class="ic"><img src="icon_mari.png" alt=""></span>Profile</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div id="snack"><span></span><button></button></div>
+
+<!-- 設定（タイトル画面の歯車） -->
+<div class="sheetBg" id="sheetBg"></div>
+<div id="sheet">
+  <div class="grab"></div>
+  <h3>設定</h3>
+  <p class="note2">データはこのiPhoneの中だけに保存されています。機種変更やデータ消去に備えて、ときどき書き出しておくと安心です。</p>
+  <button class="row" id="exportBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを書き出す<small>Todo・Love・Profile・Accountsをまとめて保存（JSON）</small></span></button>
+  <button class="row" id="importBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 10l5 5 5-5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを読み込む<small>書き出したJSONから復元（今のデータは置き換わります）</small></span></button>
+  <button class="close" id="sheetClose">閉じる</button>
+  <input type="file" id="importFile" accept="application/json,.json">
+</div>
+
+<!-- 選択メニュー -->
+<div class="sheetBg" id="menuBg"></div>
+<div id="menu"></div>
+
+<!-- 入力シート -->
+<div class="sheetBg" id="edBg"></div>
+<div id="ed"><div class="eh"><button class="cancel">キャンセル</button><h3></h3><button class="save">保存</button></div><div class="eb"></div></div>
+
+<!-- Loveの拡大表示 -->
+<div id="viewer"></div>
+
+<script src="core.js"></script>
+<script src="ui.js"></script>
+<script src="motion.js"></script>
+<script src="todo.js"></script>
+<script src="love.js"></script>
+<script src="profile.js"></script>
+<script src="accounts.js"></script>
+<script>App.boot();</script>
+</body>
+</html>
