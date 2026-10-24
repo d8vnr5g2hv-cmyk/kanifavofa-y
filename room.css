@@ -397,3 +397,60 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 .gres .gst small { display:block; font-size:9px; color:#7a8fb0; } .gres .gst b { font:800 15px 'Quicksand','Noto Sans JP',sans-serif; color:#1d7fd6; }
 .gres .gbtn { display:flex; gap:10px; width:100%; }
 .gres .gbtn button { flex:1; border:none; padding:12px; background:#fff; color:#1d5fae; font:800 14px 'Noto Sans JP',sans-serif; transform:skewX(-8deg); border-radius:5px; box-shadow:0 3px 0 rgba(30,60,110,.3); }
+
+/* ===== 新聞（ホワイトボードのアップ） ===== */
+.rnp { position:relative; width:100%; aspect-ratio:1440/1200; flex:none; border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(10,30,80,.35); }
+.rnp .npwb { position:absolute; inset:0; width:100%; height:100%; }
+#room.night .rnp .npwb, #room.night .npr .npbg, #room.night .rnp .npbg { filter:brightness(.78) saturate(.9); }
+.npwrap { position:absolute; overflow:hidden; cursor:pointer; }
+.npwrap.big { position:relative; width:100%; aspect-ratio:1000/1540; border-radius:4px; box-shadow:0 10px 30px rgba(10,30,80,.35); cursor:default; }
+.nps { position:absolute; left:0; top:0; transform-origin:0 0; font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#4a4250; }
+.nps .npbg { position:absolute; inset:0; width:100%; height:100%; }
+.nps .npbg.mir { transform:scaleX(-1); }
+.npt { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(255,250,244,.82); border-radius:6px; }
+.npt b { font:400 70px/1.1 'Yusei Magic','Zen Maru Gothic',sans-serif; color:#3d6fa8; letter-spacing:.08em; text-shadow:3px 3px 0 #ffd6e6; }
+.npt span { font:400 26px 'Hachi Maru Pop','Zen Maru Gothic',sans-serif; color:#7a7088; margin-top:4px; }
+.npp { position:absolute; border-radius:6px; overflow:hidden; background:#efe9f2; box-shadow:inset 0 0 0 3px rgba(255,255,255,.7); }
+.npp > img { width:100%; height:100%; object-fit:cover; display:block; }
+.npp.nophoto { background:radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--c) 35%,#fff) 0 40%,#fbf6f2 70%); }
+.npp.nophoto .ch { position:absolute; left:50%; bottom:0; height:88%; width:auto; transform:translateX(-50%); object-fit:contain; }
+.npp em { position:absolute; right:8px; top:8px; font:400 22px 'Hachi Maru Pop',sans-serif; font-style:normal; color:#fff; background:var(--c); padding:2px 12px; border-radius:20px; transform:rotate(6deg); }
+.npp.none { background:repeating-linear-gradient(45deg,#f3eef4 0 14px,#faf7fa 14px 28px); }
+.npp.ad { display:flex; align-items:center; justify-content:center; background:#fff3f7; } .npp.ad i { font-size:110px; font-style:normal; }
+.npx { position:absolute; padding:10px 12px; background:rgba(255,251,246,.94); border-radius:8px; overflow:hidden; border-top:6px solid var(--c,#e06c9f); display:flex; flex-direction:column; }
+.npx .kd { align-self:flex-start; font:400 24px 'Hachi Maru Pop','Zen Maru Gothic',sans-serif; color:#fff; padding:1px 14px 3px; border-radius:16px; transform:rotate(-3deg); margin-bottom:6px; box-shadow:0 2px 0 rgba(0,0,0,.08); }
+.npx h6 { margin:0 0 6px; font:400 36px/1.25 'Yusei Magic','Zen Maru Gothic',sans-serif; color:#3a3348; }
+.npx.front h6 { font-size:44px; background:linear-gradient(transparent 62%,#ffe58a 62%); align-self:flex-start; }
+.npx p { margin:0; flex:1; min-height:0; font:500 26px/1.55 'Zen Maru Gothic',sans-serif; color:#5a5262; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:7; }
+.npx .by { flex:none; display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:6px; font:400 22px 'Hachi Maru Pop',sans-serif; color:var(--c); }
+.npx .by img { height:44px; }
+.npx.ad { --c:#e06c9f; border:4px dashed #f0a6c4; border-top-width:6px; border-top-style:solid; }
+.npx.none { display:flex; align-items:center; justify-content:center; background:transparent; border:none; }
+.npx .stk { background:#fff3a8; padding:22px 24px; transform:rotate(-4deg); box-shadow:0 4px 8px rgba(0,0,0,.12); font:400 34px 'Hachi Maru Pop',sans-serif; color:#8a6a10; text-align:center; }
+.npx .stk small { display:block; font-size:20px; margin-top:6px; color:#a08a50; }
+.npnav { display:flex; align-items:center; gap:8px; margin-top:10px; }
+.npnav span { flex:1; text-align:center; font:700 13px 'Zen Maru Gothic',sans-serif; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.4); }
+.npnav button, .nptab button { border:none; border-radius:12px; padding:8px 12px; background:rgba(255,255,255,.92); color:#3d6fa8; font:700 12px 'Zen Maru Gothic','Noto Sans JP',sans-serif; box-shadow:0 2px 6px rgba(10,30,80,.15); }
+.npnav button:disabled { opacity:.4; }
+.nphint { margin:8px 0 0; text-align:center; font:500 12px 'Zen Maru Gothic',sans-serif; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.45); }
+.npr { display:flex; flex-direction:column; gap:8px; max-height:100%; overflow-y:auto; }
+.nptab { display:flex; gap:6px; } .nptab button.on { background:#3d86d6; color:#fff; } .nptab [data-back] { margin-left:auto; }
+.npr .npwrap.big .npx, .npr .npwrap.big .npp:not(.none):not(.ad) { cursor:pointer; }
+/* 記事カード */
+.npa { background:#fffaf4; border-radius:16px; overflow:hidden; box-shadow:0 12px 34px rgba(10,30,80,.4); display:flex; flex-direction:column; max-height:100%; border-top:8px solid var(--c); font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; }
+.npa .ph { position:relative; flex:none; aspect-ratio:4/3; max-height:38vh; background:radial-gradient(circle at 50% 60%,color-mix(in srgb,var(--c) 35%,#fff) 0 40%,#fbf6f2 70%); overflow:hidden; }
+.npa .ph > img { width:100%; height:100%; object-fit:cover; display:block; }
+.npa .ph .ch { position:absolute; left:50%; bottom:0; height:90%; width:auto; transform:translateX(-50%); object-fit:contain; }
+.npa .ph em { position:absolute; right:12px; top:12px; font:400 13px 'Hachi Maru Pop',sans-serif; font-style:normal; color:#fff; background:var(--c); padding:2px 10px; border-radius:14px; transform:rotate(6deg); }
+.npa .bd { padding:14px 16px 6px; overflow-y:auto; min-height:0; }
+.npa .kd { display:inline-block; font:400 12px 'Hachi Maru Pop',sans-serif; color:#fff; padding:2px 10px; border-radius:12px; transform:rotate(-3deg); }
+.npa h4 { margin:6px 0 8px; font:400 22px/1.35 'Yusei Magic','Zen Maru Gothic',sans-serif; color:#3a3348; }
+.npa p { margin:0; font:500 15px/1.85 'Zen Maru Gothic',sans-serif; color:#4f4858; white-space:pre-wrap; }
+.npa .by { position:relative; display:flex; align-items:center; gap:8px; margin:12px 0 4px; padding-top:10px; border-top:2px dashed #eadfe6; }
+.npa .by img { height:46px; } .npa .by b { font:400 15px 'Hachi Maru Pop',sans-serif; color:var(--c); } .npa .by span { font-size:11px; color:#9a90a6; }
+.npa .hanko { margin-left:auto; width:44px; height:44px; border:2px solid #e0607e; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#e0607e; font:700 13px 'Zen Maru Gothic',sans-serif; font-style:normal; transform:rotate(-12deg); opacity:.85; }
+.npa .act { display:flex; gap:6px; padding:8px 12px; }
+.npa .act button, .npa .npback { border:none; border-radius:12px; padding:10px 8px; background:#eef4fd; color:#3d6fa8; font:700 12px 'Zen Maru Gothic','Noto Sans JP',sans-serif; }
+.npa .act button { flex:1; } .npa .act [data-x="prev"], .npa .act [data-x="next"] { flex:0 0 42px; font-size:16px; }
+.npa .act button:disabled { opacity:.45; }
+.npa .npback { margin:0 12px 12px; }

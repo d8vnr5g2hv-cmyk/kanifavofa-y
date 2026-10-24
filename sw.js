@@ -1,6 +1,6 @@
 // Kani Favorite：オフライン用
 // 画面のしくみ（html・js・css）はネット優先＝更新がすぐ反映。画像・音は端末にためて速く。動画は再生の都合でネットから。
-const CACHE = 'kani-favorite-v9';
+const CACHE = 'kani-favorite-v10';
 const SHELL = ['./', 'index.html', 'app.css', 'core.js', 'ui.js', 'motion.js', 'todo.js', 'love.js', 'profile.js', 'accounts.js', 'ops.js', 'ops.css', 'room.js', 'room.css', 'games.js',
                'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'splash_bg.jpg', 'bgm_title.mp3'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });

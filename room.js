@@ -184,6 +184,7 @@ const Room = (() => {
     $('rBack').onclick = exit;
     $('rSet').onclick = () => Menu.open('自室', [
       { label:'今日の当番', sub:duty ? NAME[duty] : '', fn:() => toast(`今日の当番は${NAME[duty]}です`) },
+      { label:'今月のAIの使いみち', sub:'種類ごとの金額', fn:() => budgetDetail() },
       { label:'AIの設定', sub:'作戦室と同じGASを使います', fn:() => opsSettings() },
     ]);
     $('rz').addEventListener('click', e => { if (e.target.id === 'rz' || e.target.closest('.rzx')) closeZoom(); });
@@ -502,50 +503,205 @@ const Room = (() => {
     c.querySelector('.rnav').onclick = e => { const b = e.target.closest('[data-rn]'); if (!b || b.disabled) return; i += +b.dataset.rn; sfx('tap'); show(i); };
   }
 
-  // ----- 新聞（ホワイトボード） -----
-  let paperJob = null;
-  // 今週の新聞をつくる（アプリを開いたときに裏で。部屋で開いたときにまだなければ、その場で）
-  function makePaper() {
-    if (paperJob) return paperJob;
-    paperJob = (async () => {
-      const week = monday();
-      const have = await DB.get('room', 'paper-' + week).catch(() => null); if (have) return have;
-      if (!api || !api.url) return null;
-      const who = duty || await pickDuty();
-      try {
-        const r = await call('paper', { who, week, weekEnd:D.add(week, 6) }, true);
-        if (r && r.items && r.items.length) { const p = { id:'paper-' + week, week, who, data:r, read:false }; await DB.put('room', p); return p; }
-      } catch(e) {}
-      return null;
-    })().finally(() => { paperJob = null; markPaper(); });
-    return paperJob;
+  // ----- 新聞（ホワイトボードのアップ） -----
+  // アップ画像（1440×1200）と、その中の2枚の紙の位置 [左, 上, 幅, 高さ]
+  const NP = { W:1440, H:1200, sheets:[[140, 130, 545, 840], [755, 130, 545, 840]] };
+  const PW = 1000, PH = 1540;   // 紙の中の座標（補正した紙の画像の大きさ）
+  // 紙に印刷されている枠：[左, 上, 右, 下]
+  const SLOT = { title:[142, 117, 808, 270], big:[70, 357, 622, 737], right:[670, 357, 957, 737], c1:[75, 775, 330, 1100], c2a:[362, 775, 625, 1128], c2b:[362, 1142, 625, 1500],
+                 c3:[675, 762, 957, 1075], bl:[62, 1112, 325, 1387], br:[675, 1100, 957, 1387] };
+  const PLACE = [['big', 'c1'], ['right', 'c3'], ['bl', 'c2a'], ['br', 'c2b']];   // 1面・2面それぞれ4つの記事の置き場（写真, 本文）
+  const KIND_COLOR = { 急募:'#ff6b8a', 速報:'#ff9a3c', インタビュー:'#3d9cf0', コラム:'#7c8fd6', お悩み相談:'#b47ce0', 特集:'#20b39a', ひとこと:'#8a9ab0', 募集中:'#e06c9f' };
+  const COLOR = { hoshino:'#ff9ec4', mika:'#f2a2d6', miyako:'#8fb8ff', mari:'#ffb26b', serina:'#ff8f9a', kisaki:'#e6b24f', hina:'#b48cff', seia:'#f5c95c', noa:'#aab8f0', yuuka:'#5c9cff', hikari:'#86d86a', nico:'#ffa98f' };
+  const ADS = [
+    { head:'ゲーム開発部　テストプレイヤー募集中！', body:'新作のテストプレイをしてくれる人を探しています。報酬はクリアしたときの達成感です。先生も大歓迎！' },
+    { head:'給食部　試食係、募集中！', body:'新メニューの味見をしてくれる人を探しています。おかわり自由。ただし感想は正直にお願いします。' },
+    { head:'シャーレ冷蔵庫　名前書き運動にご協力を', body:'プリンに名前を書いていないと、だれかのおなかに消えてしまいます。名前ペンは冷蔵庫の横にあります。' },
+    { head:'補習授業部　一緒に勉強してくれる人募集！', body:'テスト前の放課後、勉強会をひらきます。わからないところを聞ける人がいると、とっても助かります。' },
+    { head:'風紀委員会より　夜ふかし取り締まり週間', body:'今週は夜ふかし取り締まり強化週間です。先生も対象です。早く寝てください。' },
+    { head:'便利屋68　ご依頼お待ちしております', body:'ペット探しから大掃除まで、なんでも承ります。お値段は応相談。社長はとても頼りになります。' },
+  ];
+  let npWeek = null, npPage = 0;
+  const weekOf = s => monday(s);
+  async function weekArts(week) {
+    return (await DB.all('room').catch(() => [])).filter(r => r.id.startsWith('art-') && r.week === week).sort((a, b) => a.date.localeCompare(b.date));
+  }
+  // 一面：先生が選んだもの → 写真付きで注目度が高いもの → 全体で注目度が高いもの（同じなら新しいほう）
+  function arrange(arts, pick) {
+    const by = (a, b) => (b.score || 3) - (a.score || 3) || b.date.localeCompare(a.date);
+    let front = arts.find(a => a.id === pick);
+    if (!front) front = arts.filter(a => a.photo).sort(by)[0] || arts.slice().sort(by)[0];
+    const rest = arts.filter(a => a !== front);
+    const list = front ? [front, ...rest] : [];
+    return [[list[0], list[1], list[2], list[3]], [list[4], list[5], list[6], 'ad']];
+  }
+  const rect = (r, mirror) => { const [x0, y0, x1, y1] = r, a = mirror ? PW - x1 : x0, b = mirror ? PW - x0 : x1; return `left:${a}px;top:${y0}px;width:${b - a}px;height:${y1 - y0}px`; };
+  function photoUrl(a) { if (!a || !a.photo) return null; if (!viewUrls[a.id]) viewUrls[a.id] = URL.createObjectURL(a.photo); return viewUrls[a.id]; }
+  // 1枚の紙（1000×1540の座標で組んで、表示するときに縮める）
+  function sheetHTML(page, items, week, no) {
+    const mir = page === 1, ad = ADS[(no - 1) % ADS.length];
+    let html = `<div class="nps" style="width:${PW}px;height:${PH}px"><img class="npbg ${mir ? 'mir' : ''}" src="room_np_paper.jpg" alt="">
+      <div class="npt" style="${rect(SLOT.title, mir)}">${page === 0 ? `<b>シャーレ週報</b><span>第${no}号　${D.md(week)}〜${D.md(D.add(week, 6))}</span>` : `<b>2面</b><span>生徒たちの取材ノート</span>`}</div>`;
+    items.forEach((a, k) => {
+      const [ps, ts] = PLACE[k], front = page === 0 && k === 0;
+      if (a === 'ad') {
+        html += `<div class="npp ad" style="${rect(SLOT[ps], mir)}"><i>📣</i></div>
+          <div class="npx ad" style="${rect(SLOT[ts], mir)}"><span class="kd" style="background:${KIND_COLOR['募集中']}">募集中！</span><h6>${esc(ad.head)}</h6><p>${esc(ad.body)}</p></div>`;
+      } else if (!a) {
+        html += `<div class="npp none" style="${rect(SLOT[ps], mir)}"></div><div class="npx none" style="${rect(SLOT[ts], mir)}"><div class="stk">取材中…<small>当番がネタを集めています</small></div></div>`;
+      } else {
+        const u = photoUrl(a), c = COLOR[a.who] || '#9ab';
+        html += `<div class="npp ${u ? '' : 'nophoto'}" data-art="${a.id}" style="${rect(SLOT[ps], mir)};--c:${c}">${u ? `<img src="${u}" alt="">` : `<img class="ch" src="${img(a.who, 'stand')}" alt=""><em>写真なし</em>`}</div>
+          <div class="npx ${front ? 'front' : ''}" data-art="${a.id}" style="${rect(SLOT[ts], mir)};--c:${c}"><span class="kd" style="background:${KIND_COLOR[a.kind] || '#7c8fd6'}">${esc(a.kind)}</span>
+            <h6>${esc(a.head)}</h6><p>${esc(a.body)}</p><div class="by"><img src="${img(a.who, 'stand')}" alt="">${NAME[a.who] || ''}記者</div></div>`;
+      }
+    });
+    return html + '</div>';
+  }
+  function fitSheets(root) {   // 紙の中身を、表示されている大きさに合わせて縮める
+    root.querySelectorAll('.npwrap').forEach(w => { const s = w.querySelector('.nps'); if (s && w.clientWidth) s.style.transform = `scale(${w.clientWidth / PW})`; });
+  }
+  async function issue(week) {
+    const arts = await weekArts(week), pick = (await DB.get('room', 'front-' + week).catch(() => null) || {}).art;
+    const no = Math.max(1, Math.round((D.parse(week) - D.parse('2026-10-19')) / 604800000) + 1);
+    return { arts, pages:arrange(arts, pick), no };
   }
   async function markPaper() {
     const hs = el && el.querySelector('.hs[data-k="paper"]'); if (!hs) return;
-    const p = await DB.get('room', 'paper-' + monday()).catch(() => null);
-    hs.innerHTML = p && p.read === false ? '<i class="new">NEW</i>' : '';
+    const arts = await weekArts(monday());
+    hs.innerHTML = arts.some(a => a.read === false) ? '<i class="new">NEW</i>' : '';
   }
-  async function openPaper(from) {
-    const week = monday(), c = zoom('<div class="rwb" id="rwb"></div>', from);
-    c.style.height = 'min(80vh,680px)';
-    const box = $('rwb');
-    const doodles = '<i class="doodle" style="right:10px;top:4px">(=ↀωↀ=)</i><i class="doodle" style="left:8px;bottom:2px">☆ ﾐ</i>';
-    let p = await DB.get('room', 'paper-' + week).catch(() => null);
-    if (!p) {
-      if (!api || !api.url) { box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i><div class="rload">今週の新聞は、まだありません。<br>右上の設定からAIの設定をすると、<br>毎週月曜に当番が書いて貼ってくれます。</div></div>`; return; }
-      box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i><div class="rload"><img src="${img(duty, 'stand')}" alt="">${NAME[duty]}が、今週の新聞を書いています…<br><small>（1分ほどかかります）</small></div></div>`;
-      p = await makePaper();
-      if (!$('rwb')) return;
-      if (!p) { box.innerHTML = doodles + '<div class="paper"><div class="rload">うまく書けませんでした。少し待ってから、もう一度どうぞ</div></div>'; return; }
-    }
-    if (p.read === false) { p.read = true; DB.put('room', p).catch(() => {}); markPaper(); }
-    const no = Math.max(1, Math.round((D.parse(week) - D.parse('2026-10-19')) / 604800000) + 1);
-    const d = p.data, T = { gourmet:'グルメ', trip:'おでかけ', wanted:'募集中！', news:'お知らせ' };
-    box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i>
-      <div class="ph"><small>SCHALE WEEKLY</small><b>${esc(d.title || 'シャーレ週報')}</b><span>第${no}号　${D.md(week)}〜${D.md(D.add(week, 6))}</span></div>
-      ${(d.items || []).map(a => `<div class="art ${a.tag === 'wanted' ? 'wanted' : ''}"><span class="tg ${esc(a.tag)}">${T[a.tag] || 'トピック'}</span><h5>${esc(a.head)}</h5><p>${esc(a.body)}</p></div>`).join('')}
-      ${d.note ? `<div class="pnote"><img src="${img(p.who, 'stand')}" alt=""><p><b>編集後記　${NAME[p.who] || ''}</b>${esc(d.note)}</p></div>` : ''}
-      ${d.sources && d.sources.length ? `<div class="src">参考：${d.sources.slice(0, 4).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || s.url)}</a>`).join('　')}</div>` : ''}</div>`;
+  // ホワイトボードのアップ（2枚が貼ってある）
+  async function openPaper(from, week) {
+    npWeek = week || monday();
+    const { arts, pages, no } = await issue(npWeek);
+    const c = zoom(`<div class="rnp"><img class="npwb" src="room_np_d.jpg" alt="">
+      ${NP.sheets.map((s, i) => `<div class="npwrap" data-pg="${i}" style="left:${s[0] / NP.W * 100}%;top:${s[1] / NP.H * 100}%;width:${s[2] / NP.W * 100}%;height:${s[3] / NP.H * 100}%">${sheetHTML(i, pages[i], npWeek, no)}</div>`).join('')}
+      </div><div class="npnav"><button data-wk="-7">‹ 前の号</button><span>第${no}号</span><button data-wk="7" ${npWeek >= monday() ? 'disabled' : ''}>次の号 ›</button></div>
+      <p class="nphint">${arts.length ? '紙をタップすると読めます' : '今週はまだ記事がありません。当番が取材に来るのを待ってね'}</p>`, week ? {} : from);
+    requestAnimationFrame(() => fitSheets(c));
+    c.onclick = e => {
+      const w = e.target.closest('[data-wk]'); if (w) { if (w.disabled) return; sfx('tap'); return openPaper(null, D.add(npWeek, +w.dataset.wk)); }
+      const p = e.target.closest('.npwrap'); if (p) { sfx('tap'); readSheet(+p.dataset.pg); }
+    };
+    arts.filter(a => a.read === false).forEach(a => { a.read = true; DB.put('room', a).catch(() => {}); });
+    setTimeout(markPaper, 300);
+  }
+  // 紙を読む（1面・2面）
+  async function readSheet(pg) {
+    npPage = pg;
+    const { pages, no } = await issue(npWeek);
+    const c = zoom(`<div class="npr"><div class="nptab"><button data-pg="0" class="${pg === 0 ? 'on' : ''}">1面</button><button data-pg="1" class="${pg === 1 ? 'on' : ''}">2面</button><button data-back="1">ボードに戻る</button></div>
+      <div class="npwrap big">${sheetHTML(pg, pages[pg], npWeek, no)}</div></div>`);
+    requestAnimationFrame(() => fitSheets(c));
+    let sx = 0;
+    c.addEventListener('pointerdown', e => { sx = e.clientX; });
+    c.addEventListener('pointerup', e => { const dx = e.clientX - sx; if (Math.abs(dx) > 60 && !e.target.closest('button')) { const n = dx < 0 ? 1 : 0; if (n !== npPage) readSheet(n); } });
+    c.onclick = e => {
+      const t = e.target.closest('[data-pg]'); if (t) { sfx('tap'); return readSheet(+t.dataset.pg); }
+      if (e.target.closest('[data-back]')) return openPaper(null, npWeek);
+      const a = e.target.closest('[data-art]'); if (a) { sfx('tap'); readArticle(a.dataset.art); }
+    };
+  }
+  // 記事を1本読む
+  async function readArticle(id) {
+    const { arts, pages } = await issue(npWeek), i = arts.findIndex(a => a.id === id), a = arts[i]; if (!a) return;
+    const front = pages[0][0] && pages[0][0].id;
+    const u = photoUrl(a), c = COLOR[a.who] || '#9ab';
+    const box = zoom(`<div class="npa" style="--c:${c}"><div class="ph">${u ? `<img src="${u}" alt="">` : `<img class="ch" src="${img(a.who, 'stand')}" alt=""><em>写真なし</em>`}</div>
+      <div class="bd"><span class="kd" style="background:${KIND_COLOR[a.kind] || '#7c8fd6'}">${esc(a.kind)}</span><h4>${esc(a.head)}</h4><p>${esc(a.body)}</p>
+      <div class="by"><img src="${img(a.who, 'stand')}" alt=""><b>${NAME[a.who] || ''}記者</b><span>${D.md(a.date)}（${D.dow(a.date)}）取材</span><i class="hanko">${(NAME[a.who] || '').slice(0, 2)}</i></div></div>
+      <div class="act"><button data-x="prev" ${i <= 0 ? 'disabled' : ''}>‹</button><button data-x="front" ${front === a.id ? 'disabled' : ''}>${front === a.id ? '一面にしています' : '一面にする'}</button>
+        <button data-x="photo">${u ? '写真を変える' : '写真を貼る'}</button><button data-x="next" ${i >= arts.length - 1 ? 'disabled' : ''}>›</button></div>
+      <button class="npback" data-x="back">紙面に戻る</button></div>`);
+    box.onclick = async e => {
+      const b = e.target.closest('[data-x]'); if (!b || b.disabled) return; sfx('tap');
+      const x = b.dataset.x;
+      if (x === 'prev') return readArticle(arts[i - 1].id);
+      if (x === 'next') return readArticle(arts[i + 1].id);
+      if (x === 'back') return readSheet(npPage);
+      if (x === 'front') { await DB.put('room', { id:'front-' + npWeek, art:a.id }); toast('一面にしました'); return readArticle(a.id); }
+      if (x === 'photo') pickFile('image/*', false, async ([f]) => { a.photo = await shrink(f); if (viewUrls[a.id]) { URL.revokeObjectURL(viewUrls[a.id]); delete viewUrls[a.id]; } await DB.put('room', a); readArticle(a.id); });
+    };
+  }
+
+  // ===== 新聞の取材（1日1回、当番が先生にインタビュー） =====
+  const IV = {
+    ask:{ hoshino:'ねえ先生〜、今日の新聞のネタ、なにかない〜？ おじさんが記事にしてあげるよ〜', mika:'先生！今日の新聞のネタちょうだい☆ なんでもいいよ、私がかわいく書くから！',
+      miyako:'先生、本日の取材任務です。新聞のネタを一件、ご提供いただけますか', mari:'先生、新聞のお手伝いをしています。今日はなにかお話を聞かせていただけますか？',
+      serina:'先生、今日の新聞のネタ集めをしているんです。なにかありませんか？', kisaki:'先生、今日は妾が記者じゃ。なにか面白い話はないかのう？',
+      hina:'……先生。新聞の記事、今日は私の番なの。なにか話題、ある？', seia:'先生、今日は私が筆を執る日だ。君の話を、ひとつ聞かせてくれないか',
+      noa:'先生、今日の取材をさせてください♪ どんなお話でも、しっかり記録しますね', yuuka:'先生、新聞の記事を一本書かないといけないんです。ネタ、ありませんか？',
+      hikari:'せんせーー！しんぶんのネタちょうだーーい！', nico:'先生〜、今日の新聞のネタ、なにかありませんか〜？' },
+    write:{ hoshino:'うへ〜、いいネタもらっちゃった。ちょっと書いてくるね〜', mika:'ありがと☆ じゃあ書いてくるね！', miyako:'取材完了。記事を作成します', mari:'ありがとうございます。心をこめて書きますね',
+      serina:'ありがとうございます！すぐ書いてきますね', kisaki:'うむ、しかと聞いた。筆を執るとしよう', hina:'……わかった。書いてくるわ', seia:'ありがとう。言葉にしてみるよ',
+      noa:'ありがとうございます♪ 記事にまとめますね', yuuka:'了解です！手早くまとめます！', hikari:'かいてくるーー！', nico:'ありがとうございます〜。書いてきますね〜' },
+    photo:{ hoshino:'あ、写真もあったら貼りたいな〜。なにかある〜？', mika:'写真もあったら貼りたいな☆ ある？', miyako:'写真資料があれば、ご提供ください', mari:'もしよろしければ、写真もいただけますか？',
+      serina:'写真もあれば、一緒に貼りたいです', kisaki:'絵になるものはあるかの？写真じゃ', hina:'写真、ある？あれば貼るわ', seia:'添える写真はあるかな？', noa:'写真もあれば、記録として貼りますね♪',
+      yuuka:'写真があると記事が映えるんですけど、ありますか？', hikari:'しゃしんもちょうだーーい！', nico:'写真もあったら、うれしいです〜' },
+    thanks:{ hoshino:'ありがと〜。ホワイトボードに貼っておくね〜', mika:'ありがと☆ さっそく貼ってくるね！', miyako:'掲示を完了しました', mari:'ありがとうございます。貼っておきますね',
+      serina:'ありがとうございます！貼っておきますね', kisaki:'うむ、貼っておいたぞ', hina:'……貼っておいたわ', seia:'貼っておいたよ。いい紙面になりそうだ', noa:'貼っておきました♪',
+      yuuka:'貼っておきました！今週の新聞、いい感じです', hikari:'はったーー！', nico:'貼っておきましたよ〜' },
+    skip:'わかった。また明日、聞かせてね',
+    q:'それで、それで？ もっと聞かせて！',
+  };
+  let ivMode = false, iv = null;
+  async function ivRec() {
+    const day = dutyDay();
+    return (await DB.get('room', 'iv-' + day).catch(() => null)) || { id:'iv-' + day, date:day, who:duty, status:'new', log:[] };
+  }
+  const saveIv = () => DB.put('room', iv).catch(() => {});
+  // 取材を始める（まだ今日の記事がなければ）。始めたら true
+  async function maybeInterview() {
+    if (!api || !api.url || viewOnly()) return false;
+    if (await DB.get('room', 'art-' + dutyDay()).catch(() => null)) return false;
+    iv = await ivRec();
+    if (iv.status === 'skip' || iv.status === 'done') return false;
+    if (iv.status === 'write') { await writeArticle(true); return true; }   // 前回うまく書けなかった分
+    await sayLines([IV.ask[duty]]);
+    choice([['talk', 'ネタを話す'], ['skip', '今日はパス']], async v => {
+      if (v === 'skip') { iv.status = 'skip'; saveIv(); await sayLines([IV.skip]); return toInput(); }
+      iv.status = 'active'; iv.log = []; saveIv(); ivMode = true;
+      await sayLines(['やった！ じゃあ、話題を教えて！']); toInput();
+    });
+    return true;
+  }
+  function choice(list, fn) {
+    $('rch').innerHTML = list.map(([v, l]) => `<button data-c="${v}">${esc(l)}</button>`).join('');
+    setMode('choice');
+    $('rch').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; $('rch').innerHTML = ''; showWin(); setMode('typing'); fn(b.dataset.c); };
+  }
+  async function ivSend(t) {
+    iv.log.push({ who:'me', text:t }); saveIv();
+    const turns = iv.log.filter(m => m.who === 'me').length;
+    if (turns >= 3) return writeArticle(false);
+    $('rwT').textContent = ''; setMode('think');
+    let line = IV.q;
+    try { const r = await call('interview', { who:duty, log:iv.log }); if (r.line) line = r.line; } catch(e) {}
+    iv.log.push({ who:'duty', text:line }); saveIv();
+    if (mode === 'off') return;
+    await sayLines([line]); toInput();
+  }
+  async function writeArticle(retry) {
+    ivMode = false; iv.status = 'write'; saveIv();
+    await sayLines([retry ? 'あ、先生。さっきの記事、もう一回書いてみるね' : IV.write[duty]]);
+    $('rwT').textContent = '記事を書いています'; setMode('think');
+    let r;
+    try { r = await call('article', { who:duty, date:dutyDay(), log:iv.log }); } catch(e) {}
+    if (!r || !r.head) { await sayLines(['……ごめんね、うまくまとまらなかった。あとでもう一回書いてみるね']); return toInput(); }
+    const day = dutyDay();
+    const art = { id:'art-' + day, date:day, week:weekOf(day), who:duty, kind:r.kind, head:r.head, body:r.body, score:r.score, photo:null, read:false, at:Date.now(), log:iv.log };
+    await DB.put('room', art);
+    iv.status = 'done'; saveIv(); markPaper();
+    sfx('pc');
+    await sayLines([r.line || '書けたよ、先生！', `見出しは「${r.head}」！`, IV.photo[duty]]);
+    choice([['photo', '写真を選ぶ'], ['no', '写真なしでOK']], async v => {
+      if (v === 'photo') {
+        pickFile('image/*', false, async ([f]) => { art.photo = await shrink(f); await DB.put('room', art); if (mode === 'off') return; await sayLines([IV.thanks[duty]]); toInput(); });
+        await sayLines(['写真、待ってるね！（あとから新聞の記事からも貼れるよ）']); return toInput();
+      }
+      await sayLines([IV.thanks[duty]]); toInput();
+    });
   }
 
   // ===== 当番との会話（メッセージウィンドウ） =====
@@ -607,22 +763,29 @@ const Room = (() => {
         lines = (r.lines || []).filter(Boolean);
       } catch(e) {}
     }
+    if (kind !== 'open') {   // 取材の途中なら、続きから
+      const r0 = await ivRec();
+      if (r0.status === 'active' && api && api.url) { iv = r0; ivMode = true; await sayLines(['先生、取材の続きをしよう！']); return toInput(); }
+    }
     if (!lines || !lines.length) { const L = LINES[duty]; lines = [kind === 'open' ? L[0] : L[1 + Math.floor(Math.random() * (L.length - 1))]]; }
     talkLog.greeted = true;
     lines.forEach(t => talkLog.log.push({ who:'duty', text:t }));
     await saveChat();
     await sayLines(lines);
+    if (await maybeInterview()) return;
     toInput();
   }
   function toInput() {
     if (mode === 'off') return;
     setMode('input');
     const i = $('rIn'); i.disabled = !(api && api.url);
-    i.placeholder = api && api.url ? `${NAME[duty]}に話しかける…` : 'AIの設定をすると、話しかけられます';
+    const turns = ivMode && iv ? iv.log.filter(m => m.who === 'me').length : 0;
+    i.placeholder = !(api && api.url) ? 'AIの設定をすると、話しかけられます' : ivMode ? (turns ? `取材に答える（${turns + 1}/3）` : '話題を教えて（例：おいしいラーメン屋さん）') : `${NAME[duty]}に話しかける…`;
   }
   async function sendTalk() {
     const i = $('rIn'), t = i.value.trim(); if (!t || mode !== 'input') return;
     i.value = ''; i.blur();
+    if (ivMode) return ivSend(t);
     talkLog.log.push({ who:'me', text:t });
     $('rwT').textContent = ''; setMode('think');
     let r;
@@ -659,6 +822,7 @@ const Room = (() => {
   }
   function endTalk(bye) {
     if (mode === 'off') return;
+    ivMode = false;   // 取材の途中で閉じても、次に話しかけたら続きから
     clearInterval(typing); typing = null; queue = [];
     $('rmw').className = ''; mode = 'off'; $('rch').innerHTML = '';
   }
@@ -681,22 +845,32 @@ const Room = (() => {
 
   // ===== GAS（AI）との通信：作戦室と同じ設定を使う =====
   async function loadApi() { api = await DB.get('settings', 'opsApi').catch(() => null); return api; }
+  let lastBudget = null;
+  const TAGNAME = { classify:'作戦室（分類）', discuss:'作戦室（会議）', room:'当番との会話', interview:'取材', article:'記事の仕上げ', report:'日報', other:'その他' };
+  function budgetDetail() {
+    if (!lastBudget) return toast('AIの設定をすると見られます');
+    const by = lastBudget.by || {}, keys = Object.keys(by).sort((a, b) => by[b] - by[a]);
+    Menu.open(`今月のAI ¥${Math.round(lastBudget.spent)} / ¥${lastBudget.limit}`, keys.length ? keys.map(k => ({ label:`${TAGNAME[k] || k}　¥${by[k] < 1 ? by[k].toFixed(1) : Math.round(by[k])}`, fn:() => {} }))
+      : [{ label:'内訳は、GASを更新したあとの分から記録されます', fn:() => {} }]);
+  }
   function showBudget(b) { const e = $('rBudget'); if (e) e.textContent = `AI 今月 ¥${Math.round(b.spent)} / ¥${b.limit}`; }
   function opsSettings() {
     const body = h('<div></div>');
     const fU = F.text('サーバーのURL（GASのウェブアプリURL）', api && api.url, 'https://script.google.com/macros/s/…/exec', 'url');
     const fK = F.text('合言葉（GASに設定したACCESS_KEY）', api && api.key, '', 'password');
     fU.input.autocapitalize = 'off'; fK.input.autocapitalize = 'off';
-    body.append(fU.el, fK.el, h('<p class="hint">作戦室と同じ設定です。当番との会話・日報・新聞に使います。</p>'));
+    body.append(fU.el, fK.el, h('<p class="hint">作戦室と同じ設定です。当番との会話・取材・日報に使います。</p>'));
     Editor.open({ title:'AIの設定', body, theme:{ '--accent':'#3d86d6', '--title':'#3d6fa8', '--soft':'#eef5ff', '--line':'#d6e4f5' },
       save:async () => { api = { id:'opsApi', url:fU.get(), key:fK.input.value }; await DB.put('settings', api); toast('保存しました'); } });
   }
   async function call(action, body, quiet = false) {
     if (!api || !api.url) throw new Error('noapi');
     let j, last;
-    for (let n = 0; n < 3; n++) {
+    // 記事・日報は時間がかかって高いので、自動ではつなぎ直さない（GAS側でも同じ日は二度作らない）
+    const once = action === 'article' || action === 'report';
+    for (let n = 0; n < (once ? 1 : 3); n++) {
       if (n) await sleep(1500 * n);
-      const ac = new AbortController(), to = setTimeout(() => ac.abort(), action === 'paper' ? 150000 : 90000);
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), once ? 300000 : 90000);
       try {
         const r = await fetch(api.url, { method:'POST', body:JSON.stringify(Object.assign({ key:api.key, action }, body)), signal:ac.signal, cache:'no-store' });
         const tx = await r.text();
@@ -705,7 +879,7 @@ const Room = (() => {
       } catch(e) { last = e; } finally { clearTimeout(to); }
     }
     if (!j) { if (!quiet) toast('通信できませんでした。少し待ってからもう一度どうぞ', 2600); throw last || new Error('net'); }
-    if (j.budget) showBudget(j.budget);
+    if (j.budget) { showBudget(j.budget); lastBudget = j.budget; }
     if (j.error) {
       const M = { key:'合言葉が違います（設定を確認してください）', budget:'今月のAIの予算を使い切りました', ai:'AIの応答でエラーが出ました。少し待ってからもう一度', bad:'サーバーのコードが古いかもしれません（GASを更新してください）' };
       if (!quiet) toast(M[j.error] || j.error, 2800); throw new Error(j.error);
@@ -719,11 +893,10 @@ const Room = (() => {
     active:() => active,
     bgm:() => active ? (typeof Games !== 'undefined' && Games.bgm()) || roomBgm() : null,
     paintDoor,
-    // アプリを開いて少ししたら：前日の日報と今週の新聞を裏で用意する
+    // アプリを開いて少ししたら：前日の日報を裏で用意する
     async warmup() {
       await loadApi(); if (!api || !api.url) return;
       checkReport();
-      setTimeout(makePaper, 4000);
     },
   };
 })();
