@@ -14,28 +14,43 @@ const AppLock = (() => {
   let el = null, done = null, locked = false, hiddenAt = 0, busy = false, lastGuard = -1;
 
   function clock() { const d = new Date(); return { t:`${p2(d.getHours())}:${p2(d.getMinutes())}`, d:`${d.getMonth() + 1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）` }; }
+  const VOICE = { hoshino:'hoshino', mika:'mika', hina:'hina', miyako:'miyako', mari:'mari', nico:'kitchen', serina:'christmas', hikari:'conductor', seia:'drive', kisaki:'sofa', noa:'bedtime', yuuka:'office' };
+  let duty = null, woke = false;
+  // 最初に画面に触れた瞬間：タイトルの曲と、当番のひとこと（iPhoneは触れるまで音を出せない）
+  function wake() {
+    if (woke) return; woke = true;
+    try { ctx.resume(); } catch(e) {}
+    syncBgm(0, .3);
+    setTimeout(voice, 350);
+  }
+  function voice() {
+    if (!duty || !VOICE[duty]) return;
+    const g = el && el.querySelector('.gguard');
+    playVoice(VOICE[duty], { start:() => g && g.classList.add('talk'), end:() => g && g.classList.remove('talk') });
+  }
   // ロック画面を出す。開けたら cb（ロック解除のタップ＝ユーザー操作の中で呼ぶ）
   async function show(cb, opt = {}) {
     if (!(await Accounts.gate.ready())) { LS.set('kf-lock', '0'); return cb && cb(); }   // マスターパスワードがない（消えた）ときは、ロックを解除
-    done = cb; locked = true;
+    done = cb; locked = true; woke = false;
+    duty = await Room.todayDuty().catch(() => 'hoshino');
     let gi; do { gi = Math.floor(Math.random() * GUARD.length); } while (gi === lastGuard && GUARD.length > 1);
     lastGuard = gi; const g = GUARD[gi], c = clock(), face = Accounts.gate.face();
     if (el) el.remove();
-    el = h(`<div id="gate"><img class="gw" src="${g.wall}" alt=""><div class="gsh"></div>
+    el = h(`<div id="gate" class="${face ? '' : 'pwmode'}"><img class="gw" src="${g.wall}" alt=""><div class="gsh"></div>
       <div class="gclock"><b>${c.t}</b><span>${c.d}</span></div>
       <div class="lkcard">
-        <div class="gtitle">Kani Favorite<small>${opt.cancel ? 'ロックの確認' : 'LOCKED'}</small></div>
-        ${face ? `<button class="gface" id="gFace">${FACE}<span>Face IDで開く</span></button><div class="gor"><span>または</span></div>` : ''}
+        ${face ? `<button class="gface" id="gFace">${FACE}<span>Face IDで開く</span></button><button class="gpwlink" id="gPwLink">パスワードで開く</button>` : ''}
         <div class="gpw"><input id="gPw" type="password" placeholder="マスターパスワード" autocomplete="current-password" enterkeyhint="go"><button id="gGo">開く</button></div>
         ${opt.cancel ? '<button class="gcancel" id="gCancel">やめる</button>' : ''}
       </div>
-      <div class="gguard"><div class="gbub"><b>${g.name}</b>${esc(g.line)}</div><img src="${g.n}_chibi.webp" alt=""></div></div>`);
+      <div class="gguard" id="gGuard"><div class="gplate"><small>本日の当番</small><b>${esc(Room.nameOf(duty))}</b></div><img class="gc" src="${duty}_chibi.webp" alt=""></div></div>`);
     document.body.appendChild(el);
-    if (face) $('gFace').onclick = tryFace;
+    el.addEventListener('pointerdown', wake, { capture:true });
+    $('gGuard').onclick = () => { wake(); voice(); };
+    if (face) { $('gFace').onclick = tryFace; $('gPwLink').onclick = () => { el.classList.add('pwmode'); setTimeout(() => $('gPw').focus(), 50); }; }
     $('gGo').onclick = tryPw;
     $('gPw').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); tryPw(); } });
-    if (opt.cancel) $('gCancel').onclick = () => { locked = false; done = null; close(); if (opt.onCancel) opt.onCancel(); };
-    if (!face) setTimeout(() => { const i = $('gPw'); if (i) i.focus(); }, 400);
+    if (opt.cancel) $('gCancel').onclick = () => { locked = false; done = null; close(); syncBgm(0, .4); if (opt.onCancel) opt.onCancel(); };
   }
   function close() { if (!el) return; const e = el; el = null; e.classList.add('out'); setTimeout(() => e.remove(), 450); }
   function opened() {
@@ -46,15 +61,15 @@ const AppLock = (() => {
   }
   async function tryFace() {
     if (busy) return; busy = true;
-    try { ctx.resume(); } catch(e) {}
+    wake();
     try { await Accounts.gate.tryFace(); opened(); }
-    catch(e) { toast('Face IDで開けませんでした。パスワードでどうぞ'); el && el.classList.add('pwmode'); const i = $('gPw'); if (i) i.focus(); }
+    catch(e) { toast('Face IDで開けませんでした。もう一度か、パスワードでどうぞ'); el && el.classList.add('pwmode'); }
     finally { busy = false; }
   }
   async function tryPw() {
     const i = $('gPw'), pw = i && i.value; if (!pw) return i && i.focus();
     if (busy) return; busy = true;
-    try { ctx.resume(); } catch(e) {}
+    wake();
     $('gGo').disabled = true;
     try { await Accounts.gate.tryPw(pw); i.blur(); opened(); }
     catch(e) { i.value = ''; i.classList.add('shake'); setTimeout(() => i.classList.remove('shake'), 400); toast('パスワードが違います'); }

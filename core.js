@@ -141,7 +141,7 @@ function ramp(to, sec) {
   bgmGain.gain.cancelScheduledValues(t); bgmGain.gain.setValueAtTime(bgmGain.gain.value, t); bgmGain.gain.linearRampToValueAtTime(to, t + sec);
 }
 function wantedBgm() {
-  if (typeof AppLock !== 'undefined' && AppLock.locked()) return null;
+  if (typeof AppLock !== 'undefined' && AppLock.locked()) return TITLE_BGM;   // ロック画面からタイトルの曲
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室

@@ -73,10 +73,10 @@
 #gate.out { animation:gOut .45s ease forwards; } @keyframes gOut { to { opacity:0; transform:scale(1.04); } }
 #gate .gw { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 #gate .gsh { position:absolute; inset:0; background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.05) 40%,rgba(40,20,50,.25)); backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); }
-#gate .gclock { position:absolute; left:0; right:0; top:calc(env(safe-area-inset-top) + 9%); text-align:center; color:#fff; text-shadow:0 2px 12px rgba(80,40,80,.35); }
+#gate .gclock { position:absolute; left:0; right:0; top:calc(env(safe-area-inset-top) + 9%); text-align:center; color:#fff; text-shadow:0 2px 14px rgba(60,30,60,.55), 0 0 2px rgba(60,30,60,.4); }
 #gate .gclock b { display:block; font:300 64px/1 'Quicksand',sans-serif; letter-spacing:.04em; }
 #gate .gclock span { font:500 14px 'Zen Maru Gothic',sans-serif; }
-#gate .lkcard { position:absolute; left:50%; top:34%; width:min(84%,340px); transform:translateX(-50%); background:rgba(255,255,255,.82); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+#gate .lkcard { position:absolute; left:50%; top:30%; width:min(76%,300px); transform:translateX(-50%); background:rgba(255,255,255,.7); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   border-radius:24px; padding:18px 18px 16px; box-shadow:0 10px 30px rgba(120,60,100,.2); border:1.5px solid rgba(255,255,255,.9); text-align:center; }
 #gate .gtitle { font:400 22px 'Yusei Magic','Zen Maru Gothic',sans-serif; color:#e7779f; margin-bottom:12px; }
 #gate .gtitle small { display:block; font:700 9px 'Quicksand',sans-serif; letter-spacing:.4em; color:#c9a0b4; margin-top:2px; }
@@ -84,20 +84,23 @@
   font:700 14px 'Zen Maru Gothic',sans-serif; box-shadow:0 6px 16px rgba(240,120,160,.4); }
 #gate .gface svg { width:40px; height:40px; fill:none; stroke:#fff; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 #gate .gor { display:flex; align-items:center; gap:8px; margin:12px 0 10px; font-size:11px; color:#b8a0ac; } #gate .gor::before, #gate .gor::after { content:''; flex:1; height:1px; background:#f0d6e2; }
-#gate .gpw { display:flex; gap:6px; }
+#gate .gpw { display:none; gap:6px; margin-top:10px; } #gate.pwmode .gpw { display:flex; }
+#gate .gpwlink { display:block; margin:10px auto 0; border:none; background:none; color:#c9a0b4; font:700 11.5px 'Zen Maru Gothic',sans-serif; text-decoration:underline; }
+#gate.pwmode .gpwlink { display:none; }
 #gate .gpw input { flex:1; min-width:0; border:1.5px solid #f3cfdd; border-radius:14px; padding:11px 12px; font-size:16px; font-family:inherit; outline:none; background:#fff; color:#5a3442; }
 #gate .gpw input:focus { border-color:#f59bb8; }
 #gate .gpw button { border:none; border-radius:14px; background:#f59bb8; color:#fff; font:700 14px 'Zen Maru Gothic',sans-serif; padding:0 16px; }
 #gate.pwmode .gpw input { border-color:#f59bb8; box-shadow:0 0 0 3px rgba(245,155,184,.25); }
 #gate .gcancel { margin-top:10px; border:none; background:none; color:#b8a0ac; font:700 12px 'Zen Maru Gothic',sans-serif; }
-#gate .gguard { position:absolute; left:4%; right:4%; bottom:calc(env(safe-area-inset-bottom) + 3%); display:flex; align-items:flex-end; gap:6px; pointer-events:none; }
-#gate .gguard img { flex:none; height:min(26vh,210px); filter:drop-shadow(0 6px 10px rgba(80,40,80,.25)); animation:gBob 3.2s ease-in-out infinite; transform-origin:50% 100%; order:2; margin-left:auto; }
+#gate .gguard { position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 2%); display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+#gate .gguard .gc { height:min(32vh,260px); filter:drop-shadow(0 8px 12px rgba(80,40,80,.28)); animation:gBob 3.2s ease-in-out infinite; transform-origin:50% 100%; transition:transform .2s; }
+#gate .gguard.talk .gc { animation:gTalk .5s ease-in-out infinite; }
 @keyframes gBob { 50% { transform:translateY(-4px); } }
-#gate .gbub { position:relative; margin-bottom:22%; background:#fff; border-radius:16px; padding:10px 13px; font:400 13px/1.6 'Hachi Maru Pop','Zen Maru Gothic',sans-serif; color:#6a4a5a;
-  box-shadow:0 4px 14px rgba(120,60,100,.18); animation:gBub .5s .3s cubic-bezier(.2,1.3,.4,1) both; max-width:62%; }
-#gate .gbub b { display:block; font:700 11px 'Zen Maru Gothic',sans-serif; color:#e7779f; margin-bottom:1px; }
-#gate .gbub::after { content:''; position:absolute; right:-7px; bottom:16px; border:7px solid transparent; border-left-color:#fff; border-right:0; }
-@keyframes gBub { from { opacity:0; transform:scale(.7); } }
+@keyframes gTalk { 50% { transform:translateY(-3px) scale(1.02); } }
+#gate .gplate { order:2; margin-top:-6px; text-align:center; background:rgba(255,255,255,.88); border-radius:14px; padding:5px 18px 6px; box-shadow:0 4px 12px rgba(120,60,100,.18); transform:skewX(-8deg); }
+#gate .gplate > * { display:block; transform:skewX(8deg); }
+#gate .gplate small { font:700 9px 'Zen Maru Gothic',sans-serif; letter-spacing:.3em; color:#e7779f; }
+#gate .gplate b { font:400 18px 'Yusei Magic','Zen Maru Gothic',sans-serif; color:#5a3442; }
 #gate.ok .lkcard { animation:gOk .4s ease forwards; } @keyframes gOk { to { opacity:0; transform:translateX(-50%) scale(.9); } }
 #sheet .tg { margin-left:auto; flex:none; width:44px; height:26px; border-radius:13px; background:#e8dbe2; position:relative; transition:.2s; }
 #sheet .tg::after { content:''; position:absolute; left:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:.2s; }

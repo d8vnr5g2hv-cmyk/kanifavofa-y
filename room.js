@@ -891,6 +891,8 @@ const Room = (() => {
     makeDoor, setDoor,
     isDoor:() => onDoor,
     active:() => active,
+    async todayDuty() { return pickDuty(); },   // ロック画面の「本日の当番」用
+    nameOf:k => NAME[k] || '',
     bgm:() => active ? (typeof Games !== 'undefined' && Games.bgm()) || roomBgm() : null,
     paintDoor,
     // アプリを開いて少ししたら：前日の日報を裏で用意する
