@@ -69,6 +69,8 @@ const TAB_BGM = { todo:L('bgm_todo.mp3', 135.179), love:L('bgm_love.mp3', 138.08
 const TAB_ACCENT = { todo:'#e7779f', love:'#f27ea7', accounts:'#2f9fd6', profile:'#ef86a9' };
 
 const slidesEl = $('slides'), dotsEl = $('dots');
+const OFF = 1;   // 左端に自室の扉があるので、メモロビは1枚ずれる
+const slideOf = i => slidesEl.children[i + OFF];
 let current = 0, tab = 'favorite', phase = 'lock';   // lock → splash → app
 
 // ===== 起動ごとのくじ：12人から5人、最初のメモロビはその5人の誰か =====
@@ -140,6 +142,7 @@ function ramp(to, sec) {
 function wantedBgm() {
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
+  const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
   const ob = typeof Ops !== 'undefined' && Ops.bgm(); if (ob) return ob;   // 作戦室
   if (tab === 'favorite') return bgmOn ? chars[current].bgm : null;
   return TAB_BGM[tab] || null;
@@ -205,7 +208,7 @@ function showTabs() { document.body.classList.remove('tabsHidden'); }
 
 // ===== スライド =====
 function loadChar(i) {
-  const c = chars[i], s = slidesEl.children[i];
+  const c = chars[i], s = slideOf(i);
   const land = document.body.classList.contains('land');
   const src = land ? c.wide : c.tall, poster = land ? c.widePoster : c.tallPoster;
   s.innerHTML = '';
@@ -232,8 +235,8 @@ function loadChar(i) {
 }
 function updateVideos() {
   [...dotsEl.children].forEach((d, i) => d.classList.toggle('on', i === current));
-  [...slidesEl.children].forEach((s, i) => {
-    const v = s.querySelector('video.lv'); if (!v) return;
+  chars.forEach((c, i) => {
+    const s = slideOf(i), v = s && s.querySelector('video.lv'); if (!v) return;
     if (i === current) { v.preload = 'auto'; if (tab === 'favorite') v.play().catch(() => {}); } else v.pause();
     if (Math.abs(i - current) === 1 && v.preload !== 'auto') v.preload = 'auto';   // となりも先に読んでおく
     const pv = s.querySelector('.patv');
@@ -247,7 +250,7 @@ const Pat = (() => {
   const HEART = '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.5c2.2 0 3.6 1.3 5.4 3.2 1.8-1.9 3.2-3.2 5.4-3.2 3.7 0 5.7 3.9 4.2 7.3C19.5 16.4 12 21 12 21z"/></svg>';
   // 頭の範囲を画面上の位置に置く（動画は画面いっぱいに切り抜いて表示しているので、その計算に合わせる）
   function place(i) {
-    const c = chars[i], s = slidesEl.children[i], z = s && s.querySelector('.patzone'); if (!z) return;
+    const c = chars[i], s = slideOf(i), z = s && s.querySelector('.patzone'); if (!z) return;
     const land = document.body.classList.contains('land'), sw = s.clientWidth, sh = s.clientHeight;
     const vw = land ? 2532 : 1170, vh = land ? 1170 : 2534;
     const [bx, by, bw, bh] = land ? [0, 0, 2532, 1170] : c.pat.box, [u0, v0, u1, v1] = c.pat.zone;
@@ -390,10 +393,11 @@ function toast(msg, ms = 1400) {
 
 // ===== データ保存（IndexedDB：この端末の中だけ） =====
 const DB = (() => {
-  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings', 'ops'];
+  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings', 'ops', 'room', 'events', 'album', 'music'];
+  const BLOBS = ['album', 'music'];   // 写真・曲は書き出しに入れない（大きいので）
   let dbp;
   const open = () => dbp || (dbp = new Promise((ok, ng) => {
-    const r = indexedDB.open('kani-favorite', 2);
+    const r = indexedDB.open('kani-favorite', 3);
     r.onupgradeneeded = () => STORES.forEach(s => { if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, { keyPath:'id' }); });
     r.onsuccess = () => ok(r.result); r.onerror = () => ng(r.error);
   }));
@@ -401,7 +405,7 @@ const DB = (() => {
     const t = db.transaction(store, mode), s = t.objectStore(store), res = fn(s);
     t.oncomplete = () => ok(res && 'result' in res ? res.result : undefined); t.onerror = () => ng(t.error); }); };
   return {
-    STORES,
+    STORES, BLOBS,
     all: s => tx(s, 'readonly', st => st.getAll()),
     get: (s, id) => tx(s, 'readonly', st => st.get(id)),
     put: (s, obj) => tx(s, 'readwrite', st => st.put(obj)),
@@ -429,7 +433,7 @@ const D = {
 // ===== 書き出し・読み込み =====
 async function exportData() {
   const data = { app:'kani-favorite', version:1, exportedAt:new Date().toISOString(), stores:{} };
-  for (const s of DB.STORES) data.stores[s] = await DB.all(s);
+  for (const s of DB.STORES) if (!DB.BLOBS.includes(s)) data.stores[s] = await DB.all(s);
   const d = new Date(), stamp = `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}`;
   const name = `kani-favorite-${stamp}.json`;
   const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
@@ -441,7 +445,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.1';
+const VERSION = '2.2';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -457,7 +461,7 @@ async function importData(file) {
     const data = JSON.parse(await file.text());
     if (data.app !== 'kani-favorite' || !data.stores) throw new Error('format');
     if (!confirm('今のデータを、このファイルの内容で置き換えます。よろしいですか？')) return;
-    for (const s of DB.STORES) { await DB.clear(s); await DB.putMany(s, data.stores[s] || []); }
+    for (const s of DB.STORES) { if (DB.BLOBS.includes(s) || !data.stores[s] && ['room', 'events'].includes(s)) continue; await DB.clear(s); await DB.putMany(s, data.stores[s] || []); }
     App.reloadAll();
     toast('読み込みました');
   } catch(e) { toast('読み込めませんでした（形式が違います）'); }
@@ -533,10 +537,10 @@ const App = {
     titleReady.then(() => loadBuf(chars[current].bgm.src).catch(() => {}));
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
-    Ops.makeDoor();
+    Room.makeDoor(); Ops.makeDoor();
     chars.forEach((c, i) => loadChar(i));
-    slidesEl.scrollLeft = slidesEl.clientWidth * current;
-    requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * current; });
+    slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
+    requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
     updateVideos();
 
     let dotTimer;
@@ -544,15 +548,16 @@ const App = {
       if (phase !== 'app') return;
       dotsEl.classList.add('show'); clearTimeout(dotTimer);
       dotTimer = setTimeout(() => { dotsEl.classList.remove('show'); updateVideos(); }, 1200);   // 止まったら、今のメモロビ以外は止める
-      const f = slidesEl.scrollLeft / slidesEl.clientWidth, nb = f > current ? current + 1 : current - 1;
-      if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slidesEl.children[nb], nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
+      const f = slidesEl.scrollLeft / slidesEl.clientWidth - OFF, nb = f > current ? current + 1 : current - 1;
+      if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slideOf(nb), nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
       const i = Math.round(f);
       Ops.setDoor(i === chars.length);   // 右端の先は作戦室のドア
+      Room.setDoor(i === -1);            // 左端の先は自室の扉
       if (i !== current && i >= 0 && i < chars.length) { current = i; updateVideos(); syncBgm(250); prefetchNear(); setTimeout(trimBgmCache, 1500); }
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
     slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
-    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
+    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
     document.addEventListener('pointerdown', wake, { passive:true, capture:true });
 
     const handle = $('handle'); let hy = 0;
@@ -564,7 +569,7 @@ const App = {
     $('landBtn').addEventListener('click', e => {
       e.stopPropagation(); document.body.classList.toggle('land');
       chars.forEach((c, i) => loadChar(i));
-      requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * current; });
+      requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
     });
     document.querySelectorAll('.icons button').forEach(b => ['pointerdown','pointerup'].forEach(ev => b.addEventListener(ev, e => e.stopPropagation())));
 
@@ -578,7 +583,7 @@ const App = {
     document.addEventListener('visibilitychange', () => {
       if (phase === 'lock') return;
       if (document.hidden) { stopBgm(0.1); ctx.suspend(); }
-      else ctx.resume().then(() => { updateVideos(); syncBgm(); });
+      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); });
       Object.values(TabHooks).forEach(h => h.visibility && h.visibility(document.hidden));
     });
 
@@ -607,7 +612,7 @@ const App = {
         phase = 'app';
         splash.classList.add('go');
         stopBgm(0.7);
-        const v = slidesEl.children[current].querySelector('video'); if (v) v.play().catch(() => {});
+        const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
         setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); }, 800);
         setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
         setTimeout(() => { splash.style.display = 'none'; }, 1500);
