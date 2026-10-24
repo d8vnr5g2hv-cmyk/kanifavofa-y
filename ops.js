@@ -152,7 +152,9 @@ const Ops = (() => {
         box.appendChild(c);
       });
     });
-    const fit = () => { o.querySelectorAll('.rbox').forEach(b => cover(b, +b.dataset.w, +b.dataset.h)); cover(o.querySelector('.mbox'), 853, 1844); };
+    // 見えている画面だけ測り直す（隠れている画面は幅が0になるので測らない）
+    const fit = () => { o.querySelectorAll('.rbox').forEach(b => { if (b.parentNode.clientWidth) cover(b, +b.dataset.w, +b.dataset.h); });
+                        const m = o.querySelector('.mbox'); if (m.parentNode.clientWidth) cover(m, 853, 1844); };
     addEventListener('resize', fit); o._fit = fit;
     // 部屋の切り替え（横スワイプ）
     const rooms = $('rooms');
@@ -207,7 +209,7 @@ const Ops = (() => {
     scene = null; syncBgm(200);
   }
   function toLounge() {
-    $('ops').className = 'show lounge-on'; scene = 'lounge'; op = null; busy = false;
+    $('ops').className = 'show lounge-on'; $('ops')._fit(); scene = 'lounge'; op = null; busy = false;
     $('ops').querySelectorAll('.oc').forEach(c => c.classList.remove('picked', 'dim'));
     $('vbar').innerHTML = ''; $('vbar').classList.remove('on');
     syncBgm(0, .8);
@@ -217,11 +219,19 @@ const Ops = (() => {
   async function loadApi() { api = await DB.get('settings', 'opsApi').catch(() => null); return api; }
   async function call(action, body) {
     if (!api || !api.url) { settings(); throw new Error('noapi'); }
-    let r;
-    try {
-      r = await fetch(api.url, { method:'POST', body:JSON.stringify(Object.assign({ key:api.key, action }, body)) });
-    } catch(e) { toast('通信できませんでした（電波を確認してください）', 2200); throw e; }
-    let j; try { j = await r.json(); } catch(e) { toast('作戦室サーバーの応答が読めませんでした', 2200); throw e; }
+    // GASは起動に時間がかかったり、途中で切れたりすることがあるので、最大3回まで自動でつなぎ直す
+    let j, last;
+    for (let n = 0; n < 3; n++) {
+      if (n) { if (scene === 'meeting') setThinking('通信が不安定なので、つなぎ直しています…'); await sleep(1500 * n); }
+      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 90000);
+      try {
+        const r = await fetch(api.url, { method:'POST', body:JSON.stringify(Object.assign({ key:api.key, action }, body)), signal:ac.signal, cache:'no-store' });
+        const tx = await r.text();
+        try { j = JSON.parse(tx); } catch(e) { throw new Error('parse'); }   // GASが一時的にエラー画面を返したときも、つなぎ直す
+        break;
+      } catch(e) { last = e; } finally { clearTimeout(to); }
+    }
+    if (!j) { toast('通信できませんでした。少し待ってからもう一度どうぞ', 2600); throw last || new Error('net'); }
     if (j.budget) budgetShow(j.budget);
     if (j.error) {
       const M = { key:'合言葉が違います（設定を確認してください）', budget:'今月の予算を使い切りました。来月まで作戦室はお休みです', ai:'AIの応答でエラーが出ました。少し待ってからもう一度' };
@@ -329,6 +339,7 @@ const Ops = (() => {
   function stage(t) { $('mSt').textContent = t; }
   const avatar = k => `<div class="av" style="background-image:url(${img(k, 'stand')})"></div>`;
   function add(html) { const l = $('mLog'); l.insertAdjacentHTML('beforeend', html); l.scrollTop = l.scrollHeight; }
+  function setThinking(t) { const e = $('thinking'); if (e) e.querySelector('.bb').textContent = t; }
   function sysMsg(t) { add(`<div class="m sys"><div class="bb">${esc(t)}</div></div>`); }
   function talking(k) {
     $('mMem').querySelectorAll('.mc').forEach(c => {
