@@ -240,6 +240,7 @@ const Ops = (() => {
     return j;
   }
   function budgetShow(b) {
+    if (typeof Stats !== 'undefined') Stats.noteAI(b);
     const t = `今月 ¥${Math.round(b.spent)} / ¥${b.limit}`;
     if ($('opsBudget')) $('opsBudget').textContent = t;
     if ($('mBudget')) $('mBudget').textContent = t;

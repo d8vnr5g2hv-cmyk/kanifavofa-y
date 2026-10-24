@@ -87,7 +87,7 @@ const Games = (() => {
       bar('MEMOLOBBY PUZZLE', '', null);
       const medal = i => [3, 4, 5].map(k => (R.best || {})[i + '-' + k] ? `<i class="md m${k}"></i>` : '').join('');
       body().innerHTML = `<div class="gmenu2"><div class="gseg">${[3, 4, 5].map(k => `<button data-n="${k}" class="${k === n ? 'on' : ''}">${k}×${k}</button>`).join('')}</div>
-        <div class="pgrid">${lobbies().map(l => { const b = (R.best || {})[l.i + '-' + n]; return `<button class="pth" data-i="${l.i}" style="background-image:url(${l.poster})">
+        <div class="pzgrid">${lobbies().map(l => { const b = (R.best || {})[l.i + '-' + n]; return `<button class="pth" data-i="${l.i}" style="background-image:url(${l.poster})">
           <span class="mds">${medal(l.i)}</span>${b ? `<em>BEST ${b.moves}手</em>` : ''}<b>${CHARS[l.who].name}</b></button>`; }).join('')}</div>
         <div class="mlegend"><i class="md m3"></i>3×3 <i class="md m4"></i>4×4 <i class="md m5"></i>5×5 をクリア</div>
         <button class="gbig" data-a="rand"><span>おまかせで始める</span></button></div>`;

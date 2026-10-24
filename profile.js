@@ -60,6 +60,8 @@ const Profile = (() => {
     const m = me(); if (m.f.birthday) { const u = untilYearly(m.f.birthday); if (u.days <= 1) out.push({ when:u.days, text:'先生の誕生日です' }); }
     return out;
   }
+  // 丸いアイコン（写真があれば写真、なければ頭文字）
+  const avatar = (cls, photo, name, bg, attr = '') => `<div class="${cls}${photo ? ' hasph' : ''}" ${attr} style="${photo ? `background-image:url(${photo})` : bg ? `background:${bg}` : ''}">${photo ? '' : esc([...(name || '?')][0])}</div>`;
   const stars = (n, max = 5) => `<span class="stars">${'★'.repeat(n || 0)}<i>${'★'.repeat(max - (n || 0))}</i></span>`;
   // レーダーチャート（1〜5）
   function radar(defs, vals, size = 150, color = '#f59bb8') {
@@ -90,16 +92,16 @@ const Profile = (() => {
       if (p.lastMet) { const d = D.diff(D.today(), p.lastMet); sub.push(d <= 0 ? '今日会った' : `${d}日前に会った`); }
       let bd = '';
       if (p.birthday) { const u = untilYearly(p.birthday); bd = `<em>${u.days === 0 ? '今日が誕生日！' : `誕生日まで${u.days}日`}</em>`; }
-      return `<div class="person" data-id="${p.id}"><div class="av" style="background:${AV[hashN(p.name, AV.length)]}">${esc([...p.name][0] || '?')}</div>
+      return `<div class="person" data-id="${p.id}">${avatar('av', p.photo, p.name, AV[hashN(p.name, AV.length)])}
         <div class="tx">${esc(p.name)}<small>${sub.join('・')}</small></div><div class="bd">${r.trust ? stars(r.trust) : '<span class="nos">未評価</span>'}${bd}</div></div>`;
     }).join('')}</div></div>`;
     // MY PROFILE（要約カード）
     const f = m.f || {}, age = ageOf(f.birthday), filled = ME_GROUPS.flatMap(g => g[1]).filter(([k]) => f[k] && String(f[k]).length).length, total = ME_GROUPS.flatMap(g => g[1]).length;
     html += `<div class="pblock"><div class="sec">MY PROFILE</div><div class="mycard" id="myCard">
-      <div class="mytop"><div class="myav">${esc([...(f.nick || f.name || '先')][0])}</div><div class="myname"><b>${esc(f.nick || f.name || 'じぶん')}</b><span>${[age != null ? `${age}歳` : '', f.job || ''].filter(Boolean).map(esc).join('・') || 'タップして書きはじめる'}</span>
+      <div class="mytop">${avatar('myav', m.photo, f.nick || f.name || '先', '')}<div class="myname"><b>${esc(f.nick || f.name || 'じぶん')}</b><span>${[age != null ? `${age}歳` : '', f.job || ''].filter(Boolean).map(esc).join('・') || 'タップして書きはじめる'}</span>
         ${f.one ? `<i>「${esc(f.one)}」</i>` : ''}</div></div>
       <div class="mymid">${radar(ME_RATE, m.rate || {}, 128, '#f59bb8')}<div class="myfill"><small>記入</small><b>${filled}<span>/${total}</span></b><div class="bar"><i style="width:${filled / total * 100}%"></i></div>
-        ${(f.good || []).length ? `<div class="chips">${f.good.slice(0, 3).map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}</div></div></div></div>`;
+        ${(f.good || []).length ? `<div class="tchips">${f.good.slice(0, 3).map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}</div></div></div></div>`;
     if (!an.length && !pe.length) html += '<p class="phint">＋から、記念日や人物を追加できます</p>';
     box().innerHTML = html;
   }
@@ -109,7 +111,7 @@ const Profile = (() => {
   function fieldVal(def, v, isMe) {
     const [k, l, t, u] = def;
     if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '<span class="emp">未記入</span>';
-    if (t === 'tags') return `<div class="chips">${v.map(x => `<span>${esc(x)}</span>`).join('')}</div>`;
+    if (t === 'tags') return `<div class="tchips">${v.map(x => `<span>${esc(x)}</span>`).join('')}</div>`;
     if (t === 'date') {
       const extra = k === 'birthday' ? (() => { const a = ageOf(v); return a != null && isMe ? `（${a}歳）` : ''; })() : k === 'lastMet' ? (() => { const d = D.diff(D.today(), v); return d <= 0 ? '（今日）' : `（${d}日前）`; })() : '';
       return `${D.ymd(v)}<small>${extra}</small>`;
@@ -127,7 +129,7 @@ const Profile = (() => {
     const html = `<div class="bk-in"><div class="bk-hd"><button class="bk-x" data-x="close">‹</button><div class="bk-tt"><small>${isMe ? 'MY PROFILE' : 'PEOPLE NOTE'}</small><b>${esc(title)}</b></div>
         ${isMe ? '' : '<button class="bk-ed" data-x="edit">名前</button>'}</div>
       <div class="bk-body">
-        <div class="bk-cover" style="--c:${color}"><div class="bk-av">${esc([...(title || '?')][0])}</div>
+        <div class="bk-cover" style="--c:${color}">${avatar('bk-av', obj.photo, title, '', 'data-x="photo"')}<i class="bk-cam">📷</i>
           <div class="bk-cv"><b>${esc(title)}</b>${isMe ? `<span>${[ageOf(data.birthday) != null ? ageOf(data.birthday) + '歳' : '', data.job || ''].filter(Boolean).map(esc).join('・')}</span>` : `<span>${esc(obj.relation || '')}</span>${rate.trust ? `<div>信頼度 ${stars(rate.trust)}</div>` : ''}`}
           ${data.one ? `<i>「${esc(data.one)}」</i>` : ''}</div></div>
         <div class="bk-sec rate" data-rate="1"><h5>${isMe ? '自己評価' : '私からの評価（1〜5）'}<em>タップで評価</em></h5>
@@ -151,6 +153,7 @@ const Profile = (() => {
       if (k === 'close') return closeBook();
       if (k === 'edit') return editPersonName(items.find(i => i.id === bookOf));
       if (k === 'addc') return editCustom(null);
+      if (k === 'photo') return editPhoto();
       if (k === 'del') { const p = items.find(i => i.id === bookOf); if (!confirm(`${p.name}を削除しますか？`)) return; closeBook(); return delItem(p, '人物'); }
     }
     if (t.closest('[data-rate]')) return editRate();
@@ -183,7 +186,26 @@ const Profile = (() => {
     rates.forEach(([k, l]) => { const f = F.seg(l, [1, 2, 3, 4, 5].map(n => [n, '★'.repeat(n)]), cur[k] || 0); fs[k] = f; body.append(f.el); });
     body.appendChild(h(`<p class="hint">${isMe ? '今の自分を、正直に。' : '私から見た、今のその人を。'}あとから何度でも変えられます。</p>`));
     Editor.open({ title:isMe ? '自己評価' : `${obj.name}の評価`, body, theme:THEME,
-      save:async () => { const rate = {}; rates.forEach(([k]) => { const v = fs[k].get(); if (v) rate[k] = v; }); await saveItem(Object.assign({}, obj, { rate })); openBook(bookOf); } });
+      save:async () => { const rate = {}; rates.forEach(([k]) => { const v = fs[k].get(); if (v) rate[k] = v; }); await saveItem(Object.assign({}, obj, { rate }));
+        if (isMe && typeof Stats !== 'undefined') Stats.noteSelf(rate);   // 自己評価の移り変わりを記録
+        openBook(bookOf); } });
+  }
+  // アイコン写真（真ん中を正方形に切り抜いて、小さくして保存。書き出しにも入る）
+  function squareThumb(file, size = 400) {
+    return new Promise(ok => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => { const s = Math.min(im.naturalWidth, im.naturalHeight), c = document.createElement('canvas'); c.width = c.height = size;
+        c.getContext('2d').drawImage(im, (im.naturalWidth - s) / 2, (im.naturalHeight - s) / 2, s, s, 0, 0, size, size); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', .85)); };
+      im.onerror = () => { URL.revokeObjectURL(u); ok(null); };
+      im.src = u;
+    });
+  }
+  function editPhoto() {
+    const isMe = bookOf === 'me', obj = isMe ? me() : items.find(x => x.id === bookOf); if (!obj) return;
+    const pick = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*';
+      i.onchange = async () => { if (!i.files[0]) return; const d = await squareThumb(i.files[0]); if (!d) return toast('読み込めませんでした'); await saveItem(Object.assign({}, obj, { photo:d })); openBook(bookOf); }; i.click(); };
+    if (!obj.photo) return pick();
+    Menu.open('アイコン写真', [{ label:'写真を変える', fn:pick }, { label:'写真を外す', danger:true, fn:async () => { const o = Object.assign({}, obj); delete o.photo; await saveItem(o); openBook(bookOf); } }]);
   }
   function editCustom(c) {
     const m = me(), isNew = !c; c = c || { label:'', value:'' };

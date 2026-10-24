@@ -274,6 +274,7 @@ const Room = (() => {
   // ----- PC -----
   const IC = {
     music:'<svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
+    stats:'<svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/><circle cx="19" cy="6" r="1.3"/></svg>',
     mem:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>',
   };
   const viewUrls = {};
@@ -296,7 +297,7 @@ const Room = (() => {
       const due = x => x.due < t ? '<em class="late">期限切れ</em>' : x.due === t ? '<em>今日</em>' : '<em>明日</em>';
       const nowName = (() => { if (musicSel && musicSel.startsWith('c:')) return '追加した曲'; const b = roomBgm(), n = TRACK_NAME[b.src]; return n ? n[0] : 'Music'; })();
       p.innerHTML = pcHead('SCHALE OS') + `<div class="bd"><div class="wel">${greet()}, Sensei<small>${D.ymd(t)} ${DOW[new Date().getDay()]}</small></div>
-        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div></div>
+        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div><div class="app" data-pc="stats">${IC.stats}<b>Analytics</b></div></div>
         <div class="wdg"><h6>TODAY</h6>${ev.length ? ev.map(e => `<p><i>${e.time || '終日'}</i>${esc(e.title)}</p>`).join('') : '<p class="mu">今日の予定はありません</p>'}</div>
         <div class="wdg"><h6>TODO</h6>${td.length ? td.map(x => `<p>${due(x)}${esc(x.title)}</p>`).join('') : '<p class="mu">期限の近いTodoはありません</p>'}</div>
         <div class="wdg now" data-pc="music"><h6>NOW PLAYING</h6><p><span class="eq"><i></i><i></i><i></i></span>${esc(nowName)}</p></div></div>`;
@@ -310,6 +311,10 @@ const Room = (() => {
       custom.forEach((t, i) => html += row('c:' + t.id, t.name, '追加した曲', i + 20, true));
       p.innerHTML = pcHead('MUSIC', 1) + `<div class="bd"><div class="ttl">Music<button data-pc="addMusic">＋ 曲を追加</button></div>${html}</div>`;
     }
+    if (v === 'stats') {
+      const body = await Stats.html(); if (!$('rpc')) return;
+      p.innerHTML = pcHead('ANALYTICS', 1) + `<div class="bd sbd"><div class="ttl">Analytics</div>${body}</div>`;
+    }
     if (v === 'mem') {
       const list = (await DB.all('album').catch(() => [])).sort((a, b) => b.at - a.at);
       Object.values(viewUrls).forEach(u => URL.revokeObjectURL(u));
@@ -322,6 +327,8 @@ const Room = (() => {
     if (rm) { e.stopPropagation(); if (!confirm('この曲をリストから消しますか？')) return; const id = rm.dataset.rm.slice(2); await DB.del('music', id); if (musicSel === 'c:' + id) setMusic(null); return pcView('music'); }
     const tr = e.target.closest('[data-tr]');
     if (tr) { const id = tr.dataset.tr; await setMusic(id === 'auto' ? null : id); return pcView('music'); }
+    const st = e.target.closest('[data-st]');
+    if (st) { sfx('tap'); Stats.setTab(st.dataset.st); return pcView('stats'); }
     const ph = e.target.closest('[data-ph]');
     if (ph) return viewPhoto(ph.dataset.ph);
     const b = e.target.closest('[data-pc]'); if (!b) return;
@@ -414,7 +421,7 @@ const Room = (() => {
       const items = ds.flatMap(d => by[`${y}-${p2(m)}-${p2(d)}`] || []).sort((a, b) => a.time.localeCompare(b.time));
       const isToday = ds.some(d => `${y}-${p2(m)}-${p2(d)}` === today), isSel = ds.some(d => `${y}-${p2(m)}-${p2(d)}` === calSel);
       const sty = `left:${GX[c] / CW * 100}%;top:${GY[r] / CH * 100}%;width:${(GX[c + 1] - GX[c]) / CW * 100}%;height:${(GY[r + 1] - GY[r]) / CH * 100}%`;
-      html += `<div class="cell ${c === 0 ? 'sun' : c === 6 ? 'sat' : ''} ${isToday ? 'today' : ''} ${isSel ? 'sel' : ''}" data-d="${isToday ? today : key}" style="${sty}"><span class="n">${ds[0]}</span>${ds[1] ? `<span class="n2">/${ds[1]}</span>` : ''}
+      html += `<div class="cell ${c === 0 ? 'sun' : c === 6 ? 'sat' : ''} ${isToday ? 'tdy' : ''} ${isSel ? 'sel' : ''}" data-d="${isToday ? today : key}" style="${sty}"><span class="n">${ds[0]}</span>${ds[1] ? `<span class="n2">/${ds[1]}</span>` : ''}
         ${items.slice(0, 2).map(x => `<span class="ev ${x.td ? 'td' : ''}">${esc(x.t)}</span>`).join('')}${items.length > 2 ? `<span class="more">+${items.length - 2}</span>` : ''}</div>`;
     });
     box.innerHTML = html;
@@ -853,7 +860,7 @@ const Room = (() => {
     Menu.open(`今月のAI ¥${Math.round(lastBudget.spent)} / ¥${lastBudget.limit}`, keys.length ? keys.map(k => ({ label:`${TAGNAME[k] || k}　¥${by[k] < 1 ? by[k].toFixed(1) : Math.round(by[k])}`, fn:() => {} }))
       : [{ label:'内訳は、GASを更新したあとの分から記録されます', fn:() => {} }]);
   }
-  function showBudget(b) { const e = $('rBudget'); if (e) e.textContent = `AI 今月 ¥${Math.round(b.spent)} / ¥${b.limit}`; }
+  function showBudget(b) { Stats.noteAI(b); const e = $('rBudget'); if (e) e.textContent = `AI 今月 ¥${Math.round(b.spent)} / ¥${b.limit}`; }
   function opsSettings() {
     const body = h('<div></div>');
     const fU = F.text('サーバーのURL（GASのウェブアプリURL）', api && api.url, 'https://script.google.com/macros/s/…/exec', 'url');

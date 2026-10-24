@@ -1,0 +1,108 @@
+/* Kani Favorite — 飾り（付箋・テープ・落書き・ブルアカ風の見出し）。クラス名は他と被らないよう dc-/f- 始まり */
+
+/* ===== 共通：枠の中の方眼＋三角、上のテープ、落書き ===== */
+#page-todo .frame::before, #page-love .frame::before, #page-profile .frame::before {
+  content:''; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:
+    linear-gradient(135deg, var(--dcTri) 0 34px, transparent 34px) top left / 100% 100% no-repeat,
+    linear-gradient(-45deg, var(--dcTri) 0 46px, transparent 46px) bottom right / 100% 100% no-repeat,
+    linear-gradient(var(--dcGrid) 1px, transparent 1px) 0 0 / 18px 18px,
+    linear-gradient(90deg, var(--dcGrid) 1px, transparent 1px) 0 0 / 18px 18px;
+}
+#page-todo    { --dcTape1:#f28cb1; --dcTape2:#f7a8c6; --dcGrid:rgba(242,140,177,.09); --dcTri:rgba(242,140,177,.16); --dcInk:#f28cb1; }
+#page-love    { --dcTape1:#ff7fae; --dcTape2:#ff9cc0; --dcGrid:rgba(255,255,255,.22); --dcTri:rgba(255,255,255,.35); --dcInk:#fff; }
+#page-profile { --dcTape1:#f5b942; --dcTape2:#f8cd6c; --dcGrid:rgba(230,180,60,.12); --dcTri:rgba(245,155,184,.18); --dcInk:#ef86a9; }
+
+.ftape { flex:none; position:relative; z-index:2; height:22px; margin:8px -14px -2px; transform:rotate(-1.6deg); overflow:hidden; display:flex; align-items:center;
+  background:repeating-linear-gradient(-45deg, var(--dcTape1) 0 12px, var(--dcTape2) 12px 24px); box-shadow:0 2px 8px rgba(0,0,0,.08); pointer-events:none; }
+.ftape span { white-space:nowrap; color:#fff; font:700 10.5px/1 'Quicksand','Zen Maru Gothic',sans-serif; letter-spacing:.2em; animation:tape 22s linear infinite; text-shadow:0 1px 2px rgba(0,0,0,.15); }
+#page-love .ftape { transform:rotate(1.4deg); }
+.fdood { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.dd { position:absolute; fill:none; stroke:var(--dcInk); stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; opacity:.55; }
+#page-todo .frame > .head, #page-todo .frame > .scroll, #page-love .frame > .head, #page-love .frame > .scroll, #page-profile .frame > .head, #page-profile .frame > .scroll { position:relative; z-index:1; }
+
+/* ===== ブルアカ風：見出しタグ・切り替えボタン ===== */
+#page-todo .grp > .sec, #page-profile .pblock > .sec {
+  display:inline-flex; position:relative; padding:4px 14px 4px 10px; margin:8px 2px 10px; color:#fff; z-index:0; }
+#page-todo .grp > .sec::before, #page-profile .pblock > .sec::before {
+  content:''; position:absolute; inset:0; z-index:-1; transform:skewX(-14deg); border-radius:3px;
+  background:var(--accent); box-shadow:3px 3px 0 rgba(0,0,0,.08); }
+#page-todo .grp > .sec::after, #page-profile .pblock > .sec::after {
+  content:''; position:absolute; right:-10px; top:3px; bottom:3px; width:4px; transform:skewX(-14deg); background:var(--accent); opacity:.45; }
+#page-todo .grp.over > .sec { color:#fff; } #page-todo .grp.over > .sec::before, #page-todo .grp.over > .sec::after { background:#e0485f; }
+#page-todo .grp > .sec .n { opacity:.9; }
+
+#page-todo .seg { background:rgba(255,255,255,.7); border:1.5px solid var(--line); border-radius:10px; }
+#page-todo .seg button { position:relative; z-index:0; font-weight:700; letter-spacing:.06em; }
+#page-todo .seg button.on { background:none; box-shadow:none; color:#fff; }
+#page-todo .seg button.on::before { content:''; position:absolute; inset:0 4px; z-index:-1; border-radius:6px; transform:skewX(-12deg);
+  background:linear-gradient(180deg, #f7a0c0, var(--accent)); box-shadow:0 2px 6px rgba(242,140,177,.4); }
+
+/* ===== Todo：付箋 ===== */
+#page-todo .trow { transform:rotate(var(--dcR, 0deg)); }
+#page-todo .grp .trow:nth-child(4n+2) { --dcR:-.6deg; --dcP:#fff3c4; --dcT:rgba(140,210,230,.7); }
+#page-todo .grp .trow:nth-child(4n+3) { --dcR:.5deg;  --dcP:#ffe3ee; --dcT:rgba(255,200,120,.7); }
+#page-todo .grp .trow:nth-child(4n)   { --dcR:-.3deg; --dcP:#e3f6ef; --dcT:rgba(242,140,177,.6); }
+#page-todo .grp .trow:nth-child(4n+1) { --dcR:.4deg;  --dcP:#eaf0ff; --dcT:rgba(255,180,200,.7); }
+#page-todo .trow .fg { background:var(--dcP, #fff8d6); border-radius:3px 3px 14px 3px; box-shadow:0 1px 1px rgba(0,0,0,.05), 0 4px 10px rgba(200,120,150,.12); }
+#page-todo .trow .fg::before { content:''; position:absolute; left:14px; top:-6px; width:34px; height:12px; transform:rotate(-4deg); border-radius:1px;
+  background:var(--dcT, rgba(140,210,230,.7)); pointer-events:none; }
+#page-todo .trow .tl { font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; font-weight:500; }
+#page-todo .trow .chk { border-radius:7px; transform:rotate(-4deg); }
+#page-todo .trow.checked .tl { color:#b6a5ab; }
+/* 完了したら COMPLETE! のスタンプ */
+#page-todo .trow.checked .fg::after { content:'COMPLETE!'; position:absolute; right:12px; top:50%; pointer-events:none;
+  font:700 12px/1 'Quicksand',sans-serif; letter-spacing:.08em; color:#e95a83; padding:4px 7px; border:2px solid #e95a83; border-radius:6px;
+  transform:translateY(-50%) rotate(-12deg); opacity:.78; animation:dcStamp .35s cubic-bezier(.3,1.6,.5,1) both; background:rgba(255,255,255,.4); }
+@keyframes dcStamp { from { transform:translateY(-50%) rotate(-12deg) scale(2.2); opacity:0; } }
+#page-todo .doneList .trow .fg { background:rgba(255,255,255,.62); }
+#page-todo .doneToggle { font-family:'Quicksand','Zen Maru Gothic',sans-serif; }
+#page-todo .empty { font-family:'Hachi Maru Pop','Zen Maru Gothic',sans-serif; font-size:13px; }
+
+/* ===== Love：シールっぽく ===== */
+#page-love .pc:nth-child(3n+2)::before { background:rgba(190,225,255,.8); }
+#page-love .pc:nth-child(3n)::before   { background:rgba(255,236,160,.85); width:30px; left:auto; right:6px; margin-left:0; transform:rotate(28deg); }
+#page-love .pc:nth-child(4n+1)::after  { content:'♡'; position:absolute; right:-6px; bottom:30px; width:22px; height:22px; border-radius:50%; background:#ff8fb6; color:#fff;
+  font:700 12px/22px sans-serif; text-align:center; transform:rotate(14deg); box-shadow:0 2px 4px rgba(200,70,120,.25); pointer-events:none; }
+#page-love .pc:nth-child(4n+3)::after  { content:'★'; position:absolute; left:-6px; bottom:34px; width:22px; height:22px; border-radius:50%; background:#ffd36b; color:#fff;
+  font:700 11px/22px sans-serif; text-align:center; transform:rotate(-12deg); box-shadow:0 2px 4px rgba(200,140,40,.25); pointer-events:none; }
+#page-love .pc .cap span { font-family:'Klee One','Noto Sans JP',sans-serif; font-weight:600; }
+#page-love .chips button { position:relative; z-index:0; border:none; background:none; font-weight:700; }
+#page-love .chips button::before { content:''; position:absolute; inset:0; z-index:-1; transform:skewX(-12deg); border-radius:5px;
+  border:1.5px solid rgba(255,255,255,.9); background:rgba(255,255,255,.45); }
+#page-love .chips button.on { box-shadow:none; }
+#page-love .chips button.on::before { background:#fff; box-shadow:0 2px 8px rgba(200,70,120,.18); }
+
+/* ===== Profile：テープ留めのカード ===== */
+#page-profile .mycard, #page-profile .person { position:relative; }
+#page-profile .mycard::before, #page-profile .person:nth-child(odd)::before { content:''; position:absolute; top:-6px; left:50%; width:44px; height:12px; margin-left:-22px;
+  transform:rotate(-3deg); background:rgba(255,215,120,.75); border-radius:1px; pointer-events:none; }
+#page-profile .person:nth-child(even)::before { content:''; position:absolute; top:-5px; right:18px; width:30px; height:11px; transform:rotate(8deg);
+  background:rgba(245,155,184,.55); border-radius:1px; pointer-events:none; }
+#page-profile .person { border-radius:4px 16px 16px 16px; box-shadow:0 2px 8px rgba(220,170,40,.14); }
+#page-profile .person .tx { font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; }
+#pbook .bk-sec { position:relative; border-radius:4px 16px 16px 16px; }
+#pbook .bk-sec::before { content:''; position:absolute; top:-6px; left:16px; width:40px; height:12px; transform:rotate(-4deg); background:rgba(255,215,120,.75); border-radius:1px; pointer-events:none; }
+#pbook .bk-sec:nth-of-type(even)::before { left:auto; right:16px; transform:rotate(5deg); background:rgba(245,155,184,.5); }
+
+/* ===== 入力画面：罫線の紙＋テープ＋シールのボタン ===== */
+#ed { background:#fffdf8; }
+#ed::before { content:''; position:absolute; top:-8px; left:50%; width:90px; height:18px; margin-left:-45px; transform:rotate(-2deg); z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(-45deg, rgba(32,153,156,.55) 0 8px, rgba(120,205,205,.55) 8px 16px); border-radius:2px; }
+#ed .eh { border-bottom:2px dashed #e9e1d3; }
+#ed .eh h3 { font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; letter-spacing:.06em; }
+#ed .eh button.save { position:relative; z-index:0; color:#fff; text-align:center; min-width:64px; margin-right:6px; }
+#ed .eh button.save::before { content:''; position:absolute; inset:2px 0; z-index:-1; transform:skewX(-12deg); border-radius:6px;
+  background:linear-gradient(180deg,#3cb7b9,var(--accent)); box-shadow:0 2px 6px rgba(32,153,156,.35); }
+#ed .eb { background:repeating-linear-gradient(transparent 0 31px, rgba(32,153,156,.07) 31px 32px); background-attachment:local; }
+#ed .fl > label { display:inline-block; position:relative; z-index:0; color:#fff; padding:3px 12px 3px 8px; margin-left:4px; }
+#ed .fl > label::before { content:''; position:absolute; inset:0; z-index:-1; transform:skewX(-14deg); border-radius:3px; background:var(--accent); }
+#ed .qk button { border:1.5px solid var(--line); border-radius:14px 14px 14px 4px; box-shadow:0 1.5px 0 rgba(0,0,0,.06); }
+#ed .qk button:nth-child(3n+1) { transform:rotate(-1.5deg); } #ed .qk button:nth-child(3n+2) { transform:rotate(1deg); }
+#ed .qk button.on { box-shadow:0 2px 6px rgba(32,153,156,.3); }
+#ed .photo { border-radius:4px; background:#fff; padding:8px; box-shadow:0 2px 10px rgba(0,0,0,.08); border:none; outline:2px dashed var(--line); outline-offset:-8px; }
+.eddood { position:absolute; inset:0; pointer-events:none; z-index:1; overflow:hidden; border-radius:22px 22px 0 0; }
+.eddood .dd { stroke:#20999C; opacity:.3; width:24px; }
+.eddood .a { right:14px; top:58px; transform:rotate(14deg); }
+.eddood .b { left:12px; bottom:calc(env(safe-area-inset-bottom) + 18px); transform:rotate(-10deg); stroke:#f28cb1; }
+.eddood .c { right:22px; bottom:calc(env(safe-area-inset-bottom) + 30px); width:20px; }
