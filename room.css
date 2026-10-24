@@ -9,7 +9,7 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 .rdoor .rdbox > img { position:absolute; inset:0; width:100%; height:100%; }
 .rdoor .ro { opacity:0; transition:opacity .6s ease; }
 .rdoor.opened .ro { opacity:1; }
-.rdoor .rplate { position:absolute; left:75.4%; width:14.4%; top:47.6%; height:3.6%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+.rdoor .rplate { position:absolute; left:75.7%; width:14.9%; top:44.9%; height:3.7%; display:flex; flex-direction:column; align-items:center; justify-content:center;
   color:#3d6fa8; font:700 9px/1 'Noto Sans JP',sans-serif; letter-spacing:.12em; }
 .rdoor .rplate small { font:600 5.5px/1 'Quicksand',sans-serif; letter-spacing:.25em; margin-top:2px; color:#7aa6d6; }
 .rdoor.closed .rdbox::after { content:''; position:absolute; inset:0; background:rgba(10,20,50,.55); }
@@ -131,42 +131,40 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 .rload { text-align:center; padding:30px 10px; font:400 14px/1.8 'Klee One',sans-serif; color:#667; }
 .rload img { width:70px; display:block; margin:0 auto 8px; animation:rbr 1.2s ease-in-out infinite; }
 
-/* 日報（クリップボード） */
-.rclip { position:relative; background:#c99b6a; border-radius:14px; padding:34px 12px 14px; box-shadow:0 12px 30px rgba(10,30,80,.35); min-height:0; display:flex; flex-direction:column; }
-.rclip::before { content:''; position:absolute; left:50%; top:8px; width:110px; height:30px; transform:translateX(-50%); border-radius:8px 8px 12px 12px;
-  background:linear-gradient(#e9eef5,#b7c2d1); box-shadow:0 2px 4px rgba(0,0,0,.3); z-index:2; }
-.rclip .sheet { position:relative; background:#fff; border-radius:3px; padding:16px 15px 14px; overflow-y:auto; min-height:0; color:#3b3a40;
-  background-image:linear-gradient(#cfe4ff 0 46px,transparent 46px),repeating-linear-gradient(0deg,transparent 0 27px,rgba(120,150,200,.18) 27px 28px); background-position:0 0,0 6px; }
-.rclip .sh { display:flex; align-items:center; gap:8px; height:30px; margin-bottom:12px; }
-.rclip .sh b { font:600 18px 'Klee One',sans-serif; color:#2f5d93; letter-spacing:.1em; }
-.rclip .sh span { margin-left:auto; font:400 12px 'Klee One',sans-serif; color:#4a6a99; }
-.rclip .meta { font:400 12px 'Klee One',sans-serif; color:#667; margin-bottom:8px; }
-.rclip .body { font:400 14px/2 'Klee One',sans-serif; white-space:pre-wrap; padding-bottom:56px; }
-.rclip .stamp { position:absolute; right:14px; bottom:12px; width:58px; height:58px; border:2.5px solid #e0607e; border-radius:50%; color:#e0607e; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; font:600 12px/1.2 'Klee One',sans-serif; transform:rotate(-12deg); opacity:.85; }
-.rclip .stamp small { font-size:8px; }
-.rclip .rnav { display:flex; gap:8px; margin-top:10px; }
+/* 日報（机の上のクリップボードの絵 1122×1402 に、文字を重ねる） */
+.rclip { position:relative; display:flex; flex-direction:column; align-items:center; min-height:0; }
+.rrep { position:relative; width:min(100%, calc((100vh - 170px) * 1122 / 1402)); aspect-ratio:1122/1402; flex:none; border-radius:10px; overflow:hidden; box-shadow:0 12px 30px rgba(10,30,80,.35); --ru:.33px; }
+.rrep .rpbg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.rrep .rph { position:absolute; left:20%; top:19.4%; width:54.6%; height:4%; display:flex; align-items:center; gap:8px; padding:0 4%; }
+.rrep .rph b { font:600 calc(var(--ru) * 40) 'Klee One',sans-serif; color:#2f5d93; letter-spacing:.1em; }
+.rrep .rph span { margin-left:auto; font:400 calc(var(--ru) * 27) 'Klee One',sans-serif; color:#4a6a99; }
+.rrep .sheet { position:absolute; left:20.5%; top:25.3%; width:56%; height:53.5%; overflow-y:auto; -webkit-overflow-scrolling:touch; color:#3b3a40; padding-right:2%; scrollbar-width:none; }
+.rrep .sheet::-webkit-scrollbar { display:none; }
+.rrep .meta { font:400 calc(var(--ru) * 26)/calc(var(--ru) * 93) 'Klee One',sans-serif; color:#778; }
+.rrep .body { font:400 calc(var(--ru) * 36)/calc(var(--ru) * 93) 'Klee One',sans-serif; white-space:pre-wrap; padding-bottom:calc(var(--ru) * 120); }
+.rrep .rload { font-size:calc(var(--ru) * 34); }
+.rrep .rstamp { position:absolute; right:22%; bottom:21%; pointer-events:none; }
+.rrep .rstamp i { width:calc(var(--ru) * 140); height:calc(var(--ru) * 140); border:calc(var(--ru) * 6) solid #e0607e; border-radius:50%; color:#e0607e; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; font:600 calc(var(--ru) * 28)/1.2 'Klee One',sans-serif; font-style:normal; transform:rotate(-12deg); opacity:.82; }
+.rrep .rstamp small { font-size:calc(var(--ru) * 19); }
+#room.night .rrep .sheet, #room.night .rrep .rph { filter:brightness(.92); }
+.rclip .rnav { display:flex; gap:8px; margin-top:10px; width:100%; }
 .rclip .rnav button { flex:1; border:none; border-radius:12px; padding:9px; background:rgba(255,255,255,.88); color:#7a5530; font:700 12px 'Noto Sans JP',sans-serif; }
 .rclip .rnav button:disabled { opacity:.4; }
 
-/* ゲーム機 */
-.rgame { position:relative; width:100%; aspect-ratio:1.9; border-radius:40px; display:flex; align-items:center; padding:0 3%;
-  background:linear-gradient(90deg,#ffb7cf 0 17%,#fdfdff 17% 83%,#9fd0ff 83%); box-shadow:0 12px 30px rgba(10,30,80,.35), inset 0 -6px 0 rgba(0,0,0,.06); }
-.rgame .pad { width:14%; display:flex; flex-direction:column; align-items:center; gap:12%; height:70%; justify-content:center; }
-.rgame .pad i { display:block; width:46%; aspect-ratio:1; border-radius:50%; background:rgba(255,255,255,.75); box-shadow:inset 0 -2px 0 rgba(0,0,0,.12); }
-.rgame .pad .cross { width:58%; aspect-ratio:1; background:none; box-shadow:none; position:relative; }
-.rgame .pad .cross::before, .rgame .pad .cross::after { content:''; position:absolute; background:#fff; border-radius:3px; box-shadow:0 1px 0 rgba(0,0,0,.1); }
-.rgame .pad .cross::before { left:33%; right:33%; top:0; bottom:0; } .rgame .pad .cross::after { top:33%; bottom:33%; left:0; right:0; }
-.rgame .scr { flex:1; height:84%; margin:0 3%; border-radius:12px; background:#1d2440; padding:5px; }
-.rgame .scr > div { width:100%; height:100%; border-radius:8px; overflow:hidden; position:relative; background:linear-gradient(160deg,#bfe3ff,#e8f2ff 60%,#ffe3ef); }
-.gmenu { position:absolute; inset:0; display:flex; flex-direction:column; padding:8px 10px; gap:5px; }
-.gmenu h6 { margin:0 0 2px; font:700 10px 'Quicksand',sans-serif; letter-spacing:.3em; color:#3d6fa8; }
-.gmenu button { border:none; border-radius:8px; background:rgba(255,255,255,.85); color:#3a4a66; font:700 12px 'Noto Sans JP',sans-serif; text-align:left; padding:6px 9px; display:flex; align-items:center; gap:6px; }
+/* ゲーム機（正面アップの絵 1122×1402。緑の画面の位置にメニューを出す） */
+.rgame { position:relative; width:min(100%, calc((100vh - 110px) * 1122 / 1402)); align-self:center; aspect-ratio:1122/1402; border-radius:12px; overflow:hidden; box-shadow:0 12px 30px rgba(10,30,80,.35); }
+.rgame .gbg { position:absolute; inset:0; width:100%; height:100%; display:block; }
+.rgame .scr { position:absolute; left:22.1%; top:47.15%; width:55.7%; height:22.04%; border-radius:6px; overflow:hidden; background:#1d2440; }
+.rgame .scr > div { width:100%; height:100%; position:relative; background:linear-gradient(160deg,#bfe3ff,#e8f2ff 60%,#ffe3ef); }
+.gmenu { position:absolute; inset:0; display:flex; flex-direction:column; padding:6px 8px; gap:4px; }
+.gmenu h6 { margin:0; font:700 9px 'Quicksand',sans-serif; letter-spacing:.3em; color:#3d6fa8; }
+.gmenu button { flex:1; min-height:0; border:none; border-radius:7px; background:rgba(255,255,255,.88); color:#3a4a66; font:700 11px 'Noto Sans JP',sans-serif; text-align:left; padding:0 8px; display:flex; align-items:center; gap:6px; }
 .gmenu button small { margin-left:auto; font:600 8px 'Quicksand',sans-serif; letter-spacing:.1em; color:#9ab; }
 
 /* PC（デジタル画面） */
 .rpc { position:relative; display:flex; flex-direction:column; height:min(70vh,560px); border-radius:16px; overflow:hidden; color:#e8f6ff;
-  background:linear-gradient(180deg,rgba(60,150,220,.6),rgba(20,70,140,.7)); border:1px solid rgba(170,235,255,.8);
+  background:linear-gradient(180deg,rgba(20,70,140,.35),rgba(10,40,90,.55)), url(pc_wall.jpg) center/cover; border:1px solid rgba(170,235,255,.8);
   box-shadow:0 0 0 1px rgba(255,255,255,.15) inset,0 10px 40px rgba(20,80,160,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 #rz .rzc.zpc { animation:pcIn .5s cubic-bezier(.2,.9,.3,1) both; }
 @keyframes pcIn { from { opacity:0; transform:translateY(30px) scaleY(.15); } }
@@ -399,9 +397,13 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 .gres .gbtn button { flex:1; border:none; padding:12px; background:#fff; color:#1d5fae; font:800 14px 'Noto Sans JP',sans-serif; transform:skewX(-8deg); border-radius:5px; box-shadow:0 3px 0 rgba(30,60,110,.3); }
 
 /* ===== 新聞（ホワイトボードのアップ） ===== */
-.rnp { position:relative; width:100%; aspect-ratio:1440/1200; flex:none; border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(10,30,80,.35); }
+.rnp { position:relative; width:100%; aspect-ratio:1374/1145; flex:none; border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(10,30,80,.35); }
 .rnp .npwb { position:absolute; inset:0; width:100%; height:100%; }
-#room.night .rnp .npwb, #room.night .npr .npbg, #room.night .rnp .npbg { filter:brightness(.78) saturate(.9); }
+#room.night .npr .npbg { filter:brightness(.78) saturate(.9); }
+#room.night .rnp .npq { filter:brightness(.8) saturate(.88) sepia(.08); }
+.rnp .npq { position:absolute; left:0; top:0; transform-origin:0 0; overflow:hidden; cursor:pointer; box-shadow:0 0 1px rgba(0,0,0,.2); }
+.rnp .npq .nps { transform:none; }
+.rnp .npfr { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .npwrap { position:absolute; overflow:hidden; cursor:pointer; }
 .npwrap.big { position:relative; width:100%; aspect-ratio:1000/1540; border-radius:4px; box-shadow:0 10px 30px rgba(10,30,80,.35); cursor:default; }
 .nps { position:absolute; left:0; top:0; transform-origin:0 0; font-family:'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#4a4250; }
@@ -491,3 +493,7 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 .rpc .sem, .rpc .snote { font-size:10.5px; color:#9fd6f2; margin:6px 2px 0; line-height:1.6; }
 .rpc .sem { text-align:center; padding:10px 0; }
 .rpc .snum { font-size:12px; margin:2px 0; } .rpc .snum b { font:700 18px 'Quicksand',sans-serif; color:#ffd27a; margin:0 3px; }
+
+/* 神経衰弱のカード裏（絵に差し替え） */
+.mc2 .bk { background:url(mem_back1.webp) center/100% 100% no-repeat; border:none; box-shadow:0 3px 8px rgba(20,40,90,.3); border-radius:9px; }
+.mc2 .bk::before, .mc2 .bk i { display:none; }

@@ -85,7 +85,7 @@ const Room = (() => {
       <div class="rplate">先生の部屋<small>SENSEI'S ROOM</small></div></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
     slidesEl.insertBefore(s, slidesEl.firstChild);
     // 画面が細いときは、扉と名札が見えるように少し右に寄せる
-    const box = s.querySelector('.rdbox'), fit = () => fitBox(box, 784, 1168, 735);
+    const box = s.querySelector('.rdbox'), fit = () => fitBox(box, 1027, 1531, 940);
     fit(); addEventListener('resize', fit);
     let tx = 0, ty = 0;
     s.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; });
@@ -194,7 +194,7 @@ const Room = (() => {
     $('rIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); sendTalk(); } });
     $('rmwEnd').onclick = () => endTalk(true);
     $('rmwLog').onclick = showLog;
-    addEventListener('resize', fit);
+    addEventListener('resize', () => { fit(); const z = $('rz'); if (z && z.classList.contains('on')) fitQuads(z); });
   }
   function fit() {
     if (!el) return;
@@ -452,9 +452,8 @@ const Room = (() => {
 
   // ----- ゲーム機 -----
   function openGame(from) {
-    zoom(`<div class="rgame"><div class="pad"><i class="cross"></i><i></i></div><div class="scr"><div><div class="gmenu"><h6>GAME</h6>
-      <button data-g="puzzle">🧩 メモロビパズル<small>PLAY</small></button><button data-g="memory">🃏 神経衰弱<small>PLAY</small></button><button data-g="maker">✏️ アイデア帳<small>SOON</small></button></div></div></div>
-      <div class="pad"><i></i><i></i></div></div>`, from).onclick = e => {
+    zoom(`<div class="rgame"><img class="gbg" src="room_game_${per === 'day' ? 'd' : 'n'}.jpg" alt=""><div class="scr"><div><div class="gmenu"><h6>GAME</h6>
+      <button data-g="puzzle">🧩 メモロビパズル<small>PLAY</small></button><button data-g="memory">🃏 神経衰弱<small>PLAY</small></button><button data-g="maker">✏️ アイデア帳<small>SOON</small></button></div></div></div></div>`, from).onclick = e => {
       const g = e.target.closest('[data-g]'); if (!g) return; sfx('tap');
       if (g.dataset.g === 'maker') return toast('準備中です。お楽しみに');
       const r = e.target.closest('.scr').getBoundingClientRect();
@@ -494,15 +493,18 @@ const Room = (() => {
   }
   async function openReport(from, idx = 0) {
     const list = await reports();
-    const c = zoom('<div class="rclip"><div class="sheet" id="rsheet"></div><div class="rnav"><button data-rn="1">‹ 前の日</button><button data-rn="-1">次の日 ›</button></div></div>', idx ? {} : from);
-    c.style.height = 'min(78vh,640px)';
+    const c = zoom(`<div class="rclip"><div class="rrep"><img class="rpbg" src="room_report_${per === 'day' ? 'd' : 'n'}.jpg" alt=""><div class="rph" id="rph"></div><div class="sheet" id="rsheet"></div><div class="rstamp" id="rstamp"></div></div>
+      <div class="rnav"><button data-rn="1">‹ 前の日</button><button data-rn="-1">次の日 ›</button></div></div>`, idx ? {} : from);
+    const rr = c.querySelector('.rrep'), unit = () => rr.style.setProperty('--ru', rr.clientHeight / 1402 + 'px');
+    unit(); requestAnimationFrame(unit);
     const show = async i => {
       const s = $('rsheet'); if (!s) return;
       const r = list[i];
       c.querySelector('[data-rn="1"]').disabled = i >= list.length - 1; c.querySelector('[data-rn="-1"]').disabled = i <= 0;
-      if (!r) { s.innerHTML = `<div class="sh"><b>日報</b></div><div class="rload">${reportBusy ? `<img src="${img(duty, 'stand')}" alt="">当番が日報を書いています…` : 'まだ日報はありません。<br>毎日0時に、その日の当番が書いてくれます。' + (api && api.url ? '' : '<br><br>（右上の設定から、AIの設定をすると届くようになります）')}</div>`; return; }
-      s.innerHTML = `<div class="sh"><b>日報</b><span>${D.ymd(r.date)}（${D.dow(r.date)}）</span></div><div class="meta">当番：${NAME[r.who] || ''}　提出 0:00</div>
-        <div class="body">${esc(r.text)}</div><div class="stamp">${NAME[r.who] || ''}<small>確認</small></div>`;
+      $('rph').innerHTML = r ? `<b>日報</b><span>${D.ymd(r.date)}（${D.dow(r.date)}）</span>` : '<b>日報</b>';
+      $('rstamp').innerHTML = r ? `<i>${NAME[r.who] || ''}<small>確認</small></i>` : '';
+      if (!r) { s.innerHTML = `<div class="rload">${reportBusy ? `<img src="${img(duty, 'stand')}" alt="">当番が日報を書いています…` : 'まだ日報はありません。<br>毎日0時に、その日の当番が書いてくれます。' + (api && api.url ? '' : '<br><br>（右上の設定から、AIの設定をすると届くようになります）')}</div>`; return; }
+      s.innerHTML = `<div class="meta">当番：${NAME[r.who] || ''}　提出 0:00</div><div class="body">${esc(r.text)}</div>`;
       s.scrollTop = 0;
       if (!r.read) { r.read = true; await DB.put('room', r); markNew(); }
     };
@@ -512,7 +514,25 @@ const Room = (() => {
 
   // ----- 新聞（ホワイトボードのアップ） -----
   // アップ画像（1440×1200）と、その中の2枚の紙の位置 [左, 上, 幅, 高さ]
-  const NP = { W:1440, H:1200, sheets:[[140, 130, 545, 840], [755, 130, 545, 840]] };
+  // 紙は少し傾いて貼ってあるので、四隅の位置（左上・右上・右下・左下）に合わせて変形して重ねる
+  const NP = { W:1374, H:1145, quads:[[[324, 159], [720, 191], [725, 814], [315, 831]], [[749, 193], [1093, 223], [1104, 797], [753, 811]]],
+    // 紙の上に乗っているマグネットとテープ（元の絵を切り抜いて、いちばん上に重ねる）
+    front:[[[472, 143], [538, 143], [538, 216], [472, 216]], [[889, 181], [958, 181], [958, 250], [889, 250]],
+      [[658, 186], [673, 172], [733, 228], [716, 245]], [[298, 796], [313, 776], [368, 822], [352, 843]],
+      [[1038, 213], [1051, 199], [1098, 241], [1083, 258]], [[1044, 781], [1103, 712], [1126, 731], [1062, 803]]] };
+  // 正方形 → 四角形 の射影変換（CSSの matrix3d 用）
+  function quadMatrix(q, w, hh, k) {
+    const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q.map(([x, y]) => [x * k, y * k]);
+    const dx1 = x1 - x2, dx2 = x3 - x2, dy1 = y1 - y2, dy2 = y3 - y2, sx = x0 - x1 + x2 - x3, sy = y0 - y1 + y2 - y3;
+    const den = dx1 * dy2 - dx2 * dy1, g = (sx * dy2 - dx2 * sy) / den, hh2 = (dx1 * sy - sx * dy1) / den;
+    const a = x1 - x0 + g * x1, b = x3 - x0 + hh2 * x3, d = y1 - y0 + g * y1, e = y3 - y0 + hh2 * y3;
+    return `matrix3d(${a / w},${d / w},0,${g / w},${b / hh},${e / hh},0,${hh2 / hh},0,0,1,0,${x0},${y0},0,1)`;
+  }
+  function fitQuads(root) {
+    const b = root.querySelector('.rnp'); if (!b || !b.clientWidth) return;
+    const k = b.clientWidth / NP.W;
+    b.querySelectorAll('.npq').forEach((w, i) => { w.style.transform = quadMatrix(NP.quads[i], PW, PH, k); });
+  }
   const PW = 1000, PH = 1540;   // 紙の中の座標（補正した紙の画像の大きさ）
   // 紙に印刷されている枠：[左, 上, 右, 下]
   const SLOT = { title:[142, 117, 808, 270], big:[70, 357, 622, 737], right:[670, 357, 957, 737], c1:[75, 775, 330, 1100], c2a:[362, 775, 625, 1128], c2b:[362, 1142, 625, 1500],
@@ -582,14 +602,16 @@ const Room = (() => {
   async function openPaper(from, week) {
     npWeek = week || monday();
     const { arts, pages, no } = await issue(npWeek);
-    const c = zoom(`<div class="rnp"><img class="npwb" src="room_np_d.jpg" alt="">
-      ${NP.sheets.map((s, i) => `<div class="npwrap" data-pg="${i}" style="left:${s[0] / NP.W * 100}%;top:${s[1] / NP.H * 100}%;width:${s[2] / NP.W * 100}%;height:${s[3] / NP.H * 100}%">${sheetHTML(i, pages[i], npWeek, no)}</div>`).join('')}
+    const wb = `room_wb_${per === 'day' ? 'd' : 'n'}.jpg`;
+    const c = zoom(`<div class="rnp"><img class="npwb" src="${wb}" alt="">
+      ${NP.quads.map((q, i) => `<div class="npq" data-pg="${i}" style="width:${PW}px;height:${PH}px">${sheetHTML(i, pages[i], npWeek, no)}</div>`).join('')}
+      ${NP.front.map(f => `<img class="npfr" src="${wb}" style="clip-path:polygon(${f.map(([x, y]) => `${(x / NP.W * 100).toFixed(2)}% ${(y / NP.H * 100).toFixed(2)}%`).join(',')})" alt="">`).join('')}
       </div><div class="npnav"><button data-wk="-7">‹ 前の号</button><span>第${no}号</span><button data-wk="7" ${npWeek >= monday() ? 'disabled' : ''}>次の号 ›</button></div>
       <p class="nphint">${arts.length ? '紙をタップすると読めます' : '今週はまだ記事がありません。当番が取材に来るのを待ってね'}</p>`, week ? {} : from);
-    requestAnimationFrame(() => fitSheets(c));
+    requestAnimationFrame(() => fitQuads(c));
     c.onclick = e => {
       const w = e.target.closest('[data-wk]'); if (w) { if (w.disabled) return; sfx('tap'); return openPaper(null, D.add(npWeek, +w.dataset.wk)); }
-      const p = e.target.closest('.npwrap'); if (p) { sfx('tap'); readSheet(+p.dataset.pg); }
+      const p = e.target.closest('.npq'); if (p) { sfx('tap'); readSheet(+p.dataset.pg); }
     };
     arts.filter(a => a.read === false).forEach(a => { a.read = true; DB.put('room', a).catch(() => {}); });
     setTimeout(markPaper, 300);

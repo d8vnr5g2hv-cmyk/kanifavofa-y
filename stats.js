@@ -35,6 +35,7 @@ const Stats = (() => {
     await load(); const t = D.today(), r = {}; ME_RATE.forEach(([k]) => { if (rate[k]) r[k] = rate[k]; });
     S.self = S.self.filter(x => x.d !== t).concat([{ d:t, r }]).slice(-120); save();
   }
+  async function noteCafe(served, coins) { await load(); const d = day(D.today()); d.cafe = (d.cafe || 0) + served; d.coin = (d.coin || 0) + coins; save(); }
   async function noteAI(b) {
     if (!b) return; await load();
     S.ai[month()] = { spent:+b.spent || 0, limit:+b.limit || 0, by:b.by || {} }; save();
@@ -128,7 +129,16 @@ const Stats = (() => {
     return kpi([['当番の日', Object.values(duty).reduce((a, b) => a + b, 0), '日'], ['記事', arts, '本'], ['日報', reps, '通'], ['神経衰弱', games ? Math.round(tot.l / games * 100) + '%' : '—', '勝率']])
       + card('当番になった回数', dl.length ? bars(dl) : emp('まだ記録がありません'))
       + card('神経衰弱 対戦（先生の勝ち数）', vl.length ? bars(vl.map(x => ({ n:x.n, v:x.v })), v => v + '勝') + `<p class="snote">全体 ${tot.l}勝 ${tot.w}敗 ${tot.d}分</p>` : emp('対戦するとここに出ます'))
-      + card('パズル', `<p class="snum">クリアした絵 <b>${Object.keys(puz.best || {}).length}</b> 種類（サイズ別）</p>`);
+      + card('パズル', `<p class="snum">クリアした絵 <b>${Object.keys(puz.best || {}).length}</b> 種類（サイズ別）</p>`)
+      + await cafeCard();
+  }
+  async function cafeCard() {
+    if (typeof Cafe === 'undefined') return '';
+    const c = await Cafe.stats(), ds = lastDays(14), g = (k, f) => (S.days[k] || {})[f] || 0;
+    const reg = Object.entries(c.guests || {}).sort((a, b) => b[1].n - a[1].n).slice(0, 5).map(([k, v]) => ({ n:Cafe.NAME[k] || k, v:v.n }));
+    return card("Yohei's Coffee", kpi([['お店', 'Lv.' + c.lv, ''], ['累計', c.served, '皿'], ['コイン', c.coins, ''], ['メニュー', c.menu, '/24']])
+      + (ds.some(k => g(k, 'cafe')) ? line([{ n:'出した皿', v:ds.map(k => g(k, 'cafe')), c:C[1] }], ds.map(md)) : '')
+      + (reg.length ? `<p class="snote">よく来るお客さん</p>` + bars(reg, v => v + '回') : emp('カフェを開くと、ここに記録がたまります')));
   }
   async function pAI() {
     const ms = lastMonths(6), cur = S.ai[month()];
@@ -146,7 +156,7 @@ const Stats = (() => {
   }
 
   return {
-    noteOpen, noteSelf, noteAI, html,
+    noteOpen, noteSelf, noteAI, noteCafe, html,
     setTab(k) { tab = k; },
     init() { setTimeout(() => noteOpen().catch(() => {}), 3000); },
   };
