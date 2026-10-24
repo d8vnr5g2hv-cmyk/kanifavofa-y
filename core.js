@@ -69,6 +69,7 @@ const TAB_BGM = { todo:L('bgm_todo.mp3', 135.179), love:L('bgm_love.mp3', 138.08
 const TAB_ACCENT = { todo:'#e7779f', love:'#f27ea7', accounts:'#2f9fd6', profile:'#ef86a9' };
 
 const slidesEl = $('slides'), dotsEl = $('dots');
+let bgReady = false;   // BGMが鳴り始めたら、重い先読みを始めてよい
 const OFF = 1;   // 左端に自室の扉があるので、メモロビは1枚ずれる
 const slideOf = i => slidesEl.children[i + OFF];
 let current = 0, tab = 'favorite', phase = 'lock';   // lock → splash → app
@@ -274,7 +275,7 @@ function updateVideos() {
     if (i === current) { v.preload = 'auto'; if (tab === 'favorite') v.play().catch(() => {}); } else v.pause();
     if (Math.abs(i - current) === 1) {   // となりは先に読んで、1コマ目まで準備しておく（スワイプしたらすぐ動く）
       if (v.preload !== 'auto') v.preload = 'auto';
-      if (!v._primed && tab === 'favorite') { v._primed = true; v.play().then(() => { if (i !== current) v.pause(); }).catch(() => { v._primed = false; }); }
+      if (!v._primed && tab === 'favorite' && bgReady) { v._primed = true; v.play().then(() => { if (i !== current) v.pause(); }).catch(() => { v._primed = false; }); }
     }
     const pv = s.querySelector('.patv');
     if (pv) { if (i === current) { if (pv.preload !== 'auto') pv.preload = 'auto'; } else Pat.stop(s); }
@@ -651,8 +652,9 @@ const App = {
         stopBgm(0.7);
         const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
         setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
-        setTimeout(() => Room.warmup(), 6000);   // 新聞・日報を裏で用意しておく
-        setTimeout(preloadPosters, 1200);
+        setTimeout(() => Room.warmup(), 8000);   // 前日の日報を裏で用意しておく
+        // 重い先読み（となりの動画・止め絵）は、今のメモロビのBGMが鳴り始めてから
+        loadBuf(chars[current].bgm.src).catch(() => {}).then(() => sleep(1500)).then(() => { bgReady = true; updateVideos(); setTimeout(preloadPosters, 1500); });
         setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
         setTimeout(() => { splash.style.display = 'none'; }, 1500);
       }
