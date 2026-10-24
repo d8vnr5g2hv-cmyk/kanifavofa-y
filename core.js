@@ -222,7 +222,13 @@ function loadChar(i) {
   };
   const v = mk('lv', true);
   v.preload = Math.abs(i - current) <= 1 ? 'auto' : 'metadata'; v.src = src;
-  const show = () => { if (!v.classList.contains('ready') && v.currentTime > 0) v.classList.add('ready'); };
+  // iPhoneは再生し始めの一瞬、動画を元の大きさで描くことがあるので、映像の大きさが決まって2コマ描けてから見せる
+  const show = () => {
+    if (v.classList.contains('ready') || v._showing || !(v.currentTime > 0) || !v.videoWidth) return;
+    v._showing = true;
+    const go = () => requestAnimationFrame(() => requestAnimationFrame(() => { v.classList.add('ready'); v._showing = false; }));
+    if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(() => v.requestVideoFrameCallback(go)); else go();
+  };
   v.addEventListener('timeupdate', show); v.addEventListener('playing', () => setTimeout(show, 60));
   s.appendChild(v);
   if (c.pat) {   // なでなで：反応の動画（上に重ねて、撫でたときだけ見せる）と頭の範囲
@@ -231,8 +237,18 @@ function loadChar(i) {
     const z = document.createElement('div'); z.className = 'patzone'; s.appendChild(z);
     Pat.bind(i, s, z, pv);
   }
+  sizeMedia(i);
   if (i === current) v.play().catch(() => {});
 }
+// 動画と止め絵の大きさ：CSS（object-fit）任せにせず、画面いっぱいに切り抜いた大きさを直接決める
+function sizeMedia(i) {
+  const s = slideOf(i); if (!s) return;
+  const land = document.body.classList.contains('land'), W = s.clientWidth, H = s.clientHeight; if (!W || !H) return;
+  const vw = land ? 2532 : 1170, vh = land ? 1170 : 2534, k = Math.max(W / vw, H / vh);
+  const st = { left:(W - vw * k) / 2 + 'px', top:(H - vh * k) / 2 + 'px', width:vw * k + 'px', height:vh * k + 'px', right:'auto', bottom:'auto' };
+  s.querySelectorAll('.lposter, video').forEach(m => Object.assign(m.style, st));
+}
+addEventListener('resize', () => chars.forEach((c, i) => sizeMedia(i)));
 function updateVideos() {
   [...dotsEl.children].forEach((d, i) => d.classList.toggle('on', i === current));
   chars.forEach((c, i) => {
@@ -613,7 +629,8 @@ const App = {
         splash.classList.add('go');
         stopBgm(0.7);
         const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
-        setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); }, 800);
+        setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
+        setTimeout(() => Room.warmup(), 6000);   // 新聞・日報を裏で用意しておく
         setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
         setTimeout(() => { splash.style.display = 'none'; }, 1500);
       }

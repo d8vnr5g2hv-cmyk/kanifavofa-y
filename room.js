@@ -156,7 +156,7 @@ const Room = (() => {
           <div class="duty" id="rduty"><img alt=""></div>
         </div></div>
       </div>
-      <div class="rhud"><button class="rback" id="rBack">‹ 出る</button><div class="rttl">SENSEI'S ROOM<small id="rDuty"></small></div>
+      <div class="rhud"><button class="rback" id="rBack">‹ 出る</button><div class="rttl">SENSEI'S ROOM<small id="rDuty"></small><small id="rBudget"></small></div>
         <button class="rset" id="rSet" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button></div>
       <div class="rmdots"><i class="on"></i><i></i></div>
       <div id="rz"></div>
@@ -228,14 +228,15 @@ const Room = (() => {
     musicSel = (await DB.get('settings', 'roomMusic').catch(() => null) || {}).sel || null;
     syncBgm(0, .8);
     await loadApi();
-    checkReport();
+    if (api && api.url) call('budget', {}, true).catch(() => {}); else $('rBudget').textContent = '';
+    checkReport(); markPaper();
     // その日はじめて入ったら、当番があいさつ（部屋のほうへ移ってから）
     const day = dutyDay(), log = await DB.get('room', 'chat-' + day).catch(() => null);
     if (!viewOnly() && (!log || !log.greeted)) setTimeout(() => { if (!active) return; $('rs').scrollTo({ left:$('rs').clientWidth, behavior:'smooth' }); setTimeout(() => openTalk('open'), 650); }, 900);
   }
   function exit() {
     if (!active) return;
-    closeZoom(); endTalk(false);
+    closeZoom(); endTalk(false); if (typeof Games !== 'undefined') Games.close(true);
     el.classList.add('out');
     setTimeout(() => { el.className = ''; document.body.classList.remove('roomOn'); }, 350);
     active = false; syncBgm(200);
@@ -428,8 +429,14 @@ const Room = (() => {
   // ----- ゲーム機 -----
   function openGame(from) {
     zoom(`<div class="rgame"><div class="pad"><i class="cross"></i><i></i></div><div class="scr"><div><div class="gmenu"><h6>GAME</h6>
-      <button data-g="puzzle">🧩 メモロビパズル<small>SOON</small></button><button data-g="memory">🃏 神経衰弱<small>SOON</small></button><button data-g="maker">✏️ アイデア帳<small>SOON</small></button></div></div></div>
-      <div class="pad"><i></i><i></i></div></div>`, from).onclick = e => { if (e.target.closest('[data-g]')) { sfx('tap'); toast('準備中です。お楽しみに'); } };
+      <button data-g="puzzle">🧩 メモロビパズル<small>PLAY</small></button><button data-g="memory">🃏 神経衰弱<small>PLAY</small></button><button data-g="maker">✏️ アイデア帳<small>SOON</small></button></div></div></div>
+      <div class="pad"><i></i><i></i></div></div>`, from).onclick = e => {
+      const g = e.target.closest('[data-g]'); if (!g) return; sfx('tap');
+      if (g.dataset.g === 'maker') return toast('準備中です。お楽しみに');
+      const r = e.target.closest('.scr').getBoundingClientRect();
+      closeZoom();
+      Games.open(g.dataset.g, { duty, name:NAME, img, rect:r, host:el });
+    };
   }
 
   // ----- 日報 -----
@@ -448,7 +455,7 @@ const Room = (() => {
     if (!api || !api.url) return markNew();
     reportBusy = true;
     try {
-      const drec = await DB.get('room', 'duty-' + day).catch(() => null), who = drec ? drec.who : duty;
+      const drec = await DB.get('room', 'duty-' + day).catch(() => null), who = drec ? drec.who : (duty || await pickDuty());
       const todos = await DB.all('todos'), evs = await DB.all('events').catch(() => []);
       const inDay = t => t && D.key(new Date(t)) === day;
       const chat = await DB.get('room', 'chat-' + day).catch(() => null);
@@ -480,7 +487,28 @@ const Room = (() => {
   }
 
   // ----- 新聞（ホワイトボード） -----
-  let paperBusy = false;
+  let paperJob = null;
+  // 今週の新聞をつくる（アプリを開いたときに裏で。部屋で開いたときにまだなければ、その場で）
+  function makePaper() {
+    if (paperJob) return paperJob;
+    paperJob = (async () => {
+      const week = monday();
+      const have = await DB.get('room', 'paper-' + week).catch(() => null); if (have) return have;
+      if (!api || !api.url) return null;
+      const who = duty || await pickDuty();
+      try {
+        const r = await call('paper', { who, week, weekEnd:D.add(week, 6) }, true);
+        if (r && r.items && r.items.length) { const p = { id:'paper-' + week, week, who, data:r, read:false }; await DB.put('room', p); return p; }
+      } catch(e) {}
+      return null;
+    })().finally(() => { paperJob = null; markPaper(); });
+    return paperJob;
+  }
+  async function markPaper() {
+    const hs = el && el.querySelector('.hs[data-k="paper"]'); if (!hs) return;
+    const p = await DB.get('room', 'paper-' + monday()).catch(() => null);
+    hs.innerHTML = p && p.read === false ? '<i class="new">NEW</i>' : '';
+  }
   async function openPaper(from) {
     const week = monday(), c = zoom('<div class="rwb" id="rwb"></div>', from);
     c.style.height = 'min(80vh,680px)';
@@ -490,15 +518,11 @@ const Room = (() => {
     if (!p) {
       if (!api || !api.url) { box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i><div class="rload">今週の新聞は、まだありません。<br>右上の設定からAIの設定をすると、<br>毎週月曜に当番が書いて貼ってくれます。</div></div>`; return; }
       box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i><div class="rload"><img src="${img(duty, 'stand')}" alt="">${NAME[duty]}が、今週の新聞を書いています…<br><small>（1分ほどかかります）</small></div></div>`;
-      if (paperBusy) return;
-      paperBusy = true;
-      try {
-        const r = await call('paper', { who:duty, week, weekEnd:D.add(week, 6) }, true);
-        if (r && r.items) { p = { id:'paper-' + week, week, who:duty, data:r }; await DB.put('room', p); }
-      } catch(e) {} finally { paperBusy = false; }
+      p = await makePaper();
       if (!$('rwb')) return;
       if (!p) { box.innerHTML = doodles + '<div class="paper"><div class="rload">うまく書けませんでした。少し待ってから、もう一度どうぞ</div></div>'; return; }
     }
+    if (p.read === false) { p.read = true; DB.put('room', p).catch(() => {}); markPaper(); }
     const no = Math.max(1, Math.round((D.parse(week) - D.parse('2026-10-19')) / 604800000) + 1);
     const d = p.data, T = { gourmet:'グルメ', trip:'おでかけ', wanted:'募集中！', news:'お知らせ' };
     box.innerHTML = doodles + `<div class="paper"><i class="mag a"></i><i class="mag b"></i>
@@ -634,6 +658,7 @@ const Room = (() => {
 
   // ===== GAS（AI）との通信：作戦室と同じ設定を使う =====
   async function loadApi() { api = await DB.get('settings', 'opsApi').catch(() => null); return api; }
+  function showBudget(b) { const e = $('rBudget'); if (e) e.textContent = `AI 今月 ¥${Math.round(b.spent)} / ¥${b.limit}`; }
   function opsSettings() {
     const body = h('<div></div>');
     const fU = F.text('サーバーのURL（GASのウェブアプリURL）', api && api.url, 'https://script.google.com/macros/s/…/exec', 'url');
@@ -657,6 +682,7 @@ const Room = (() => {
       } catch(e) { last = e; } finally { clearTimeout(to); }
     }
     if (!j) { if (!quiet) toast('通信できませんでした。少し待ってからもう一度どうぞ', 2600); throw last || new Error('net'); }
+    if (j.budget) showBudget(j.budget);
     if (j.error) {
       const M = { key:'合言葉が違います（設定を確認してください）', budget:'今月のAIの予算を使い切りました', ai:'AIの応答でエラーが出ました。少し待ってからもう一度', bad:'サーバーのコードが古いかもしれません（GASを更新してください）' };
       if (!quiet) toast(M[j.error] || j.error, 2800); throw new Error(j.error);
@@ -668,7 +694,13 @@ const Room = (() => {
     makeDoor, setDoor,
     isDoor:() => onDoor,
     active:() => active,
-    bgm:() => active ? roomBgm() : null,
+    bgm:() => active ? (typeof Games !== 'undefined' && Games.bgm()) || roomBgm() : null,
     paintDoor,
+    // アプリを開いて少ししたら：前日の日報と今週の新聞を裏で用意する
+    async warmup() {
+      await loadApi(); if (!api || !api.url) return;
+      checkReport();
+      setTimeout(makePaper, 4000);
+    },
   };
 })();
