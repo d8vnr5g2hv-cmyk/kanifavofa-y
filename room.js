@@ -47,7 +47,14 @@ const Room = (() => {
   const W = 941, H = 1672;
   const DESK = { pc:[52, 444, 531, 938], tray:[505, 330, 775, 585], drawer1:[655, 1065, 925, 1147], drawer2:[655, 1150, 925, 1235] };
   const SOFA = { board:[0, 340, 380, 740], cal:[735, 262, 890, 470], game:[745, 910, 880, 990] };
-  const DUTY_AT = { cx:46, by:71, h:23 };   // 当番の立ち位置（中心x%・足元y%・身長156cmの高さ%）
+  // 当番の居場所（時間で変わる）：中心x%・足元y%・身長156cmの子の高さ%
+  function dutySpot(d = new Date()) {
+    const hr = d.getHours();
+    if (hr < 6) return { cx:70, by:53, h:15 };            // 夜中：ソファーでうとうと
+    if (hr < 11) return { cx:27, by:57, h:19 };           // 朝：ホワイトボードの前
+    if (hr < 18) return { cx:55, by:67, h:21 };           // 昼：ソファーの横
+    return { cx:31, by:73, h:24 };                        // 夜：机のそば
+  }
   const pct = ([x0, y0, x1, y1]) => `left:${(x0 / W * 100).toFixed(2)}%;top:${(y0 / H * 100).toFixed(2)}%;width:${((x1 - x0) / W * 100).toFixed(2)}%;height:${((y1 - y0) / H * 100).toFixed(2)}%`;
 
   // ===== 音楽 =====
@@ -153,7 +160,7 @@ const Room = (() => {
           <div class="hs" data-k="paper" style="${pct(SOFA.board)}"></div>
           <div class="hs" data-k="cal" style="${pct(SOFA.cal)}"></div>
           <div class="hs" data-k="game" style="${pct(SOFA.game)}"></div>
-          <div class="duty" id="rduty"><img alt=""></div>
+          <div class="duty" id="rduty"><div class="dw"><img class="s" alt=""><img class="t" alt=""></div></div>
         </div></div>
       </div>
       <div class="rhud"><button class="rback" id="rBack">‹ 出る</button><div class="rttl">SENSEI'S ROOM<small id="rDuty"></small><small id="rBudget"></small></div>
@@ -207,10 +214,11 @@ const Room = (() => {
     return who;
   }
   function placeDuty() {
-    const d = $('rduty'), sleepy = viewOnly();
-    const hh = duty === 'hikari' ? DUTY_AT.h * .55 : DUTY_AT.h * HEIGHT[duty] / 156;
-    Object.assign(d.style, { left:DUTY_AT.cx + '%', bottom:(100 - DUTY_AT.by) + '%', height:hh + '%' });
-    d.querySelector('img').src = img(duty, sleepy ? 'sit' : 'stand');
+    const d = $('rduty'), sleepy = viewOnly(), at = dutySpot();
+    const hh = duty === 'hikari' ? at.h * .55 : at.h * HEIGHT[duty] / 156;
+    Object.assign(d.style, { left:at.cx + '%', bottom:(100 - at.by) + '%', height:hh + '%' });
+    d.querySelector('.s').src = img(duty, sleepy ? 'sit' : 'stand');
+    d.querySelector('.t').src = img(duty, 'talk'); d.classList.toggle('sleepy', sleepy);
     d.querySelector('.zz') && d.querySelector('.zz').remove();
     if (sleepy) d.insertAdjacentHTML('beforeend', '<i class="zz">z z</i>');
     $('rDuty').textContent = `今日の当番：${NAME[duty]}`;
@@ -281,8 +289,16 @@ const Room = (() => {
   async function pcView(v) {
     const p = $('rpc'); if (!p) return;
     if (v === 'home') {
-      p.innerHTML = pcHead('SCHALE OS') + `<div class="bd"><div class="wel">${greet()}, Sensei<small>${D.ymd(D.today())} ${DOW[new Date().getDay()]}</small></div>
-        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div></div></div>`;
+      const t = D.today(), [evs, todos] = await Promise.all([DB.all('events').catch(() => []), DB.all('todos').catch(() => [])]);
+      const ev = evs.filter(e => e.date === t).sort((a, b) => (a.time || '').localeCompare(b.time || '')).slice(0, 3);
+      const td = todos.filter(x => !x.done && x.list === 'do' && x.due && x.due <= D.add(t, 1)).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 3);
+      const due = x => x.due < t ? '<em class="late">期限切れ</em>' : x.due === t ? '<em>今日</em>' : '<em>明日</em>';
+      const nowName = (() => { if (musicSel && musicSel.startsWith('c:')) return '追加した曲'; const b = roomBgm(), n = TRACK_NAME[b.src]; return n ? n[0] : 'Music'; })();
+      p.innerHTML = pcHead('SCHALE OS') + `<div class="bd"><div class="wel">${greet()}, Sensei<small>${D.ymd(t)} ${DOW[new Date().getDay()]}</small></div>
+        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div></div>
+        <div class="wdg"><h6>TODAY</h6>${ev.length ? ev.map(e => `<p><i>${e.time || '終日'}</i>${esc(e.title)}</p>`).join('') : '<p class="mu">今日の予定はありません</p>'}</div>
+        <div class="wdg"><h6>TODO</h6>${td.length ? td.map(x => `<p>${due(x)}${esc(x.title)}</p>`).join('') : '<p class="mu">期限の近いTodoはありません</p>'}</div>
+        <div class="wdg now" data-pc="music"><h6>NOW PLAYING</h6><p><span class="eq"><i></i><i></i><i></i></span>${esc(nowName)}</p></div></div>`;
     }
     if (v === 'music') {
       const custom = (await DB.all('music').catch(() => [])).sort((a, b) => a.at - b.at);
@@ -580,6 +596,7 @@ const Room = (() => {
     if (!active || mode !== 'off') return;
     talkLog = await chatRec(); talkLog.who = duty;
     showWin(); sfx('msg');
+    if (kind === 'open') dutyVoice();
     if (viewOnly()) { await sayLines([SLEEP[duty]]); return endTalk(false); }
     let lines;
     if (kind === 'open' && api && api.url) {
@@ -645,8 +662,14 @@ const Room = (() => {
     clearInterval(typing); typing = null; queue = [];
     $('rmw').className = ''; mode = 'off'; $('rch').innerHTML = '';
   }
+  // 当番のボイス（鳴っている間は口が動く絵に）
+  function dutyVoice() {
+    const k = typeof Games !== 'undefined' && Games.VOICE[duty]; if (!k) return;
+    const on = v => { const d = $('rduty'); if (d) d.classList.toggle('talk', v && !d.classList.contains('sleepy')); const pt = $('rpt'); if (pt && v) pt.classList.add('talk'); };
+    playVoice(k, { start:() => on(true), end:() => on(false) });
+  }
   function tapDuty() {
-    sfx('tap'); haptic();
+    sfx('tap'); haptic(); dutyVoice();
     const d = $('rduty'); d.animate([{ transform:'translateX(-50%) translateY(0)' }, { transform:'translateX(-50%) translateY(-6%)' }, { transform:'translateX(-50%) translateY(0)' }], { duration:320, easing:'ease-out' });
     setTimeout(() => openTalk('tap'), 200);
   }

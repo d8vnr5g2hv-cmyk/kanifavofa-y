@@ -238,15 +238,33 @@ function loadChar(i) {
     Pat.bind(i, s, z, pv);
   }
   sizeMedia(i);
+  pi.addEventListener('load', () => sizeMedia(i)); v.addEventListener('loadedmetadata', () => sizeMedia(i));
   if (i === current) v.play().catch(() => {});
 }
 // 動画と止め絵の大きさ：CSS（object-fit）任せにせず、画面いっぱいに切り抜いた大きさを直接決める
 function sizeMedia(i) {
   const s = slideOf(i); if (!s) return;
   const land = document.body.classList.contains('land'), W = s.clientWidth, H = s.clientHeight; if (!W || !H) return;
-  const vw = land ? 2532 : 1170, vh = land ? 1170 : 2534, k = Math.max(W / vw, H / vh);
-  const st = { left:(W - vw * k) / 2 + 'px', top:(H - vh * k) / 2 + 'px', width:vw * k + 'px', height:vh * k + 'px', right:'auto', bottom:'auto' };
-  s.querySelectorAll('.lposter, video').forEach(m => Object.assign(m.style, st));
+  const pi = s.querySelector('.lposter');
+  s.querySelectorAll('.lposter, video').forEach(m => {
+    // 実際の大きさ（読み込み前は止め絵の大きさ → それもなければ標準の大きさ）
+    let vw = m.naturalWidth || m.videoWidth || (pi && pi.naturalWidth), vh = m.naturalHeight || m.videoHeight || (pi && pi.naturalHeight);
+    if (!vw || !vh) { vw = land ? 2532 : 1170; vh = land ? 1170 : 2534; }
+    const k = Math.max(W / vw, H / vh);
+    Object.assign(m.style, { left:(W - vw * k) / 2 + 'px', top:(H - vh * k) / 2 + 'px', width:vw * k + 'px', height:vh * k + 'px', right:'auto', bottom:'auto' });
+  });
+}
+// 止め絵を先に全部読み込んでおく（初めてのメモロビでも、すぐ絵が出るように）
+function preloadPosters() {
+  const land = document.body.classList.contains('land');
+  const order = [...chars.keys()].sort((a, b) => Math.abs(a - current) - Math.abs(b - current));
+  let k = 0;
+  const next = () => {
+    if (k >= order.length) return;
+    const c = chars[order[k++]], im = new Image(); im.src = land ? c.widePoster : c.tallPoster;
+    (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => setTimeout(next, 120));
+  };
+  next();
 }
 addEventListener('resize', () => chars.forEach((c, i) => sizeMedia(i)));
 function updateVideos() {
@@ -254,7 +272,10 @@ function updateVideos() {
   chars.forEach((c, i) => {
     const s = slideOf(i), v = s && s.querySelector('video.lv'); if (!v) return;
     if (i === current) { v.preload = 'auto'; if (tab === 'favorite') v.play().catch(() => {}); } else v.pause();
-    if (Math.abs(i - current) === 1 && v.preload !== 'auto') v.preload = 'auto';   // となりも先に読んでおく
+    if (Math.abs(i - current) === 1) {   // となりは先に読んで、1コマ目まで準備しておく（スワイプしたらすぐ動く）
+      if (v.preload !== 'auto') v.preload = 'auto';
+      if (!v._primed && tab === 'favorite') { v._primed = true; v.play().then(() => { if (i !== current) v.pause(); }).catch(() => { v._primed = false; }); }
+    }
     const pv = s.querySelector('.patv');
     if (pv) { if (i === current) { if (pv.preload !== 'auto') pv.preload = 'auto'; } else Pat.stop(s); }
   });
@@ -461,7 +482,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.2';
+const VERSION = '2.3';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -584,7 +605,7 @@ const App = {
     $('bgmBtn').addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; drawIcons(); syncBgm(); });
     $('landBtn').addEventListener('click', e => {
       e.stopPropagation(); document.body.classList.toggle('land');
-      chars.forEach((c, i) => loadChar(i));
+      chars.forEach((c, i) => loadChar(i)); preloadPosters();
       requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
     });
     document.querySelectorAll('.icons button').forEach(b => ['pointerdown','pointerup'].forEach(ev => b.addEventListener(ev, e => e.stopPropagation())));
@@ -631,6 +652,7 @@ const App = {
         const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
         setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
         setTimeout(() => Room.warmup(), 6000);   // 新聞・日報を裏で用意しておく
+        setTimeout(preloadPosters, 1200);
         setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
         setTimeout(() => { splash.style.display = 'none'; }, 1500);
       }

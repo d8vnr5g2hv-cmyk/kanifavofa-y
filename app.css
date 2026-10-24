@@ -482,3 +482,8 @@ body.dragging, body.dragging * { cursor:grabbing; }
 .slogo .kani { font:600 11px 'Quicksand',sans-serif; letter-spacing:.6em; color:#8f9cc6; margin:0 0 6px .6em; opacity:0; text-shadow:0 0 6px #fff; }
 #splash.run .slogo .kani { animation:fadeIn .6s ease 1.0s forwards; }
 .slogo .star { width:.3em; height:.3em; }
+
+/* メモロビ：再生が始まるまでは止まった絵 → 動き出したら動画にすっと切り替え */
+.slide .lposter { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.slide video.lv { opacity:0; transition:opacity .5s ease; }
+.slide video.lv.ready { opacity:1; }
