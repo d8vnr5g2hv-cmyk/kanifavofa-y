@@ -141,6 +141,7 @@ function ramp(to, sec) {
   bgmGain.gain.cancelScheduledValues(t); bgmGain.gain.setValueAtTime(bgmGain.gain.value, t); bgmGain.gain.linearRampToValueAtTime(to, t + sec);
 }
 function wantedBgm() {
+  if (typeof AppLock !== 'undefined' && AppLock.locked()) return null;
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
@@ -381,9 +382,11 @@ function layoutChibis() {
     const W = pg.clientWidth, H = pg.clientHeight;
     const safeTop = parseFloat(getComputedStyle(probe).paddingTop) || 0;
     const tabH = $('tabs').offsetHeight;
+    const K = 1.12;   // デフォルメを少しだけ大きく（足元を基準に）
     const R = cs.map(c => {
       const ww = +c.dataset.ww, wh = +c.dataset.wh, s = Math.max(W / ww, H / wh), ox = (W - ww * s) / 2;
-      return { c, x: ox + c.dataset.x * s, y: c.dataset.y * s, w: c.dataset.w * s, h: c.dataset.h * s };
+      const w = c.dataset.w * s, hh = c.dataset.h * s;
+      return { c, x: ox + c.dataset.x * s - w * (K - 1) / 2, y: c.dataset.y * s - hh * (K - 1), w: w * K, h: hh * K };
     });
     const bottomBand = pg.classList.contains('bandBottom');
     let dy = 0;
@@ -483,7 +486,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.4';
+const VERSION = '2.5';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -639,13 +642,18 @@ const App = {
     // 1回目のタップ：ロック解除 → タイトル曲と演出（音はその瞬間に頭から）
     // 2回目のタップ：アプリへ
     const splash = $('splash');
+    const startTitle = () => {   // タイトルの演出とBGM（タップの流れの中で呼ぶ）
+      if (phase !== 'lock') return;
+      ctx.resume();
+      phase = 'splash';
+      if (buffers[TITLE_BGM.src]) syncBgm(0, 0.12); else titleReady.then(() => syncBgm(0, 0.25));
+      splash.classList.add('run');
+      setTimeout(() => splash.classList.add('ready'), 2200);
+    };
     splash.addEventListener('click', async () => {
       if (phase === 'lock') {
-        ctx.resume();
-        phase = 'splash';
-        if (buffers[TITLE_BGM.src]) syncBgm(0, 0.12); else titleReady.then(() => syncBgm(0, 0.25));
-        splash.classList.add('run');
-        setTimeout(() => splash.classList.add('ready'), 2200);
+        if (AppLock.locked()) return;
+        startTitle();
       } else if (phase === 'splash' && splash.classList.contains('ready')) {
         phase = 'app';
         splash.classList.add('go');
@@ -662,5 +670,7 @@ const App = {
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('sw', e.message));
     this.modules.forEach(m => m.init && m.init());
+    AppLock.init();
+    if (AppLock.needAtBoot()) AppLock.show(startTitle);   // ロック → 開けたらそのままタイトルへ
   },
 };

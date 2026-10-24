@@ -289,6 +289,13 @@ const Accounts = (() => {
     } };
     load();
   }
-  return { init, reload:load };
+  // アプリのロック用：Accountsは開かずに、本人かどうかだけ確かめる（同じマスターパスワード・Face IDを使う）
+  const gate = {
+    async ready() { if (!vault) vault = await DB.get('settings', 'vault').catch(() => null) || null; return !!vault; },
+    face:() => !!(vault && vault.prf && canPasskey()),
+    async tryFace() { const out = await assertPrf(unb64(vault.prf.credId), unb64(vault.prf.salt)); await unseal(await prfKey(out), vault.prf.box); return true; },
+    async tryPw(pw) { await unseal(await pwKey(pw, unb64(vault.salt), vault.iter), vault.pw); return true; },
+  };
+  return { init, reload:load, gate };
 })();
 App.modules.push(Accounts);
