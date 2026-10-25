@@ -333,3 +333,19 @@ body.officeOn .tabs, body.officeOn .handle, body.officeOn .dots { display:none !
 .oflow { display:flex; height:16px; border-radius:8px; overflow:hidden; background:#eef3fa; margin-bottom:2px; }
 .oflow i { display:block; height:100%; }
 .oflow .fx { background:#a9b8d4; } .oflow .sv { background:#3cc3a6; } .oflow .fr { background:linear-gradient(90deg,#5cc8ff,#2f8fff); }
+
+/* 準備期間：出費予定をテープでふさぐ */
+.osub button.lk { opacity:.75; }
+.osub button .ltp { position:absolute; left:6px; right:6px; top:42%; height:12px; background:url(dc_tape1.webp) center/100% 100% no-repeat; transform:rotate(-10deg); z-index:2; }
+.olock { position:relative; min-height:250px; overflow:hidden; border-radius:10px; }
+.olock .ghost { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; filter:blur(1.5px); opacity:.45; }
+.olock .ghost i { aspect-ratio:1/1.05; border-radius:6px; background:#e6f0fb; }
+.olock .t1, .olock .t2 { position:absolute; left:-10%; right:-10%; height:30px; background:url(dc_tape1.webp) center/100% 100% no-repeat; filter:drop-shadow(0 2px 3px rgba(0,0,0,.12)); }
+.olock .t1 { top:22%; transform:rotate(-14deg); } .olock .t2 { top:58%; transform:rotate(11deg); background-image:url(dc_tape2.webp); }
+.olock .msg { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) rotate(-2deg); width:82%; padding:14px 12px 12px; text-align:center;
+  background:url(dc_note1.webp) center/100% 100% no-repeat; filter:drop-shadow(0 4px 8px rgba(120,80,20,.2)); }
+.olock .msg img { width:36px; display:block; margin:-30px auto 2px; }
+.olock .msg b { display:block; font:700 15px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#e0607e; }
+.olock .msg span { display:block; margin-top:4px; font:500 10.5px/1.6 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#6b4a1f; }
+.ofstart { position:absolute; left:50%; top:30%; z-index:9; width:min(70vw,300px); transform:translate(-50%,-50%) rotate(-10deg); pointer-events:none; animation:ofStart 2.6s cubic-bezier(.3,1.6,.5,1) both; }
+@keyframes ofStart { 0% { opacity:0; transform:translate(-50%,-50%) rotate(-10deg) scale(2.4); } 15% { opacity:1; transform:translate(-50%,-50%) rotate(-10deg) scale(1); } 80% { opacity:1; } 100% { opacity:0; } }

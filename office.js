@@ -236,7 +236,10 @@ const Office = (() => {
     b.innerHTML = tab === 'cash' ? await cashHTML() : await foodHTML();
     b.scrollTop = keep === true ? y : 0;
   }
-  let sub = 'plan', calSel = null, wishKind = 'buy';
+  let sub = 'plan', calSel = null, wishKind = 'buy', locked0 = false;
+  // 準備期間のあいだ、出費予定はテープでふさいでおく（開始日に自動で開く）
+  const lockHTML = c => `<div class="olock"><div class="ghost">${'<i></i>'.repeat(35)}</div><i class="t1"></i><i class="t2"></i>
+    <div class="msg"><img src="dc_stk4.webp" alt=""><b>${D.md(c.start)} から使えます</b><span>貯金の開始日になると、自動でテープがはがれます。<br>それまでは「買いたいもの」と「予算の設定」で準備しましょう</span></div></div>`;
   async function cashHTML() {
     const c = cfg.cash;
     if (!c.income) { sub = 'set'; return `<div class="osetup"><img src="dc_note1.webp" alt=""><p>まずは予算を決めましょう、先生。<br>手取り・固定費・貯金の目標を入れると、<br>「あと何円使えるか」を計算します。</p></div>` + await budgetHTML(); }
@@ -260,11 +263,12 @@ const Office = (() => {
     const recent = s.ents.slice().sort((a, b) => b.date.localeCompare(a.date) || b.at - a.at).slice(0, 6);
     const recCard = recent.length ? `<div class="ocard"><h6>さいきんの記録</h6>${recent.map(e => { const C = CAT[e.cat] || CAT['その他']; return `<div class="orow" data-ent="${e.id}"><img src="${C.i}.webp" alt=""><span class="d">${D.md(e.date)}</span><span class="t">${esc(e.title)}<small>${esc(e.kind === 'in' ? '収入' : e.cat)}</small></span><b class="${e.kind === 'in' ? 'in' : ''}">${e.kind === 'in' ? '+' : '−'}${yen(e.amt)}</b></div>`; }).join('')}</div>` : '';
     const tabs = [['plan', '出費予定', 'dc_note2'], ['wish', '買いたいもの', 'dc_note3'], ['set', '予算の設定', 'dc_note4']];
-    const body = sub === 'plan' ? await calHTML() : sub === 'wish' ? await wishHTML() : await budgetHTML();
+    if (s.prep && sub === 'plan' && !locked0) { sub = 'wish'; locked0 = true; }   // 準備期間は、買いたいものから開く
+    const body = sub === 'plan' ? (s.prep ? lockHTML(c) : await calHTML()) : sub === 'wish' ? await wishHTML() : await budgetHTML();
     const checkable = !s.prep;
     return `<div class="omon"><button data-mon="-1">‹</button><b>${+s.m.slice(5)}月</b><span>${s.m.slice(0, 4)}</span><button data-mon="1">›</button></div>
       ${top}${goal}
-      <div class="osub">${tabs.map(([k, n, i]) => `<button data-sub="${k}" class="${k === sub ? 'on' : ''}"><img src="${i}.webp" alt="">${n}</button>`).join('')}</div>
+      <div class="osub">${tabs.map(([k, n, i]) => `<button data-sub="${k}" class="${k === sub ? 'on' : ''} ${k === 'plan' && s.prep ? 'lk' : ''}"><img src="${i}.webp" alt="">${n}${k === 'plan' && s.prep ? '<i class="ltp"></i>' : ''}</button>`).join('')}</div>
       <div class="osubb">${body}</div>
       <button class="ochk" data-x="check" ${checkable ? '' : 'disabled'}><img src="dc_stk4.webp" alt=""><span>ユウカにチェックしてもらう<small>${checkable ? `${s.prep ? '' : (c.start && ym(c.start) === s.m ? D.md(c.start) : (+s.m.slice(5)) + '/1')}から今日までを分析します` : `${D.md(c.start)}から使えます`}</small></span></button>
       ${catCard}${recCard}`;
@@ -367,7 +371,7 @@ const Office = (() => {
     }
     const ml = t.closest('[data-meal]'); if (ml) { sfx('tap'); return recordMeal(ml.dataset.meal); }
     const en = t.closest('[data-ent]'); if (en) { sfx('tap'); return editEntry(en.dataset.ent); }
-    const sb = t.closest('[data-sub]'); if (sb) { sfx('tap'); stashBudget(); sub = sb.dataset.sub; return draw(true); }
+    const sb = t.closest('[data-sub]'); if (sb) { sfx('tap'); stashBudget(); sub = sb.dataset.sub; locked0 = true; return draw(true); }
     const cd = t.closest('[data-cd]'); if (cd) { sfx('tap'); calSel = cd.dataset.cd; return draw(true); }
     if (t.closest('[data-padd]')) {
       const tt = $('pT').value.trim(), a = vnum('pA'); if (!tt || !a) return toast('名前と金額を入れてください');
@@ -585,6 +589,14 @@ const Office = (() => {
   }
   // 入ったときのあいさつ（その日はじめて）
   async function greet() {
+    const c = cfg.cash;
+    if (c.start && D.today() >= c.start && LS.get('ofStarted') !== c.start) {
+      LS.set('ofStarted', c.start);
+      const st = h('<img class="ofstart" src="dc_stamp1.webp" alt="">'); el.appendChild(st); setTimeout(() => st.remove(), 2600); sfx('ok');
+      const s = await cashSum();
+      await say([`先生、今日から貯金スタートです！`, `目標は${yen(c.goal)}。毎月${yen(s.saveM)}ずつ、きっちり積み立てていきましょう`, `出費予定のカレンダーも、今日から使えますよ`], 'smile');
+      sub = 'plan'; draw(); return mwClose();
+    }
     if (await askDuePlans()) return;
     const key = 'ofGreet', d = D.today(); if (LS.get(key) === d) return; LS.set(key, d);
     const r = await dayRec(d), hr = new Date().getHours(), s = await cashSum(ym());
