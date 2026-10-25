@@ -885,7 +885,7 @@ const Room = (() => {
   // ===== GAS（AI）との通信：作戦室と同じ設定を使う =====
   async function loadApi() { api = await DB.get('settings', 'opsApi').catch(() => null); return api; }
   let lastBudget = null;
-  const TAGNAME = { classify:'作戦室（分類）', discuss:'作戦室（会議）', room:'当番との会話', interview:'取材', article:'記事の仕上げ', report:'日報', food:'執務室（食事）', cash:'執務室（家計簿）', office:'執務室（会話）', other:'その他' };
+  const TAGNAME = { classify:'作戦室（分類）', discuss:'作戦室（会議）', room:'当番との会話', interview:'取材', article:'記事の仕上げ', report:'日報', food:'執務室（食事）', cash:'執務室（家計簿）', office:'執務室（会話）', cashcheck:'執務室（家計チェック）', other:'その他' };
   function budgetDetail() {
     if (!lastBudget) return toast('AIの設定をすると見られます');
     const by = lastBudget.by || {}, keys = Object.keys(by).sort((a, b) => by[b] - by[a]);

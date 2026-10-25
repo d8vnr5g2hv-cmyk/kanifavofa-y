@@ -251,3 +251,85 @@ body.officeOn .tabs, body.officeOn .handle, body.officeOn .dots { display:none !
 .ocal button.sel { box-shadow:inset 0 0 0 2px #2f8fff; }
 .ocdl { flex:1; min-height:0; overflow-y:auto; margin-top:10px; }
 .ocdl h6 { margin:0 0 4px; font:700 12px 'Noto Sans JP',sans-serif; color:#2b5c9e; }
+
+/* ===== Cash：準備期間・タブ・カレンダー・買いたいもの・予算 ===== */
+.oprep { position:relative; padding:18px 16px 14px; border-radius:6px 6px 16px 6px; background:url(dc_note1.webp) center/100% 100% no-repeat; color:#6b4a1f; transform:rotate(-.8deg);
+  filter:drop-shadow(0 4px 8px rgba(120,80,20,.18)); text-align:center; }
+.oprep .pin { position:absolute; left:50%; top:-14px; width:26px; margin-left:-13px; }
+.oprep small { display:inline-block; font:800 10px 'Quicksand','Noto Sans JP',sans-serif; letter-spacing:.2em; color:#fff; background:#ffae2b; padding:3px 10px; border-radius:8px; transform:skewX(-10deg); }
+.oprep p { margin:8px 0 6px; font:500 13.5px/1.75 'Zen Maru Gothic','Noto Sans JP',sans-serif; }
+.oprep p b { color:#e0607e; font-size:15px; }
+.oprep .cd { display:flex; align-items:baseline; justify-content:center; gap:4px; font:700 11px 'Noto Sans JP',sans-serif; }
+.oprep .cd b { font:700 30px/1 'Quicksand',sans-serif; color:#2f8fff; }
+.opay { margin:8px 2px 0; font:700 11px 'Noto Sans JP',sans-serif; color:#5f7aa8; text-align:right; }
+.opay b { font:700 16px 'Quicksand',sans-serif; color:#20999C; margin:0 2px; }
+.osub { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:14px; }
+.osub button { position:relative; z-index:0; border:none; background:none; padding:8px 2px 7px; display:flex; flex-direction:column; align-items:center; gap:1px; font:700 11px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#5f7aa8; }
+.osub button::before { content:''; position:absolute; inset:0; z-index:-1; transform:skewX(-10deg); border-radius:8px; background:rgba(255,255,255,.7); border:1.5px solid rgba(47,180,255,.25); }
+.osub button img { width:30px; height:28px; object-fit:contain; transform:rotate(-5deg); }
+.osub button.on { color:#fff; } .osub button.on::before { background:linear-gradient(180deg,#5cc8ff,#2f8fff); border-color:transparent; box-shadow:0 3px 8px rgba(47,143,255,.35); }
+.osubb { margin-top:8px; padding:12px 10px; border-radius:14px; background:rgba(255,255,255,.82); box-shadow:0 2px 10px rgba(30,60,120,.08); }
+.ochk { width:100%; margin-top:12px; display:flex; align-items:center; gap:10px; border:2px dashed rgba(47,143,255,.45); border-radius:16px; background:rgba(255,255,255,.75); padding:10px 14px; text-align:left; }
+.ochk img { width:40px; transform:rotate(-8deg); }
+.ochk span { font:700 13.5px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#2b5c9e; }
+.ochk small { display:block; font:500 10px 'Noto Sans JP',sans-serif; color:#8a9cbc; margin-top:1px; }
+.ochk:disabled { opacity:.55; filter:grayscale(.4); }
+.ocsum { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+.ocsum div { padding:6px 8px; border-radius:10px; background:#f3f8ff; }
+.ocsum small { display:block; font:700 9.5px 'Noto Sans JP',sans-serif; color:#8a9cbc; }
+.ocsum b { font:700 13px 'Quicksand',sans-serif; }
+.ocsum .in b { color:#20a97c; } .ocsum .out b { color:#e0607e; }
+.ocal button { overflow:hidden; aspect-ratio:auto; min-height:46px; background:#fff; box-shadow:inset 0 0 0 1px rgba(47,143,255,.12); padding:2px 0 3px; gap:0; }
+.ocal button.pre { background:#f5f7fa; }
+.ocal button small { display:block; font:700 7.5px/1.25 'Quicksand',sans-serif; letter-spacing:-.02em; }
+.ocal button small.in { color:#20a97c; } .ocal button small.out { color:#e0607e; }
+.ocal button em { width:7px; height:7px; font-style:normal; }
+.ocal button em.ok { width:11px; height:11px; right:1px; top:1px; background:#3cc3a6; color:#fff; font:800 8px/11px sans-serif; text-align:center; }
+.ocal button u { position:absolute; left:2px; top:2px; font:800 7.5px 'Noto Sans JP',sans-serif; text-decoration:none; color:#fff; background:#20999C; border-radius:3px; padding:0 2px; }
+.ocal button s { position:absolute; left:0; right:0; bottom:0; font:800 6.5px/1.6 'Quicksand',sans-serif; text-decoration:none; color:#fff; background:#ffae2b; letter-spacing:.06em; }
+.olg { display:flex; flex-wrap:wrap; gap:4px 10px; margin:8px 2px 4px; font:700 9.5px 'Noto Sans JP',sans-serif; color:#8a9cbc; }
+.olg .in { color:#20a97c; } .olg .out { color:#e0607e; } .olg .pl { color:#ff7a59; } .olg .ok { color:#3cc3a6; } .olg .py { color:#20999C; }
+.olg .fx { color:#7d93ba; } .olg .sv { color:#20999C; } .olg .fr { color:#2f8fff; }
+.ocdl { margin-top:8px; }
+.ocdl .pk { flex:none; font:700 9px 'Noto Sans JP',sans-serif; color:#fff; background:#ff7a59; padding:2px 6px; border-radius:6px; }
+.ocdl .pk.ok { background:#3cc3a6; }
+.orow b.out { color:#e0607e; }
+.osubb .padd { display:grid; grid-template-columns:1.4fr 1fr; gap:6px; margin-top:8px; }
+.osubb .padd input { border:1.5px solid rgba(47,143,255,.3); border-radius:10px; padding:8px 10px; font-size:16px; background:#fff; min-width:0; }
+.osubb .padd button { grid-column:1/-1; border:none; border-radius:10px; padding:10px; background:#2f8fff; color:#fff; font:700 12.5px 'Noto Sans JP',sans-serif; }
+.owk2 { display:flex; gap:6px; margin-bottom:8px; }
+.owk2 button { flex:1; border:1.5px solid rgba(47,143,255,.3); border-radius:12px; background:#fff; padding:7px; font:700 12px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#5f7aa8; }
+.owk2 button.on { background:#2b5c9e; border-color:#2b5c9e; color:#fff; }
+.owsum { margin:0 2px 6px; font-size:11px; color:#7d93ba; text-align:right; } .owsum b { font:700 14px 'Quicksand',sans-serif; color:var(--oink); }
+.owish { position:relative; display:flex; align-items:center; gap:8px; padding:9px 4px; border-bottom:1px dashed rgba(47,120,200,.18); }
+.owish .ck { flex:none; width:24px; height:24px; border-radius:7px; border:2px solid #2f8fff; background:#fff; color:#fff; font:800 13px/1 sans-serif; transform:rotate(-4deg); }
+.owish.done .ck { background:#2f8fff; }
+.owish .t { flex:1; min-width:0; } .owish .t b { display:block; font:700 13px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:var(--oink); }
+.owish .t small { font-size:10px; color:#8a9cbc; }
+.owish .pr { font-size:10px; color:#ffb84d; letter-spacing:-1px; }
+.owish em { font:700 13px 'Quicksand',sans-serif; font-style:normal; color:var(--oink); }
+.owish.done .t b, .owish.done em { color:#a8b4c4; text-decoration:line-through; }
+.owish .st { position:absolute; right:40px; top:50%; width:80px; transform:translateY(-50%) rotate(-10deg); opacity:.85; pointer-events:none; animation:dcStamp .35s cubic-bezier(.3,1.6,.5,1) both; }
+.wadd { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
+.wadd input, .wadd select { border:1.5px solid rgba(47,143,255,.3); border-radius:10px; padding:8px 10px; font-size:16px; background:#fff; min-width:0; }
+.wadd input:first-child { grid-column:1/-1; }
+.wadd button { border:none; border-radius:10px; padding:9px; background:#2f8fff; color:#fff; font:700 12.5px 'Noto Sans JP',sans-serif; }
+.obud h6 { margin:12px 2px 6px; font:700 12px 'Noto Sans JP',sans-serif; color:#2f8fff; letter-spacing:.1em; }
+.obud h6:first-of-type { margin-top:4px; }
+.obud label { display:flex; align-items:center; gap:8px; margin:6px 0; font:700 12px 'Noto Sans JP',sans-serif; color:var(--oink); }
+.obud label input { flex:1; min-width:0; border:1.5px solid rgba(47,143,255,.25); border-radius:10px; padding:8px 10px; font-size:16px; background:#fff; color:var(--oink); text-align:right; }
+.obud .sfx { flex:1; display:flex; align-items:center; gap:4px; } .obud .sfx input { flex:1; }
+.obud .fx { margin:6px 0; padding:8px 10px; border-radius:12px; background:#f3f8ff; }
+.obud .fx p { margin:0 0 4px; font:700 12px 'Noto Sans JP',sans-serif; color:var(--oink); } .obud .fx p small { font-weight:500; color:#8a9cbc; }
+.obud .fxr { display:flex; align-items:center; gap:6px; padding:4px 0; font-size:12.5px; }
+.obud .fxr span { flex:1; min-width:0; } .obud .fxr span small { margin-left:4px; font-size:10px; color:#8a9cbc; }
+.obud .fxr span.k { flex:none; font:700 9.5px 'Noto Sans JP',sans-serif; color:#fff; background:#7d93ba; padding:2px 6px; border-radius:6px; }
+.obud .fxr b { font:700 13px 'Quicksand',sans-serif; }
+.obud .fxr button { flex:none; width:28px; height:28px; border:none; border-radius:50%; background:#e6f0fb; color:#2b5c9e; }
+.obud .fxr.add { flex-wrap:wrap; }
+.obud .fxr.add input, .obud .fxr.add select { flex:1 1 30%; min-width:0; border:1.5px solid rgba(47,143,255,.25); border-radius:8px; padding:6px 8px; font-size:16px; background:#fff; }
+.obud .fxr.add #sFd, .obud .fxr.add #sBm { flex:0 0 52px; }
+.obud .save { width:100%; margin-top:12px; border:none; border-radius:14px; padding:12px; background:linear-gradient(180deg,#5cc8ff,#2f8fff); color:#fff; font:700 14px 'Noto Sans JP',sans-serif; }
+.oflow { display:flex; height:16px; border-radius:8px; overflow:hidden; background:#eef3fa; margin-bottom:2px; }
+.oflow i { display:block; height:100%; }
+.oflow .fx { background:#a9b8d4; } .oflow .sv { background:#3cc3a6; } .oflow .fr { background:linear-gradient(90deg,#5cc8ff,#2f8fff); }
