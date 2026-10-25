@@ -159,7 +159,7 @@ const Cafe = (() => {
   // ===== 入口（メモロビの左端のさらに先）=====
   function makeDoor() {
     const s = h(`<div class="slide cdoor"><div class="cdbox"><img class="cc" alt=""><img class="co" alt="">
-      <div class="csign">Yohei's Coffee</div><div class="cboard"><b>OPEN</b><span id="cfRec"></span></div></div>
+      <div class="csign">Yohei's Coffee</div><div class="cboard"><b>OPEN</b><span id="cfRec"></span></div><div class="cgift" id="cfGift"></div></div>
       <div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
     slidesEl.insertBefore(s, slidesEl.firstChild);
     const box = s.querySelector('.cdbox'), fit = () => { fitBox(box, 1024, 1536, 800); const sc = parseFloat(box.style.width) / 1024, l = parseFloat(box.style.left) || 0; s.querySelector('.cboard').style.visibility = l + 70 * sc < 0 ? 'hidden' : ''; };
@@ -184,7 +184,7 @@ const Cafe = (() => {
     const c = s.querySelector('.cc'), o = s.querySelector('.co');
     if (!c.src.endsWith(`cafe_door_${p}.jpg`)) { c.src = `cafe_door_${p}.jpg`; o.src = `cafe_door_open_${p}.jpg`; }
     s.classList.toggle('night', p === 'n');
-    load().then(() => { const r = $('cfRec'); if (!r) return; const on = MENU.filter(m => S.menu[m.id]); const m = on[(new Date().getDate()) % on.length]; r.textContent = m ? `本日のおすすめ\n${m.n}` : ''; });
+    load().then(() => { const gi = $('cfGift'); if (gi) gi.innerHTML = S.today.date !== D.today() ? '<img src="cf_ui1.webp" alt=""><span>お手当<br>まだだよ</span>' : ''; const r = $('cfRec'); if (!r) return; const on = MENU.filter(m => S.menu[m.id]); const m = on[(new Date().getDate()) % on.length]; r.textContent = m ? `本日のおすすめ\n${m.n}` : ''; });
   }
   async function openDoor(s) {
     if (s.classList.contains('opening')) return;
@@ -729,7 +729,7 @@ const Cafe = (() => {
     $('cfOv').className = ''; $('cfOv').innerHTML = ''; cooking = false;
     el.classList.add('out');
     setTimeout(() => { el.className = ''; document.body.classList.remove('cafeOn'); el.querySelectorAll('.gst,.waiter,.dish').forEach(x => x.remove()); guests = []; orders = []; }, 350);
-    active = false; clearTimeout(saveT); DB.put('room', S).catch(() => {}); syncBgm(200);
+    active = false; clearTimeout(saveT); DB.put('room', S).catch(() => {}); syncBgm(200); setTimeout(paintDoor, 400);
   }
   // 昼：Lemonade Diary／夜：待機室の曲
   const CAFE_BGM = { src:'cafe_bgm.mp3', loopStart:2.0, loopEnd:77.9993 };

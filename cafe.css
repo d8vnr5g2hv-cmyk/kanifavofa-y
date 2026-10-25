@@ -283,3 +283,9 @@ body.cafeOn .tabs, body.cafeOn .handle, body.cafeOn .dots { display:none !import
 .cfsh .sh, .cfsh .cftabs, .cfsh .hint, .cfsh .rm, .cfbook .bh, .cfbook .cftabs { flex:none; }
 .cfsh .lst, .cfsh .grid, .cfbook .pg { flex:1; min-height:0; }
 #cafe.editing .cfrail, #cafe.editing .cfbub { display:none; }
+
+/* 扉の札（今日のお手当がまだ） */
+.cdoor .cgift { position:absolute; left:78%; top:44%; display:flex; flex-direction:column; align-items:center; pointer-events:none; animation:obd 2.4s ease-in-out infinite; }
+.cdoor .cgift img { width:calc(var(--u) * 92); filter:drop-shadow(0 3px 5px rgba(80,40,0,.35)); }
+.cdoor .cgift span { margin-top:calc(var(--u) * -10); padding:calc(var(--u) * 10) calc(var(--u) * 14); background:url(dc_note1.webp) center/100% 100% no-repeat; transform:rotate(-4deg);
+  font:700 calc(var(--u) * 22)/1.3 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#8a5a12; text-align:center; }

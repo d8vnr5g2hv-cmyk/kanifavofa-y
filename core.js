@@ -70,7 +70,7 @@ const TAB_ACCENT = { todo:'#e7779f', love:'#f27ea7', accounts:'#2f9fd6', profile
 
 const slidesEl = $('slides'), dotsEl = $('dots');
 let bgReady = false;   // BGMが鳴り始めたら、重い先読みを始めてよい
-const OFF = 2;   // 左端にカフェと自室の扉があるので、メモロビは2枚ずれる
+const OFF = 3;   // 左端にカフェ・自室・執務室の扉があるので、メモロビは3枚ずれる
 const slideOf = i => slidesEl.children[i + OFF];
 let current = 0, tab = 'favorite', phase = 'lock';   // lock → splash → app
 
@@ -144,6 +144,7 @@ function wantedBgm() {
   if (typeof AppLock !== 'undefined' && AppLock.locked()) return TITLE_BGM;   // ロック画面からタイトルの曲
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
+  const fb = typeof Office !== 'undefined' && Office.bgm(); if (fb) return fb;   // 執務室
   const cb = typeof Cafe !== 'undefined' && Cafe.bgm(); if (cb) return cb;   // カフェ
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
   const ob = typeof Ops !== 'undefined' && Ops.bgm(); if (ob) return ob;   // 作戦室
@@ -487,7 +488,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.7';
+const VERSION = '2.8';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -579,7 +580,7 @@ const App = {
     titleReady.then(() => loadBuf(chars[current].bgm.src).catch(() => {}));
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
-    Room.makeDoor(); Ops.makeDoor(); Cafe.makeDoor();
+    Office.makeDoor(); Room.makeDoor(); Ops.makeDoor(); Cafe.makeDoor();   // 左から：カフェ・自室・執務室
     chars.forEach((c, i) => loadChar(i));
     slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
     requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
@@ -594,13 +595,14 @@ const App = {
       if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slideOf(nb), nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
       const i = Math.round(f);
       Ops.setDoor(i === chars.length);   // 右端の先は作戦室のドア
-      Room.setDoor(i === -1);            // 左端の先は自室の扉
-      Cafe.setDoor(i === -2);            // そのさらに左はカフェ
+      Office.setDoor(i === -1);          // メモロビの左隣は執務室
+      Room.setDoor(i === -2);            // その左は自室
+      Cafe.setDoor(i === -3);            // いちばん左はカフェ
       if (i !== current && i >= 0 && i < chars.length) { current = i; updateVideos(); syncBgm(250); prefetchNear(); setTimeout(trimBgmCache, 1500); }
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
     slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
-    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor() || Cafe.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
+    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor() || Cafe.isDoor() || Office.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
     document.addEventListener('pointerdown', wake, { passive:true, capture:true });
 
     const handle = $('handle'); let hy = 0;
@@ -626,7 +628,7 @@ const App = {
     document.addEventListener('visibilitychange', () => {
       if (phase === 'lock') return;
       if (document.hidden) { stopBgm(0.1); ctx.suspend(); }
-      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Cafe.paintDoor(); });
+      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Cafe.paintDoor(); Office.paintDoor(); });
       Object.values(TabHooks).forEach(h => h.visibility && h.visibility(document.hidden));
     });
 

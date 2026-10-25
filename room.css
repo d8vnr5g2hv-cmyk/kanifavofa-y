@@ -497,3 +497,11 @@ body.roomOn .tabs, body.roomOn .handle, body.roomOn .dots { display:none !import
 /* 神経衰弱のカード裏（絵に差し替え） */
 .mc2 .bk { background:url(mem_back1.webp) center/100% 100% no-repeat; border:none; box-shadow:0 3px 8px rgba(20,40,90,.3); border-radius:9px; }
 .mc2 .bk::before, .mc2 .bk i { display:none; }
+
+/* 扉の札（日報・新聞のNEW） */
+.rdoor .rbadges { position:absolute; left:74.5%; top:50%; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
+.rdoor .rbadges span { display:inline-flex; align-items:center; gap:4px; padding:5px 9px 5px 10px; font:700 10px/1 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#2b5c9e;
+  background:url(dc_note3.webp) center/100% 100% no-repeat; transform:rotate(-4deg); filter:drop-shadow(0 2px 3px rgba(0,0,0,.15)); animation:obd 2.4s ease-in-out infinite; }
+.rdoor .rbadges span.rb2 { background-image:url(dc_note1.webp); color:#8a5a12; transform:rotate(3deg); animation-delay:-1.2s; }
+.rdoor .rbadges b { font:800 9px 'Quicksand',sans-serif; color:#fff; background:#ff5c8a; padding:2px 4px; border-radius:4px; }
+.rdoor.closed .rbadges { opacity:.5; }

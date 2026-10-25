@@ -82,7 +82,7 @@ const Room = (() => {
   // ===== 入口 =====
   function makeDoor() {
     const s = h(`<div class="slide rdoor"><div class="rdbox"><img class="rc" src="room_door.jpg" alt=""><img class="ro" src="room_door_open.jpg" alt="">
-      <div class="rplate">先生の部屋<small>SENSEI'S ROOM</small></div></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
+      <div class="rplate">先生の部屋<small>SENSEI'S ROOM</small></div><div class="rbadges" id="rBadges"></div></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
     slidesEl.insertBefore(s, slidesEl.firstChild);
     // 画面が細いときは、扉と名札が見えるように少し右に寄せる
     const box = s.querySelector('.rdbox'), fit = () => fitBox(box, 1027, 1531, 940);
@@ -105,6 +105,16 @@ const Room = (() => {
     const closed = period() === 'closed';
     s.classList.toggle('closed', closed);
     s.querySelector('.rhint').textContent = closed ? 'GOOD NIGHT' : 'TAP TO ENTER';
+    paintBadges();
+  }
+  // 扉の札：まだ読んでいない日報・新聞
+  async function paintBadges() {
+    const b = $('rBadges'); if (!b) return;
+    const rep = (await reports())[0], arts = await weekArts(monday());
+    const tags = [];
+    if (rep && !rep.read) tags.push('<span class="rb1">日報<b>NEW</b></span>');
+    if (arts.some(a => a.read === false)) tags.push('<span class="rb2">新聞<b>NEW</b></span>');
+    b.innerHTML = tags.join('');
   }
   async function openDoor(s) {
     if (s.classList.contains('opening')) return;
@@ -248,7 +258,7 @@ const Room = (() => {
     closeZoom(); endTalk(false); if (typeof Games !== 'undefined') Games.close(true);
     el.classList.add('out');
     setTimeout(() => { el.className = ''; document.body.classList.remove('roomOn'); }, 350);
-    active = false; syncBgm(200);
+    active = false; syncBgm(200); paintBadges();
   }
 
   // ===== アイテム =====
@@ -875,7 +885,7 @@ const Room = (() => {
   // ===== GAS（AI）との通信：作戦室と同じ設定を使う =====
   async function loadApi() { api = await DB.get('settings', 'opsApi').catch(() => null); return api; }
   let lastBudget = null;
-  const TAGNAME = { classify:'作戦室（分類）', discuss:'作戦室（会議）', room:'当番との会話', interview:'取材', article:'記事の仕上げ', report:'日報', other:'その他' };
+  const TAGNAME = { classify:'作戦室（分類）', discuss:'作戦室（会議）', room:'当番との会話', interview:'取材', article:'記事の仕上げ', report:'日報', food:'執務室（食事）', cash:'執務室（家計簿）', office:'執務室（会話）', other:'その他' };
   function budgetDetail() {
     if (!lastBudget) return toast('AIの設定をすると見られます');
     const by = lastBudget.by || {}, keys = Object.keys(by).sort((a, b) => by[b] - by[a]);
