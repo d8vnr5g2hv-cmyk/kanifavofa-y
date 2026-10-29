@@ -5,15 +5,16 @@ const Battle = (() => {
   // ===== キャラ =====
   // role：H ヒーラー／B バランス／A アタック。set：a＝攻撃型（通常・速攻・バリア・EXアタック）／h＝回復型（通常・強化・回復・EX回復）
   const ROLE = { H:['ヒーラー', 'heal'], B:['バランス', 'bal'], A:['アタック', 'atk'] };
+  // head：[顔の中心x, 頭のてっぺんy, あごy]（立ち絵に対する割合）。味方枠で頭の高さをそろえるのに使う。col：演出の色
   const CH = {
-    hoshino:{ name:'ホシノ', role:'B', hp:64, set:'a', face:[.41, .136] },
-    mika:   { name:'ミカ',   role:'A', hp:50, set:'a', face:[.557, .208] },
-    mari:   { name:'マリー', role:'H', hp:46, set:'h', face:[.55, .2] },
-    hina:   { name:'ヒナ',   role:'A', hp:52, set:'a', face:[.47, .202] },
-    yuuka:  { name:'ユウカ', role:'B', hp:56, set:'a', face:[.45, .16] },
-    miyako: { name:'ミヤコ', role:'B', hp:50, set:'a', face:[.49, .136] },
-    nico:   { name:'ニコ',   role:'H', hp:48, set:'h', face:[.43, .177] },
-    kisaki: { name:'キサキ', role:'B', hp:52, set:'a', face:[.47, .115] },
+    hoshino:{ name:'ホシノ', role:'B', hp:64, set:'a', face:[.41, .136], head:[.46, .06, .146], col:'#ff8fc8' },
+    mika:   { name:'ミカ',   role:'A', hp:50, set:'a', face:[.557, .208], head:[.57, .11, .20], col:'#ffb0dc' },
+    mari:   { name:'マリー', role:'H', hp:46, set:'h', face:[.55, .2], head:[.58, .07, .19], col:'#ffb347' },
+    hina:   { name:'ヒナ',   role:'A', hp:52, set:'a', face:[.47, .202], head:[.58, .11, .19], col:'#c08cff' },
+    yuuka:  { name:'ユウカ', role:'B', hp:56, set:'a', face:[.45, .16], head:[.46, .08, .21], col:'#6f8cff' },
+    miyako: { name:'ミヤコ', role:'B', hp:50, set:'a', face:[.49, .136], head:[.47, .08, .20], col:'#8fd8ff' },
+    nico:   { name:'ニコ',   role:'H', hp:48, set:'h', face:[.43, .177], head:[.44, .10, .21], col:'#ff9ec7' },
+    kisaki: { name:'キサキ', role:'B', hp:52, set:'a', face:[.47, .115], head:[.47, .08, .16], col:'#b58cff' },
   };
   const KEYS = Object.keys(CH);
   const SETS = { a:['atk', 'spd', 'bar', 'exa'], h:['atk', 'buf', 'heal', 'exh'] };
@@ -68,6 +69,7 @@ const Battle = (() => {
     drone:{ name:'偵察ドローン', img:'bt_e_drone', hp:16, h:24, fly:1, pat:[['atk', 5], ['atk', 3, 2], ['weakT', 2]] },
     thug: { name:'覆面の不良生徒', img:'bt_e_thug', hp:26, h:70, pat:[['atk', 4, 2], ['buff'], ['atk', 9]] },
     robot:{ name:'警備ロボット', img:'bt_e_robot', hp:44, h:70, pat:[['atk', 8], ['shield', 12], ['atk', 6], ['aoe', 4]] },
+    dummy:{ name:'訓練用標的', img:'bt_e_heavy', hp:9999, h:72, dummy:1, pat:[['atk', 6], ['aoe', 4], ['atk', 3, 2]] },
     heavy:{ name:'重装オートマタ', img:'bt_e_heavy', hp:120, h:76, boss:1, pat:[['atk', 12], ['charge'], ['aoe', 13], ['shield', 14], ['atk', 8, 2]] },
   };
   const STAGES = [
@@ -174,6 +176,7 @@ const Battle = (() => {
          lose:() => [392, 330, 262].forEach((f, i) => tone(f, .08, .45, 'triangle', i * .18)),
          down:() => tone(300, .12, .5, 'sawtooth', 0, 80),
          ng:() => tone(180, .08, .15, 'square'),
+         pop:() => { noise(.08, .18, 0, 3000); tone(420, .07, .16, 'triangle', 0, 880); },
        })[kind]();
     } catch(e) {}
   }
@@ -189,14 +192,14 @@ const Battle = (() => {
         <div class="bt-top"><button class="bt-back" data-act="out">‹ 出る</button><div class="bt-ttl">実戦<small>SIMULATION ROOM</small></div><div class="bt-ap" id="btAp"></div></div>
         <div class="bt-stage-floor" id="btParty"></div>
         <div class="bt-menu">
-          <button class="bt-go" data-act="stages"><b>演習に出撃</b><small>SORTIE</small></button>
+          <button class="bt-go" data-act="stages"><b>出撃</b><small>SORTIE</small></button>
           <div class="bt-row"><button class="bt-sub" data-act="form"><b>編成</b><small>FORMATION</small></button><button class="bt-sub" data-act="train"><b>育成</b><small>TRAINING</small></button></div>
-          <button class="bt-sub bt-dis" data-act="story"><b>ストーリー</b><small>COMING SOON</small></button>
+          <div class="bt-row"><button class="bt-sub bt-drill" data-act="drill"><b>演習部屋</b><small>DRILL ROOM</small></button><button class="bt-sub bt-dis" data-act="story"><b>ストーリー</b><small>COMING SOON</small></button></div>
         </div>
         <div class="bt-hint">AP回復：Todoを完了 <b>+10</b>／ごはんを記録 <b>+5</b></div>
       </section>
       <section class="bt-sc bt-stg">
-        <div class="bt-top"><button class="bt-back" data-act="hub">‹ 戻る</button><div class="bt-ttl">演習<small>SELECT STAGE</small></div><div class="bt-ap" id="btAp2"></div></div>
+        <div class="bt-top"><button class="bt-back" data-act="hub">‹ 戻る</button><div class="bt-ttl">出撃<small>SELECT STAGE</small></div><div class="bt-ap" id="btAp2"></div></div>
         <div class="bt-list" id="btStages"></div>
       </section>
       <section class="bt-sc bt-trn">
@@ -206,6 +209,7 @@ const Battle = (() => {
       </section>
       <section class="bt-sc bt-fight">
         <div class="bt-ftop"><button class="bt-back" data-act="retreat">撤退</button><div class="bt-turn" id="btTurn"></div><div class="bt-pile" id="btPile"></div></div>
+        <div class="bt-dum" id="btDum"></div>
         <div class="bt-foes" id="btFoes"></div>
         <div class="bt-allies" id="btAllies"></div>
         <div class="bt-hand-zone">
@@ -215,6 +219,7 @@ const Battle = (() => {
         </div>
         <div class="bt-peek" id="btPeek"></div>
         <div class="bt-banner" id="btBanner"></div>
+        <div class="bt-pop" id="btPop"></div>
         <div class="bt-fx" id="btFx"></div>
       </section>
       <div class="bt-cut" id="btCut"></div>
@@ -284,20 +289,20 @@ const Battle = (() => {
     $('btStages').innerHTML = STAGES.map((st, i) => {
       const lock = i > 0 && !S.clr[STAGES[i - 1].id], stars = S.clr[st.id] || 0, boss = st.foes.some(f => FOE[f].boss);
       return `<button class="bt-stc${lock ? ' lock' : ''}${boss ? ' boss' : ''}" data-st="${i}">
-        <div class="bt-stn"><small>PRACTICE ${i + 1}</small><b>${st.name}</b><span>${'★'.repeat(stars)}<i>${'★'.repeat(3 - stars)}</i></span></div>
+        <div class="bt-stn"><small>STAGE ${i + 1}</small><b>${st.name}</b><span>${'★'.repeat(stars)}<i>${'★'.repeat(3 - stars)}</i></span></div>
         <div class="bt-ste">${st.foes.map(f => `<img src="${FOE[f].img}.webp" alt="">`).join('')}</div>
         <div class="bt-stap">${lock ? '🔒' : `AP <b>${st.ap}</b>`}</div></button>`;
     }).join('') + `<div class="bt-note">★1 クリア　★2 誰も倒れずにクリア　★3 規定ターン以内にクリア<br>初回クリアで星の結晶がもらえます</div>`;
     $('btStages').onclick = e => {
       const b = e.target.closest('.bt-stc'); if (!b) return;
       const i = +b.dataset.st, st = STAGES[i];
-      if (b.classList.contains('lock')) { sfx('ng'); return toast('前の演習をクリアすると挑戦できます'); }
+      if (b.classList.contains('lock')) { sfx('ng'); return toast('前のステージをクリアすると挑戦できます'); }
       sfx('tap'); stageInfo(i);
     };
   }
   function stageInfo(i) {
     const st = STAGES[i], first = !S.clr[st.id];
-    $('btModal').innerHTML = `<div class="bt-sheet"><div class="bt-sh-h"><b>演習${i + 1}　${st.name}</b><small>★3：${st.t3}ターン以内　／　消費AP ${st.ap}</small></div>
+    $('btModal').innerHTML = `<div class="bt-sheet"><div class="bt-sh-h"><b>ステージ${i + 1}　${st.name}</b><small>★3：${st.t3}ターン以内　／　消費AP ${st.ap}</small></div>
       <div class="bt-foe-info">${[...new Set(st.foes)].map(f => { const F = FOE[f];
         return `<div><img src="${F.img}.webp" alt=""><b>${F.name}</b><small>HP ${Math.round(F.hp * st.m)}${F.boss ? '・ボス' : ''}</small></div>`; }).join('')}</div>
       <div class="bt-drop"><small>報酬</small>${(first ? st.first.concat(st.drop) : st.drop).map(([k, n]) => `<span><img src="${itemImg(k)}" alt="">×${n}</span>`).join('')}<span class="exp">EXP ${st.exp}</span></div>
@@ -309,6 +314,29 @@ const Battle = (() => {
       if (m && m.dataset.m === 'form') { modalClose(); return formation(); }
       modalClose();
       if (m && m.dataset.m === 'go') { S.ap -= st.ap; save(); start(i); }
+    };
+  }
+
+  // ===== 演習部屋（APを使わない練習。報酬・記録なし） =====
+  const DRILL = { counter:false, inf:true, ex:true };
+  function drillRoom() {
+    const opt = (k, t, d) => `<button class="bt-opt${DRILL[k] ? ' on' : ''}" data-o="${k}"><b>${t}</b><small>${d}</small><i></i></button>`;
+    $('btModal').innerHTML = `<div class="bt-sheet"><div class="bt-sh-h"><b>演習部屋</b><small>APを使わずに練習できます（報酬・経験値はありません）</small></div>
+      <div class="bt-drl">
+        <div class="bt-drc on"><div><b>木人</b><small>倒れない的に好きなだけ攻撃。ダメージを数字で確認できます</small></div></div>
+        ${opt('counter', '反撃してくる', '被弾の確認用。味方はHP1で止まります')}${opt('inf', 'コスト無制限', '何枚でもカードを使えます')}${opt('ex', 'EXいつでも', 'EXゲージが常に満タン')}
+        <div class="bt-drc off"><div><b>基本演習</b><small>準備中</small></div></div>
+        <div class="bt-drc off"><div><b>自由演習</b><small>準備中</small></div></div>
+      </div>
+      <div class="bt-sh-team">${S.party.map(k => `<img src="${faceImg(k)}" alt="">`).join('')}<button class="bt-ghost" data-m="form">編成</button></div>
+      <div class="bt-sh-b"><button class="bt-ghost" data-m="x">やめる</button><button class="bt-ok" data-m="go">木人で練習</button></div></div>`;
+    $('btModal').className = 'bt-modal on';
+    $('btModal').onclick = e => {
+      const o = e.target.closest('[data-o]'); if (o) { DRILL[o.dataset.o] = !DRILL[o.dataset.o]; o.classList.toggle('on'); sfx('tap'); return; }
+      const m = e.target.closest('[data-m]'); if (!m && e.target !== $('btModal')) return;
+      if (m && m.dataset.m === 'form') { modalClose(); return formation(); }
+      modalClose();
+      if (m && m.dataset.m === 'go') start({ id:'dummy', name:'木人', foes:['dummy'], m:1, dummy:true, t3:99 }, { ...DRILL });
     };
   }
 
@@ -385,18 +413,30 @@ const Battle = (() => {
   }
 
   // ===== 戦闘 =====
-  function start(si) {
-    const st = STAGES[si], dm = 1 + (st.m - 1) * .8;
-    B = { si, st, dm, round:0, energy:ENERGY, sel:null, busy:true, over:false,
+  // si：ステージ番号、またはステージ定義そのもの（演習部屋・ストーリー用）。opt：演習部屋の設定
+  function start(si, opt = null) {
+    const st = typeof si === 'object' ? si : STAGES[si], dm = 1 + (st.m - 1) * .8, dum = !!st.dummy;
+    B = { si, st, dm, round:0, energy:ENERGY, sel:null, busy:true, over:false, spd:1,
+      dum, counter:dum && opt.counter, inf:dum && opt.inf, exInf:dum && opt.ex, stat:{ last:0, turn:0, total:0 },
       allies:S.party.map(k => ({ k, max:maxHp(k), hp:maxHp(k), sh:0, st:{}, ex:0, down:false, atk:atkMul(k), sup:supMul(k) })),
       foes:st.foes.map((t, i) => { const F = FOE[t], hp = Math.round(F.hp * st.m); return { t, i, hp, max:hp, sh:0, st:{}, pi:Math.floor(Math.random() * F.pat.length), it:null, tgt:-1, dead:false }; }),
       deck:[], hand:[], disc:[], uid:0, downed:0 };
+    if (B.exInf) B.allies.forEach(a => { a.ex = 100; });
     S.party.forEach(k => DECK_OF[CH[k].set].forEach(ty => B.deck.push({ u:++B.uid, k, ty, evo:!!S.ch[k].evo[ty] })));
     shuffle(B.deck);
     show('fight');
-    $('btFoes').innerHTML = ''; $('btAllies').innerHTML = '';
+    $('bt').classList.toggle('bt-dummy', dum);
+    $('bt').querySelector('[data-act=retreat]').textContent = dum ? '終了' : '撤退';
+    $('btFoes').innerHTML = ''; $('btAllies').innerHTML = ''; $('btPop').innerHTML = ''; paintDum();
     paintFoes(); paintAllies(); paintHand();
     setTimeout(playerTurn, 400);
+  }
+  // 戦闘中の待ち時間（画面タップで早送り）
+  const wait = ms => sleep(ms * (B ? B.spd : 1));
+  function paintDum() {
+    const el = $('btDum'); if (!B || !B.dum) { el.innerHTML = ''; return; }
+    const s = B.stat, avg = Math.round(s.total / Math.max(1, B.round));
+    el.innerHTML = `<span>直前<b>${s.last}</b></span><span>このターン<b>${s.turn}</b></span><span>合計<b>${s.total}</b></span><span>1ターン平均<b>${avg}</b></span>`;
   }
   const alive = () => B.allies.filter(a => !a.down);
   const liveFoes = () => B.foes.filter(f => !f.dead);
@@ -411,7 +451,8 @@ const Battle = (() => {
   async function playerTurn() {
     if (B.over) return;
     B.round++;
-    B.energy = ENERGY;
+    B.energy = ENERGY; B.stat.turn = 0; paintDum();
+    if (B.exInf) alive().forEach(a => { a.ex = 100; });
     B.allies.forEach(a => { a.sh = 0; });
     // 継続回復
     for (const a of alive()) if (a.st.regen && a.st.regen.u >= B.round) { heal(a, a.st.regen.n); }
@@ -419,11 +460,12 @@ const Battle = (() => {
     draw(HAND);
     paintAll();
     await banner(`TURN ${B.round}`, 'PLAYER PHASE');
-    B.busy = false; paintHand();
+    B.busy = false; B.spd = 1; paintHand();
   }
   // 敵の次の行動を決める（予告として表示）
   function decide(f) {
     const F = FOE[f.t];
+    if (F.dummy && !B.counter) { f.it = ['idle']; f.tgt = -1; return; }
     f.it = F.pat[f.pi % F.pat.length]; f.pi++;
     f.tgt = ['atk', 'weakT'].includes(f.it[0]) ? pickTarget() : -1;
   }
@@ -463,13 +505,14 @@ const Battle = (() => {
       e.classList.toggle('dead', f.dead);
       e.querySelector('.bt-bar i').style.width = f.hp / f.max * 100 + '%';
       e.querySelector('.bt-bar s').style.width = Math.min(100, f.sh / f.max * 100) + '%';
-      e.querySelector('.bt-fhp span').innerHTML = `${f.hp}/${f.max}${f.sh ? ` <em>🛡${f.sh}</em>` : ''}`;
+      e.querySelector('.bt-fhp span').innerHTML = FOE[f.t].dummy ? '∞' : `${f.hp}/${f.max}${f.sh ? ` <em>🛡${f.sh}</em>` : ''}`;
       e.querySelector('.bt-sts').innerHTML = (on(f, 'weak') ? '<i class="w">脆弱</i>' : '') + (on(f, 'atkUp') ? '<i class="u">攻↑</i>' : '');
       e.querySelector('.bt-int').innerHTML = f.dead || !f.it ? '' : intentHTML(f);
     });
   }
   function intentHTML(f) {
     const it = f.it, m = B.dm * (on(f, 'atkUp') ? 1.3 : 1), ty = it[0];
+    if (ty === 'idle') return `<div class="bt-ic idle"><small>待機中</small></div>`;
     if (ty === 'stunned') return `<div class="bt-ic stn">${icon.stun}<b>スタン</b></div>`;
     const tg = f.tgt >= 0 ? `<img src="${faceImg(B.allies[f.tgt].k)}" alt="">` : '';
     if (ty === 'atk') return `<div class="bt-ic atk">${icon.atk}<b>${Math.round(it[1] * m)}${it[2] > 1 ? `×${it[2]}` : ''}</b>${tg}</div>`;
@@ -483,8 +526,8 @@ const Battle = (() => {
   function paintAllies() {
     const el = $('btAllies'), inc = B.over ? [] : incoming();
     if (!el.children.length) {
-      el.innerHTML = B.allies.map((a, i) => { const [fx, fy] = CH[a.k].face;
-        return `<div class="bt-al" data-ai="${i}" style="--fx:${fx};--fy:${fy}"><div class="bt-alv"><img src="${tachie(a.k, 1)}" alt=""></div>
+      el.innerHTML = B.allies.map((a, i) => { const [cx, ht, hc] = CH[a.k].head, sc = 28 / (hc - ht);
+        return `<div class="bt-al" data-ai="${i}" style="--cx:${cx};--hs:${sc}%;--ht:${8 - ht * sc}%;--c:${CH[a.k].col}"><div class="bt-alv"><img src="${tachie(a.k, 1)}" alt=""></div>
           <div class="bt-inc"></div><div class="bt-exr"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle class="v" cx="18" cy="18" r="15"/></svg><b>EX</b></div>
           <div class="bt-ast"></div><div class="bt-ahp"><div class="bt-bar"><i></i><s></s></div><span></span></div></div>`; }).join('');
     }
@@ -505,10 +548,10 @@ const Battle = (() => {
   function paintHand() {
     $('btTurn').innerHTML = `TURN <b>${B.round}</b>`;
     $('btPile').innerHTML = `<span>山札 ${B.deck.length}</span><span>捨札 ${B.disc.length}</span>`;
-    $('btEnergy').innerHTML = `<b>${B.energy}</b><small>/${ENERGY}</small>`;
+    $('btEnergy').innerHTML = B.inf ? '<b>∞</b>' : `<b>${B.energy}</b><small>/${ENERGY}</small>`;
     const n = B.hand.length, W = $('btHand').clientWidth || 300, cw = Math.min(94, W / 4.1), step = n > 1 ? Math.min(cw * .92, (W - cw) / (n - 1)) : 0, x0 = (W - cw - step * (n - 1)) / 2;
     $('btHand').innerHTML = B.hand.map((c, i) => {
-      const a = B.allies.find(x => x.k === c.k), cd = cardOf(c.k, c.ty, c.evo), ok = !a.down && cd.c <= B.energy && !B.busy;
+      const a = B.allies.find(x => x.k === c.k), cd = cardOf(c.k, c.ty, c.evo), ok = !a.down && (B.inf || cd.c <= B.energy) && !B.busy;
       const rot = n > 1 ? (i - (n - 1) / 2) * 3 : 0, y = Math.abs(i - (n - 1) / 2) * 3;
       return cardHTML(c.k, c.ty, c.evo, false, `data-hi="${i}" style="left:${x0 + step * i}px;width:${cw}px;--r:${rot}deg;--y:${y}px"`)
         .replace('class="bt-card', `class="bt-card${ok ? '' : ' no'}${a.down ? ' dn' : ''}${B.sel && B.sel.u === c.u ? ' sel' : ''}`);
@@ -541,6 +584,7 @@ const Battle = (() => {
       if (a === 'form') { sfx('tap'); return formation(); }
       if (a === 'train') { sfx('tap'); return show('train'); }
       if (a === 'story') { sfx('ng'); return toast('ストーリーは準備中です'); }
+      if (a === 'drill') { sfx('tap'); return drillRoom(); }
       if (a === 'retreat') return retreat();
       if (a === 'end') return endTurn();
       if (a === 'use') return useSel(null);
@@ -552,6 +596,7 @@ const Battle = (() => {
       const cc = t.closest('[data-card]'); if (cc) return cardInfo(cc.dataset.card);
       return;
     }
+    if (scr === 'fight' && B && B.busy && !B.over) { B.spd = .35; return; }   // 演出中のタップで早送り
     if (scr !== 'fight' || !B || B.busy) return;
     const hc = t.closest('[data-hi]');
     if (hc) return pickCard(B.hand[+hc.dataset.hi]);
@@ -570,7 +615,7 @@ const Battle = (() => {
     const a = B.allies.find(x => x.k === c.k), cd = cardOf(c.k, c.ty, c.evo);
     if (B.sel && B.sel.u === c.u) { if (B.selT === 'none') return useSel(null); B.sel = null; return paintHand(); }
     if (a.down) { sfx('ng'); return toast(`${CH[c.k].name}は戦闘不能です`); }
-    if (cd.c > B.energy) { sfx('ng'); return toast('コストが足りません'); }
+    if (!B.inf && cd.c > B.energy) { sfx('ng'); return toast('コストが足りません'); }
     sfx('tap'); B.sel = c; B.selT = tgtOf(cd); paintHand();
   }
   function pickEx(a) {
@@ -585,59 +630,133 @@ const Battle = (() => {
   async function useSel(tg) {
     const c = B.sel; if (!c) return;
     const isEx = c.ty === 'ex', cd = isEx ? CARD[c.k].ex : cardOf(c.k, c.ty, c.evo), a = B.allies.find(x => x.k === c.k);
-    if (!isEx && cd.c > B.energy) { sfx('ng'); return; }
-    B.busy = true; B.sel = null;
-    if (isEx) { a.ex = 0; paintAllies(); paintHand(); await cutIn(a.k, cd.n); }
+    if (!isEx && !B.inf && cd.c > B.energy) { sfx('ng'); return; }
+    B.busy = true; B.sel = null; B.spd = 1;
+    // 演出の3段階：EX＝全画面カットイン／コスト2以上＝本人が出てくる／それ以外＝カードが飛ぶ
+    const tier = isEx ? 3 : cd.c >= 2 ? 2 : 1;
+    if (isEx) { a.ex = B.exInf ? 100 : 0; paintAllies(); paintHand(); await cutIn(a.k, cd.n); }
     else {
-      B.energy -= cd.c;
-      const i = B.hand.findIndex(x => x.u === c.u), el = $('btHand').querySelector(`[data-hi="${i}"]`);
-      if (el) { el.classList.add('fly'); }
-      sfx('card');
-      await sleep(180);
+      if (!B.inf) B.energy -= cd.c;
+      const i = B.hand.findIndex(x => x.u === c.u), el = $('btHand').querySelector(`[data-hi="${i}"]`), r = el && el.getBoundingClientRect();
       B.hand.splice(i, 1); B.disc.push(c);
       a.ex = Math.min(100, a.ex + 20);
+      paintHand(); sfx('card');
+      if (tier === 1) await cardFly(c, r, cd, tg || {});
+      else await popIn(a, cd);
     }
-    paintHand();
     await run(a, cd, tg || {});
+    if (tier === 2) popOut(a);
     retarget();
     paintAll();
     if (checkEnd()) return;
-    B.busy = false; paintHand();
+    B.busy = false; B.spd = 1; paintHand();
   }
+
+  // ----- 使用演出 -----
+  const Rb = () => $('bt').getBoundingClientRect();
+  function center(el) { const r = el.getBoundingClientRect(), R = Rb(); return [r.left + r.width / 2 - R.left, r.top + r.height / 2 - R.top]; }
+  // 効果が向かう先（敵1体／敵全体／味方1人／味方全体）
+  function aimEl(cd, tg) {
+    const t = cd.o.map(o => o[0]).join(' ');
+    if (tg.foe) return $('btFoes').children[tg.foe.i];
+    if (/dmgAll|weakAll|stunAll/.test(t)) return $('btFoes');
+    if (tg.ally) return $('btAllies').children[B.allies.indexOf(tg.ally)];
+    return $('btAllies');
+  }
+  const anim = (el, kf, ms, ease = 'cubic-bezier(.2,.8,.2,1)') => el.animate(kf, { duration:ms * B.spd, easing:ease, fill:'forwards' }).finished.catch(() => {});
+  // 段階1：カードが中央で大きく見えて、相手に飛んでいく
+  async function cardFly(c, r, cd, tg) {
+    if (!r) return;
+    const R = Rb(), fx = $('btFx');
+    const w = h(`<div class="bt-fly">${cardHTML(c.k, c.ty, c.evo, false)}</div>`);
+    Object.assign(w.style, { left:r.left - R.left + 'px', top:r.top - R.top + 'px', width:r.width + 'px', height:r.height + 'px' });
+    fx.appendChild(w);
+    const cx = R.width / 2 - (r.left - R.left) - r.width / 2, cy = R.height * .42 - (r.top - R.top) - r.height / 2;
+    await anim(w, [{ transform:'translate(0,0) scale(1)' }, { transform:`translate(${cx}px,${cy}px) scale(1.7)` }], 200);
+    w.classList.add('glow');
+    await wait(140);
+    const [tx, ty] = center(aimEl(cd, tg));
+    await anim(w, [{ transform:`translate(${cx}px,${cy}px) scale(1.7)`, opacity:1 }, { transform:`translate(${tx - (r.left - R.left) - r.width / 2}px,${ty - (r.top - R.top) - r.height / 2}px) scale(.35) rotate(${Math.random() < .5 ? -1 : 1}turn)`, opacity:.2 }], 190, 'ease-in');
+    w.remove();
+  }
+  // 段階2：本人が横から出てくる
+  async function popIn(a, cd) {
+    const k = a.k, p = $('btPop'), kind = kindOf(cd), ai = B.allies.indexOf(a);
+    p.innerHTML = `<div class="bt-pband" style="--c:${CH[k].col}"></div><div class="bt-pact"><img src="${tachie(k, 1)}" alt=""></div>
+      <div class="bt-pname" style="--c:${CH[k].col}"><small>${CH[k].name}</small><b>${cd.n}</b></div>`;
+    $('btAllies').children[ai].classList.add('acting');
+    const band = p.querySelector('.bt-pband'), img = p.querySelector('.bt-pact'), nm = p.querySelector('.bt-pname');
+    sfx('pop');
+    anim(band, [{ transform:'scaleX(0)', opacity:0 }, { transform:'scaleX(1)', opacity:1 }], 200);
+    anim(nm, [{ transform:'translateX(-120%) skewX(-12deg)' }, { transform:'translateX(0) skewX(-12deg)' }], 260);
+    await anim(img, [{ transform:'translateX(-70%)', opacity:0 }, { transform:'translateX(0)', opacity:1 }], 240);
+    await wait(170);
+    // 攻撃は前に踏み込む／回復・支援はふわっと光る
+    if (kind === 'atk') anim(img, [{ transform:'translateX(0)' }, { transform:'translateX(18px) rotate(-2deg)' }], 120, 'ease-out');
+    else { img.classList.add('shine'); }
+    await wait(110);
+  }
+  function popOut(a) {
+    const p = $('btPop'), img = p.querySelector('.bt-pact'), ai = B.allies.indexOf(a);
+    $('btAllies').children[ai] && $('btAllies').children[ai].classList.remove('acting');
+    if (!img) return;
+    p.querySelectorAll('.bt-pband,.bt-pname').forEach(e => anim(e, [{ opacity:1 }, { opacity:0 }], 220));
+    anim(img, [{ opacity:1 }, { transform:'translateX(-40%)', opacity:0 }], 240, 'ease-in').then(() => { if (p.contains(img)) p.innerHTML = ''; });
+  }
+  // 当たったときのエフェクト（kind：atk 斬撃と火花／all 横なぎ／def シールド／heal 回復の光／sup 強化の矢印／hurt 被弾）
+  function impact(el, kind, col = '#fff', big = false) {
+    if (!el) return;
+    const [x, y] = center(el), fx = $('btFx');
+    let inner = '';
+    if (kind === 'atk') inner = `<i class="ring"></i><i class="slash"></i>${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<i class="sp" style="--a:${i * 45 + Math.random() * 20}deg"></i>`).join('')}`;
+    else if (kind === 'hurt') inner = `<i class="claw"></i><i class="claw b"></i><i class="claw c"></i>`;
+    else if (kind === 'def') inner = `<i class="hex"></i>`;
+    else if (kind === 'heal') inner = [0, 1, 2, 3, 4, 5].map(i => `<i class="pl" style="--x:${(i - 2.5) * 13 + Math.random() * 8}px;--d:${i * .05}s">+</i>`).join('') + '<i class="hglow"></i>';
+    else if (kind === 'sup') inner = [0, 1, 2, 3].map(i => `<i class="ar" style="--x:${(i - 1.5) * 16}px;--d:${i * .07}s">▲</i>`).join('') + '<i class="hglow s"></i>';
+    const d = h(`<div class="bt-im k-${kind}${big ? ' big' : ''}" style="left:${x}px;top:${y}px;--c:${col}">${inner}</div>`);
+    fx.appendChild(d); setTimeout(() => d.remove(), 900);
+  }
+  function sweep(col) {
+    const d = h(`<div class="bt-sweep" style="--c:${col}"></div>`); $('btFx').appendChild(d); setTimeout(() => d.remove(), 700);
+  }
+  function shake(big) { const f = $('bt').querySelector('.bt-fight'); f.classList.remove('shake', 'shake2'); void f.offsetWidth; f.classList.add(big ? 'shake2' : 'shake'); }
+
   // ----- 効果 -----
   async function run(src, cd, tg) {
     const am = src.atk * (on(src, 'atkUp') ? 1.3 : 1), P = n => Math.round(n * src.sup);
     let killed = false;
+    B.col = CH[src.k].col;
     for (const o of cd.o) {
       const ty = o[0];
       if (ty === 'dmg') { for (let h = 0; h < (o[2] || 1); h++) { if (tg.foe.dead) break; if (await hitFoe(tg.foe, o[1] * am)) killed = true; } }
-      else if (ty === 'dmgAll') { const fs = liveFoes(); fs.forEach(f => hitFoe(f, o[1] * am, true)); await sleep(380); }
+      else if (ty === 'dmgAll') { sweep(B.col); await wait(120); const fs = liveFoes(); fs.forEach(f => hitFoe(f, o[1] * am, true)); await wait(380); }
       else if (ty === 'shield') addShield(tg.ally, P(o[1]));
       else if (ty === 'shieldSelf') addShield(src, P(o[1]));
       else if (ty === 'shieldAll') alive().forEach(a => addShield(a, P(o[1])));
       else if (ty === 'heal') heal(tg.ally, P(o[1]));
       else if (ty === 'healAll') alive().forEach(a => heal(a, P(o[1])));
       else if (ty === 'taunt') { src.st.taunt = B.round + o[1] - 1; }
-      else if (ty === 'atkUp') { tg.ally.st.atkUp = B.round + o[1] - 1; pop(tg.ally, '攻撃UP', 'u'); }
-      else if (ty === 'atkUpSelf') { src.st.atkUp = B.round + o[1] - 1; pop(src, '攻撃UP', 'u'); }
-      else if (ty === 'atkUpAll') alive().forEach(a => { a.st.atkUp = B.round + o[1] - 1; pop(a, '攻撃UP', 'u'); });
+      else if (ty === 'atkUp') { tg.ally.st.atkUp = B.round + o[1] - 1; pop(tg.ally, '攻撃UP', 'u'); supFx(tg.ally); }
+      else if (ty === 'atkUpSelf') { src.st.atkUp = B.round + o[1] - 1; pop(src, '攻撃UP', 'u'); supFx(src); }
+      else if (ty === 'atkUpAll') alive().forEach(a => { a.st.atkUp = B.round + o[1] - 1; pop(a, '攻撃UP', 'u'); supFx(a); });
       else if (ty === 'weak') { if (!tg.foe.dead) { tg.foe.st.weak = B.round + o[1] - 1; popFoe(tg.foe, '脆弱', 'w'); } }
       else if (ty === 'weakAll') liveFoes().forEach(f => { f.st.weak = B.round + o[1] - 1; popFoe(f, '脆弱', 'w'); });
       else if (ty === 'stun') { if (!tg.foe.dead) stun(tg.foe); }
       else if (ty === 'stunAll') liveFoes().forEach(stun);
       else if (ty === 'draw') draw(o[1]);
-      else if (ty === 'energy') { B.energy += o[1]; }
+      else if (ty === 'energy') { B.energy += o[1]; supFx(src); }
       else if (ty === 'regen') { tg.ally.st.regen = { n:P(o[1]), u:B.round + o[2] }; pop(tg.ally, '再生', 'r'); }
       else if (ty === 'regenAll') alive().forEach(a => { a.st.regen = { n:P(o[1]), u:B.round + o[2] }; });
       else if (ty === 'cleanse') { if (tg.ally) delete tg.ally.st.weak; }
       else if (ty === 'cleanseAll') alive().forEach(a => delete a.st.weak);
       else if (ty === 'revive') B.allies.filter(a => a.down).forEach(a => { a.down = false; a.hp = Math.round(a.max * o[1] / 100); a.st = {}; pop(a, '復活', 'r'); sfx('heal'); });
-      else if (ty === 'exAll') alive().forEach(a => { if (a !== src) a.ex = Math.min(100, a.ex + o[1]); });
+      else if (ty === 'exAll') alive().forEach(a => { if (a !== src) { a.ex = Math.min(100, a.ex + o[1]); supFx(a); } });
       else if (ty === 'refund') { if (killed) { B.energy += 1; pop(src, 'コスト+1', 'u'); } }
       paintAllies(); paintFoes();
     }
-    await sleep(160);
+    await wait(160);
   }
+  const supFx = a => impact($('btAllies').children[B.allies.indexOf(a)], 'sup', '#ffc35a');
   function stun(f) {
     if (f.st.si && f.st.si >= B.round) { popFoe(f, '効かない', 'n'); return; }
     f.it = ['stunned']; f.tgt = -1; f.st.si = B.round + 1;   // 連続スタンは1ターン空ける
@@ -646,19 +765,23 @@ const Battle = (() => {
   async function hitFoe(f, raw, quiet = false) {
     let d = Math.round(raw * (on(f, 'weak') ? 1.3 : 1));
     const ab = Math.min(f.sh, d); f.sh -= ab; d -= ab;
-    f.hp = Math.max(0, f.hp - d);
-    const el = $('btFoes').children[f.i];
+    const el = $('btFoes').children[f.i], big = raw >= 18;
+    if (FOE[f.t].dummy) { B.stat.last = d; B.stat.turn += d; B.stat.total += d; paintDum(); }
+    else f.hp = Math.max(0, f.hp - d);
     el.classList.remove('hit'); void el.offsetWidth; el.classList.add('hit');
-    floatNum(el, ab && !d ? `🛡${ab}` : d, 'dmg', raw >= 18);
-    sfx(raw >= 18 ? 'big' : 'hit');
+    impact(el.querySelector('img'), 'atk', B.col || '#fff', big);
+    if (big) shake(raw >= 30);
+    floatNum(el, ab && !d ? `🛡${ab}` : d, 'dmg', big);
+    sfx(big ? 'big' : 'hit');
     paintFoes();
     let dead = false;
     if (f.hp <= 0) { f.dead = true; dead = true; sfx('down'); setTimeout(paintFoes, 200); }
-    if (!quiet) await sleep(260);
+    if (!quiet) await wait(260);
     return dead;
   }
-  function addShield(a, n) { if (!a || a.down) return; a.sh += n; pop(a, `🛡+${n}`, 's'); sfx('shield'); }
-  function heal(a, n) { if (!a || a.down) return; const v = Math.min(n, a.max - a.hp); a.hp += v; pop(a, `+${v}`, 'h'); sfx('heal'); }
+  const alEl = a => $('btAllies').children[B.allies.indexOf(a)];
+  function addShield(a, n) { if (!a || a.down) return; a.sh += n; pop(a, `🛡+${n}`, 's'); impact(alEl(a), 'def', '#8fd8ff'); sfx('shield'); }
+  function heal(a, n) { if (!a || a.down) return; const v = Math.min(n, a.max - a.hp); a.hp += v; pop(a, `+${v}`, 'h'); impact(alEl(a), 'heal', '#8bffb8'); sfx('heal'); }
   function pop(a, txt, cls) { const el = $('btAllies').children[B.allies.indexOf(a)]; if (el) floatNum(el, txt, cls); }
   function popFoe(f, txt, cls) { floatNum($('btFoes').children[f.i], txt, cls); }
   function floatNum(el, txt, cls, big) {
@@ -682,37 +805,39 @@ const Battle = (() => {
       await foeAct(f);
       if (checkEnd()) return;
     }
-    await sleep(250);
+    await wait(250);
     playerTurn();
   }
   async function foeAct(f) {
     const it = f.it, F = FOE[f.t], el = $('btFoes').children[f.i];
-    if (!it || it[0] === 'stunned') { popFoe(f, 'スタン中', 'n'); await sleep(380); return; }
+    if (it && it[0] === 'idle') return;
+    if (!it || it[0] === 'stunned') { popFoe(f, 'スタン中', 'n'); await wait(380); return; }
     el.classList.remove('act'); void el.offsetWidth; el.classList.add('act');
-    await sleep(240);
+    await wait(240);
     const m = B.dm * (on(f, 'atkUp') ? 1.3 : 1);
     if (it[0] === 'atk') {
       for (let h = 0; h < (it[2] || 1); h++) {
         let t = B.allies[f.tgt];
         if (!t || t.down) { const i = pickTarget(); if (i == null) break; f.tgt = i; t = B.allies[i]; }
-        hurt(t, it[1] * m); await sleep(300);
+        hurt(t, it[1] * m); await wait(300);
       }
-    } else if (it[0] === 'aoe') { alive().forEach(a => hurt(a, it[1] * m)); sfx('big'); await sleep(420); }
+    } else if (it[0] === 'aoe') { shake(true); alive().forEach(a => hurt(a, it[1] * m)); sfx('big'); await wait(420); }
     else if (it[0] === 'shield') { f.sh += Math.round(it[1] * B.dm); popFoe(f, `🛡+${Math.round(it[1] * B.dm)}`, 's'); sfx('shield'); }
     else if (it[0] === 'buff') { f.st.atkUp = B.round + 1; popFoe(f, '攻撃UP', 'u'); }
     else if (it[0] === 'charge') { popFoe(f, '……', 'n'); }
     else if (it[0] === 'weakT') { const t = B.allies[f.tgt]; if (t && !t.down) { t.st.weak = B.round + 1; pop(t, '脆弱', 'w'); } }
     f.it = null; paintAll();
-    await sleep(320);
+    await wait(320);
   }
   function hurt(a, raw) {
     if (a.down) return;
     let d = Math.round(raw * (on(a, 'weak') ? 1.3 : 1));
     const ab = Math.min(a.sh, d); a.sh -= ab; d -= ab;
-    a.hp = Math.max(0, a.hp - d);
+    a.hp = Math.max(B.dum ? 1 : 0, a.hp - d);
     if (d > 0) a.ex = Math.min(100, a.ex + 10);
     const el = $('btAllies').children[B.allies.indexOf(a)];
     el.classList.remove('hurt'); void el.offsetWidth; el.classList.add('hurt');
+    impact(el, d ? 'hurt' : 'def', d ? '#ff4b5c' : '#8fd8ff');
     floatNum(el, d ? '-' + d : `🛡${ab}`, d ? 'dmg' : 's');
     sfx(d ? 'hurt' : 'shield');
     if (a.hp <= 0) { a.down = true; a.st = {}; a.sh = 0; B.downed++; sfx('down'); }
@@ -726,26 +851,27 @@ const Battle = (() => {
   }
   async function retreat() {
     if (!B || B.over) return;
+    if (B.dum) { B.over = true; B = null; $('bt').classList.remove('bt-dummy'); sfx('tap'); return show('hub'); }
     $('btModal').innerHTML = `<div class="bt-sheet"><div class="bt-sh-h"><b>撤退しますか？</b><small>使ったAPは戻りません</small></div>
       <div class="bt-sh-b"><button class="bt-ghost" data-m="x">続ける</button><button class="bt-ok red" data-m="ok">撤退</button></div></div>`;
     $('btModal').className = 'bt-modal on';
     $('btModal').onclick = e => { const m = e.target.closest('[data-m]'); if (!m && e.target !== $('btModal')) return; modalClose();
-      if (m && m.dataset.m === 'ok') { B.over = true; B = null; show('stages'); } };
+      if (m && m.dataset.m === 'ok') { B.over = true; B = null; $('btPop').innerHTML = ''; show('stages'); } };
   }
 
   // ----- 演出 -----
   async function banner(t, sub = '', cls = '') {
     const b = $('btBanner'); b.className = 'bt-banner'; b.innerHTML = `<b>${t}</b>${sub ? `<small>${sub}</small>` : ''}`;
     void b.offsetWidth; b.className = 'bt-banner on ' + cls; sfx('turn');
-    await sleep(900); b.className = 'bt-banner';
+    await wait(900); b.className = 'bt-banner';
   }
   async function cutIn(k, name) {
     const art = artOf(k, 'ex', false) || tachie(k, 1), el = $('btCut');
     el.innerHTML = `<div class="bt-cutband"><img src="${art}" alt="" class="${artOf(k, 'ex', false) ? '' : 'tc'}"></div><div class="bt-cutlines"></div>
       <div class="bt-cutname"><small>EX SKILL</small><b>${name}</b><span>${CH[k].name}</span></div>`;
     el.className = 'bt-cut on'; sfx('ex');
-    await sleep(1250);
-    el.className = 'bt-cut on out'; await sleep(250);
+    await wait(1250);
+    el.className = 'bt-cut on out'; await wait(250);
     el.className = 'bt-cut'; el.innerHTML = '';
   }
 
@@ -778,7 +904,7 @@ const Battle = (() => {
         <div class="bt-rx">${S.party.map(k => `<div><img src="${faceImg(k)}" alt=""><b>Lv.${S.ch[k].lv}</b>${ups.includes(k) ? '<em>LEVEL UP</em>' : ''}</div>`).join('')}</div>
         <div class="bt-drop">${first ? '<small>初回クリア報酬つき</small>' : ''}${gained.map(([k, n]) => `<span><img src="${itemImg(k)}" alt="">×${n}</span>`).join('')}<span class="exp">EXP ${st.exp}</span></div>`
       : `<p class="bt-rl">全員が戦闘不能になりました。<br>APを半分（${Math.floor(st.ap / 2)}）返しました。<br>編成やカードの使い方を変えてみましょう。</p>`}
-      <div class="bt-sh-b"><button class="bt-ghost" data-m="list">演習一覧</button><button class="bt-ok" data-m="again" ${S.ap < st.ap ? 'disabled' : ''}>もう一度（AP${st.ap}）</button></div></div>`;
+      <div class="bt-sh-b"><button class="bt-ghost" data-m="list">ステージ一覧</button><button class="bt-ok" data-m="again" ${S.ap < st.ap ? 'disabled' : ''}>もう一度（AP${st.ap}）</button></div></div>`;
     $('btModal').className = 'bt-modal on res';
     $('btModal').onclick = e => {
       const m = e.target.closest('[data-m]'); if (!m) return;
