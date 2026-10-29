@@ -64,6 +64,7 @@ const Todo = (() => {
     if (!t.done) {
       rowEl.classList.add('checked'); haptic();
       t.done = true; t.doneAt = Date.now();
+      if (typeof Battle !== 'undefined') Battle.gainAP('todo:' + t.id, 10);   // 実戦のAP回復
       let next = null;
       if (t.repeat && t.repeat !== 'none') {   // 繰り返し：次の分をつくる
         const base = t.due && D.diff(t.due, D.today()) >= 0 ? t.due : D.today();

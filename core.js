@@ -144,6 +144,7 @@ function wantedBgm() {
   if (typeof AppLock !== 'undefined' && AppLock.locked()) return TITLE_BGM;   // ロック画面からタイトルの曲
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
+  const bb = typeof Battle !== 'undefined' && Battle.bgm(); if (bb) return bb;   // 実戦
   const fb = typeof Office !== 'undefined' && Office.bgm(); if (fb) return fb;   // 執務室
   const cb = typeof Cafe !== 'undefined' && Cafe.bgm(); if (cb) return cb;   // カフェ
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
@@ -488,7 +489,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.8';
+const VERSION = '2.9';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;

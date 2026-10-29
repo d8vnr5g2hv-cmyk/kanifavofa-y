@@ -508,6 +508,7 @@ const Office = (() => {
       if (st === 'del') { delete r.meals[k]; await DB.put('room', r); draw(); return; }
       if (st === 'skip') { r.meals[k] = { st:'skip', at:Date.now() }; await DB.put('room', r); draw(); return reactSkip(k); }
       r.meals[k] = { st:'ate', text:text.slice(0, 200), at:Date.now(), kcal:null }; await DB.put('room', r); draw();
+      if (typeof Battle !== 'undefined') Battle.gainAP('meal:' + d + k, 5);   // 実戦のAP回復
       mwOpen(); setFace('normal'); typeLine('……ちょっと計算しますね');
       const T = target(); let lines, face = 'normal';
       if (await loadApi()) {
