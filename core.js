@@ -57,8 +57,7 @@ const chars = [
   { who:'hoshino',   ...LOB('09_aquarium'),   bgm:L('noa_bgm.mp3', 115.7314),   clock:C('#8fe3ff', '#ffc0dc', 'rgba(10,60,130,.55)') },
   { who:'conductor', ...LOB('12_conductor'),  bgm:L('yuuka_bgm.mp3', 128.9192), clock:C('#c9f27a', '#ffd27a', 'rgba(30,40,90,.55)') },
   { who:'sofa',      ...LOB('14_sofa'),       bgm:L('kisaki_bgm.mp3', 140.7833), clock:C('#e8c47a', '#9fb7ff', 'rgba(0,0,0,.65)') },
-  { who:'hina',      ...LOB('08_rest'),       bgm:L('night_bgm.mp3', 132.0),    clock:C('#c7b2ff', '#8fc8ff', 'rgba(20,20,70,.65)') },
-  { who:'mika',      ...LOB('16_mika_night'), bgm:L('night_bgm.mp3', 132.0),    clock:C('#ffc6e6', '#b9c6ff', 'rgba(40,40,110,.6)') },
+  // ヒナ（08_rest）とミカ（16_mika_night）は学生寮の部屋に移動
   { who:'bedtime',   ...LOB('15_bedtime'),    bgm:L('noa_bgm.mp3', 115.7314),   clock:C('#cfe0ff', '#eef2ff', 'rgba(20,30,80,.65)') },
   { who:'mari',      ...LOB('07_staff'),      bgm:L('nico_bgm.mp3', 135.0),     clock:C('#ffbe8a', '#bdf0c8', 'rgba(40,60,60,.5)') },
 ];
@@ -148,6 +147,7 @@ function wantedBgm() {
   const fb = typeof Office !== 'undefined' && Office.bgm(); if (fb) return fb;   // 執務室
   const cb = typeof Cafe !== 'undefined' && Cafe.bgm(); if (cb) return cb;   // カフェ
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
+  const db = typeof Dorm !== 'undefined' && Dorm.bgm(); if (db) return db;   // 学生寮
   const ob = typeof Ops !== 'undefined' && Ops.bgm(); if (ob) return ob;   // 作戦室
   if (tab === 'favorite') return bgmOn ? chars[current].bgm : null;
   return TAB_BGM[tab] || null;
@@ -489,7 +489,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '2.9';
+const VERSION = '3.0';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -581,7 +581,7 @@ const App = {
     titleReady.then(() => loadBuf(chars[current].bgm.src).catch(() => {}));
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
-    Office.makeDoor(); Room.makeDoor(); Ops.makeDoor(); Cafe.makeDoor();   // 左から：カフェ・自室・執務室
+    Office.makeDoor(); Room.makeDoor(); Dorm.makeDoor(); Ops.makeDoor(); Battle.makeDoor(); Cafe.makeDoor();   // 左：カフェ・自室・執務室／右：学生寮・作戦室・実戦
     chars.forEach((c, i) => loadChar(i));
     slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
     requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
@@ -595,7 +595,9 @@ const App = {
       const f = slidesEl.scrollLeft / slidesEl.clientWidth - OFF, nb = f > current ? current + 1 : current - 1;
       if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slideOf(nb), nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
       const i = Math.round(f);
-      Ops.setDoor(i === chars.length);   // 右端の先は作戦室のドア
+      Dorm.setDoor(i === chars.length);       // メモロビの右隣は学生寮
+      Ops.setDoor(i === chars.length + 1);   // その右は作戦室
+      Battle.setDoor(i === chars.length + 2);   // いちばん右は実戦
       Office.setDoor(i === -1);          // メモロビの左隣は執務室
       Room.setDoor(i === -2);            // その左は自室
       Cafe.setDoor(i === -3);            // いちばん左はカフェ
@@ -603,7 +605,7 @@ const App = {
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
     slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
-    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor() || Cafe.isDoor() || Office.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
+    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor() || Cafe.isDoor() || Office.isDoor() || Dorm.isDoor() || Battle.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
     document.addEventListener('pointerdown', wake, { passive:true, capture:true });
 
     const handle = $('handle'); let hy = 0;
@@ -629,7 +631,7 @@ const App = {
     document.addEventListener('visibilitychange', () => {
       if (phase === 'lock') return;
       if (document.hidden) { stopBgm(0.1); ctx.suspend(); }
-      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Cafe.paintDoor(); Office.paintDoor(); });
+      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Cafe.paintDoor(); Office.paintDoor(); Dorm.paintDoor(); Battle.paintDoor(); });
       Object.values(TabHooks).forEach(h => h.visibility && h.visibility(document.hidden));
     });
 

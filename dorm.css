@@ -1,0 +1,178 @@
+/* Kani Favorite — 学生寮（クラス名は dm- から始める） */
+body.atDmDoor .clock, body.atDmDoor .icons, body.atBtDoor .clock, body.atBtDoor .icons { opacity:0; pointer-events:none; transition:opacity .4s; }
+body.atDmDoor .dots, body.atBtDoor .dots { display:none !important; }
+
+/* ===== ドア ===== */
+.slide.dmdoor { background:#e9eef6; cursor:pointer; }
+.dmdoor .dmdbox { position:absolute; --u:.45px; }
+.dmdoor .dmdbox > img.dmdc, .dmdoor .dmdbox > img.dmdo { position:absolute; inset:0; width:100%; height:100%; }
+.dmdoor .dmdo { opacity:0; transition:opacity .7s ease; }
+.dmdoor.n .dmdbox > img { filter:brightness(.7) saturate(1.1) hue-rotate(-8deg); }
+.dmdoor.n .dmdbox::after { content:''; position:absolute; inset:0; background:linear-gradient(rgba(30,30,80,.3), rgba(30,20,60,.1)); pointer-events:none; }
+.dmdoor.opened .dmdo { opacity:1; }
+.dmdoor .dmsign { position:absolute; left:21%; top:12.6%; width:58%; height:4.6%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font:700 calc(var(--u) * 46)/1 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#6a4a2e; letter-spacing:.4em; padding-left:.4em; transition:opacity .4s; }
+.dmdoor .dmsign small { font:600 calc(var(--u) * 17)/1 Quicksand,sans-serif; letter-spacing:.45em; color:#b08a5e; margin-top:calc(var(--u) * 8); }
+.dmdoor.opened .dmsign { opacity:0; }
+.dmdoor .dmstk { position:absolute; pointer-events:none; filter:drop-shadow(0 2px 3px rgba(60,40,20,.25)); transition:opacity .4s; }
+.dmdoor .dmstk.a { left:91.5%; top:30.2%; width:6.5%; transform:rotate(12deg); }
+.dmdoor .dmstk.b { left:92%; top:36.6%; width:5.5%; transform:rotate(-10deg); }
+.dmdoor .dmbadge { position:absolute; left:50%; top:20%; transform:translateX(-50%); pointer-events:none; }
+.dmdoor .dmbadge span { display:block; padding:calc(var(--u) * 10) calc(var(--u) * 26); background:rgba(255,255,255,.88); border-radius:calc(var(--u) * 30); border:calc(var(--u) * 3) solid #f2c9a0;
+  font:700 calc(var(--u) * 26)/1.2 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#8a5a2e; white-space:nowrap; box-shadow:0 calc(var(--u) * 4) calc(var(--u) * 12) rgba(120,80,40,.2); }
+.dmdoor .dmbadge b { font-size:1.3em; color:#e0703a; }
+.dmdoor.opened .dmbadge { opacity:0; transition:opacity .3s; }
+.dmhint { position:absolute; left:0; right:0; bottom:calc(var(--tabH) + env(safe-area-inset-bottom) + 30px); text-align:center; font:600 12px 'Quicksand',sans-serif;
+  letter-spacing:.3em; color:#b0784a; text-shadow:0 0 8px #fff; animation:dmHint 2.4s ease-in-out infinite; }
+@keyframes dmHint { 50% { opacity:.35; } }
+.dmdoor.opening .dmhint { display:none; }
+.dmflash { position:absolute; inset:0; background:radial-gradient(circle at 50% 45%, #fff, #fff6e8 45%, rgba(255,240,220,0) 80%); opacity:0; pointer-events:none; }
+.dmdoor.flash .dmflash { animation:dmFlash .4s ease-in forwards; }
+@keyframes dmFlash { to { opacity:1; transform:scale(1.3); } }
+
+/* ===== 画面 ===== */
+#dorm { position:fixed; inset:0; z-index:25; display:none; overflow:hidden; background:#f3ead9; color:#4a3524; font-family:'Noto Sans JP',sans-serif; -webkit-user-select:none; user-select:none; }
+#dorm.show { display:block; animation:dmIn .5s ease; }
+#dorm.out { animation:dmOut .38s ease forwards; }
+@keyframes dmIn { from { opacity:0; } }
+@keyframes dmOut { to { opacity:0; } }
+#dorm button { font-family:inherit; -webkit-tap-highlight-color:transparent; }
+.dm-sc { position:absolute; inset:0; display:none; }
+#dorm[data-s="hall"] .dm-hall, #dorm[data-s="corr"] .dm-corr, #dorm[data-s="room"] .dm-room { display:block; }
+.dm-fade { position:absolute; inset:0; z-index:40; background:#fff8ee; opacity:0; pointer-events:none; transition:opacity .26s; }
+.dm-fade.on { opacity:1; }
+#dorm.night .dm-fade { background:#1a1830; }
+
+.dm-top { position:absolute; left:0; right:0; top:0; z-index:5; display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+  background:linear-gradient(rgba(255,250,240,.75), rgba(255,250,240,0)); }
+#dorm.night .dm-top { background:linear-gradient(rgba(20,18,40,.6), rgba(20,18,40,0)); }
+.dm-back, .dm-ico { border:1px solid rgba(160,110,70,.35); background:rgba(255,255,255,.85); color:#8a5a2e; border-radius:14px; padding:6px 12px; font:700 11px 'Noto Sans JP',sans-serif; }
+.dm-ttl { flex:1; font:700 16px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#5a3a20; text-shadow:0 1px 6px rgba(255,255,255,.9); }
+.dm-ttl small { display:block; font:600 9px Quicksand,sans-serif; letter-spacing:.3em; color:#c08a5a; }
+#dorm.night .dm-ttl { color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+.dm-clock { font:600 15px Fredoka,sans-serif; color:#8a5a2e; background:rgba(255,255,255,.8); border-radius:12px; padding:3px 10px; }
+
+/* エントランス */
+.dm-bgw { position:absolute; inset:0; }
+.dm-hbg { width:100%; height:100%; object-fit:cover; }
+#dorm.night .dm-hbg { filter:brightness(.72) saturate(1.1) hue-rotate(-6deg); }
+#dorm.night .dm-bgw::after { content:''; position:absolute; inset:0; background:linear-gradient(rgba(30,30,80,.35), rgba(30,20,60,.15)); }
+.dm-board { position:absolute; left:14px; right:14px; bottom:calc(env(safe-area-inset-bottom) + 18px); z-index:3; background:rgba(255,251,244,.94); border-radius:18px; padding:12px 12px 12px;
+  box-shadow:0 8px 24px rgba(90,60,30,.25); border:2px solid #f2d3ae; animation:dmUp .45s cubic-bezier(.2,.8,.2,1); }
+@keyframes dmUp { from { opacity:0; transform:translateY(30px); } }
+.dm-bh { display:flex; align-items:baseline; gap:8px; margin:0 2px 8px; }
+.dm-bh b { font:700 14px 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#6a4428; }
+.dm-bh small { font-size:10px; color:#a88462; }
+.dm-bgrid { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+.dm-bc { position:relative; border:1px solid #ecd9c2; background:#fff; border-radius:10px; padding:6px 2px 5px; display:flex; flex-direction:column; align-items:center; gap:1px; color:#6a4428; }
+.dm-bc i { position:absolute; left:5px; top:6px; width:7px; height:7px; border-radius:50%; background:#cdbba7; }
+.dm-bc.on i { background:#5fd38a; box-shadow:0 0 6px #5fd38a; }
+.dm-bc b { font-size:12px; }
+.dm-bc small { font-size:9px; color:#a88462; white-space:nowrap; }
+.dm-bc.on small { color:#2fa864; font-weight:700; }
+.dm-bc em { position:absolute; right:4px; top:3px; font:600 8px Fredoka,sans-serif; font-style:normal; color:#c9ab8a; }
+.dm-bc.lk { background:#f6efe6; opacity:.75; }
+.dm-bc.lk small { font-size:8px; }
+.dm-go { width:100%; margin-top:10px; border:none; border-radius:12px; padding:11px; background:linear-gradient(120deg, #f6a96b, #f07f8a); color:#fff; font-size:14px; font-weight:700; letter-spacing:.1em;
+  box-shadow:0 4px 12px rgba(240,127,138,.35); }
+.dm-go i { font-style:normal; margin-left:4px; }
+
+/* 廊下 */
+.dm-cor { position:absolute; inset:0; display:flex; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.dm-cor::-webkit-scrollbar { display:none; }
+.dm-rd { position:relative; flex:0 0 100%; height:100%; scroll-snap-align:center; overflow:hidden; }
+.dm-fit { position:absolute; --u:.45px; cursor:pointer; }
+.dm-fit > img:first-child { position:absolute; inset:0; width:100%; height:100%; }
+.dm-rd.n .dm-fit > img:first-child { filter:brightness(.78) saturate(1.05); }
+.dm-plate { position:absolute; left:79.6%; top:31.1%; width:10.8%; height:2.4%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font:700 calc(var(--u) * 19)/1 'Zen Maru Gothic','Noto Sans JP',sans-serif; color:#5a3a20; }
+.dm-plate small { font:600 calc(var(--u) * 11)/1 Fredoka,sans-serif; color:#a07a52; margin-top:calc(var(--u) * 3); }
+.dm-rd.n .dm-plate { top:29.6%; }
+.dm-lamp { position:absolute; left:43.5%; top:12.2%; width:13%; height:1.8%; border-radius:40%; background:transparent; }
+.dm-rd.n .dm-lamp { left:43%; top:10.8%; }
+.dm-rd.on .dm-lamp { background:radial-gradient(ellipse at 50% 60%, rgba(255,240,180,.95), rgba(255,210,120,.5) 50%, transparent 75%); box-shadow:0 0 calc(var(--u) * 60) calc(var(--u) * 20) rgba(255,220,140,.6); animation:dmLamp 3s ease-in-out infinite; }
+@keyframes dmLamp { 50% { opacity:.8; } }
+.dm-stk { position:absolute; left:50.5%; top:39.5%; width:8%; transform:rotate(-8deg); filter:drop-shadow(0 2px 2px rgba(60,40,20,.3)); }
+.dm-rd.n .dm-stk { top:37.5%; }
+.dm-tape { position:absolute; left:18%; width:64%; height:3.2%; background:url(dc_tape3.webp) center/100% 100% no-repeat; }
+.dm-tape.a { top:40%; transform:rotate(-24deg); }
+.dm-tape.b { top:40%; transform:rotate(24deg); }
+.dm-wait { position:absolute; left:50%; top:48%; transform:translateX(-50%) rotate(-3deg); padding:calc(var(--u) * 24) calc(var(--u) * 30); background:url(dc_note1.webp) center/100% 100% no-repeat;
+  font:700 calc(var(--u) * 34)/1.2 'Klee One','Zen Maru Gothic',sans-serif; color:#5a3a20; text-align:center; white-space:nowrap; }
+.dm-wait small { display:block; font-size:.6em; margin-top:calc(var(--u) * 6); color:#8a6a4a; }
+.dm-rd.lk .dm-fit > img:first-child { filter:saturate(.6) brightness(.92); }
+.dm-new { position:absolute; left:50%; top:20%; transform:translateX(-50%); background:#ff6f91; color:#fff; font:700 calc(var(--u) * 30)/1 Fredoka,sans-serif; padding:calc(var(--u) * 8) calc(var(--u) * 20); border-radius:calc(var(--u) * 20); animation:dmLamp 1.4s ease-in-out infinite; }
+.dm-rd.knock .dm-fit { animation:dmKnock .5s ease; }
+@keyframes dmKnock { 20%, 60% { translate:-2px 0; } 40%, 80% { translate:2px 0; } }
+.dm-st { position:absolute; left:50%; bottom:calc(env(safe-area-inset-bottom) + 64px); transform:translateX(-50%); white-space:nowrap; background:rgba(255,251,244,.94); border-radius:16px;
+  padding:7px 16px; font-size:11.5px; color:#8a6a4a; box-shadow:0 4px 14px rgba(90,60,30,.2); pointer-events:none; }
+.dm-st b { display:inline-block; margin-right:8px; padding:1px 8px; border-radius:8px; background:#cdbba7; color:#fff; font-size:11px; }
+.dm-st b.in { background:#5fc98a; }
+.dm-arr { position:absolute; top:50%; z-index:4; width:34px; height:54px; margin-top:-27px; border:none; background:rgba(255,255,255,.75); color:#a0704a; font-size:24px; border-radius:12px; box-shadow:0 2px 8px rgba(90,60,30,.2); }
+.dm-arr.l { left:6px; } .dm-arr.r { right:6px; }
+.dm-dots { position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 40px); display:flex; justify-content:center; gap:5px; pointer-events:none; }
+.dm-dots i { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.6); box-shadow:0 0 3px rgba(0,0,0,.3); transition:.2s; }
+.dm-dots i.on { width:16px; border-radius:4px; background:#fff; }
+
+/* 部屋 */
+.dm-rbg { position:absolute; inset:0; background:#222 center/cover no-repeat; }
+.dm-rbg img, .dm-rbg video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.dm-rbg .dm-f { opacity:0; transition:opacity .45s ease; }
+.dm-rbg .dm-f.on { opacity:1; }
+.dm-room .dm-top { background:linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,0)); }
+.dm-room .dm-ttl { color:#fff; text-shadow:0 1px 6px rgba(0,0,0,.6); }
+.dm-room .dm-ttl small { color:#ffe2c4; }
+.dm-mw { position:absolute; left:10px; right:10px; bottom:calc(env(safe-area-inset-bottom) + 62px); z-index:4; min-height:76px; padding:22px 16px 12px; border-radius:14px;
+  background:linear-gradient(rgba(20,26,48,.82), rgba(20,26,48,.9)); border:1px solid rgba(255,255,255,.25); color:#fff; box-shadow:0 6px 18px rgba(0,0,0,.35); }
+.dm-nm { position:absolute; left:14px; top:-12px; padding:3px 14px; border-radius:10px; background:linear-gradient(120deg, #f6a96b, #f07f8a); font:700 12px 'Noto Sans JP',sans-serif; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.dm-tx { font-size:14px; line-height:1.65; min-height:2.6em; white-space:pre-wrap; }
+.dm-nx { position:absolute; right:12px; bottom:6px; font-size:10px; font-style:normal; color:#ffd2a6; opacity:0; }
+.dm-mw.wait .dm-nx { opacity:1; animation:dmNx 1s ease-in-out infinite; }
+@keyframes dmNx { 50% { translate:0 3px; } }
+.dm-dots3 i { display:inline-block; width:6px; height:6px; margin-right:5px; border-radius:50%; background:#ffd2a6; animation:dmDot 1s ease-in-out infinite; }
+.dm-dots3 i:nth-child(2) { animation-delay:.15s; } .dm-dots3 i:nth-child(3) { animation-delay:.3s; }
+@keyframes dmDot { 50% { opacity:.3; translate:0 -3px; } }
+.dm-inp { position:absolute; left:10px; right:10px; bottom:calc(env(safe-area-inset-bottom) + 12px); z-index:4; display:flex; gap:8px; }
+.dm-inp input { flex:1; min-width:0; border:1px solid rgba(255,255,255,.4); border-radius:20px; padding:10px 14px; font-size:16px; background:rgba(255,255,255,.92); color:#3a2a1a; outline:none; }
+.dm-inp button { border:none; border-radius:20px; padding:0 18px; background:linear-gradient(120deg, #f6a96b, #f07f8a); color:#fff; font-size:13px; font-weight:700; }
+#dorm.busy .dm-inp button { opacity:.5; }
+
+/* 履歴 */
+.dm-ov { position:absolute; inset:0; z-index:30; display:none; align-items:flex-end; background:rgba(30,20,10,.4); }
+.dm-ov.on { display:flex; animation:dmIn .2s ease; }
+.dm-sheet { width:100%; max-height:78%; display:flex; flex-direction:column; background:#fffaf2; border-radius:20px 20px 0 0; padding:14px 14px calc(env(safe-area-inset-bottom) + 14px); animation:dmUp .3s ease; }
+.dm-sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.dm-sh b { font-size:15px; color:#5a3a20; }
+.dm-sh button { border:none; background:#f1e4d3; color:#8a5a2e; width:30px; height:30px; border-radius:50%; font-size:16px; }
+.dm-logs { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding:4px 2px; }
+.dm-l { max-width:82%; align-self:flex-start; }
+.dm-l.me { align-self:flex-end; text-align:right; }
+.dm-l small { font-size:9.5px; color:#b09070; }
+.dm-l p { margin:2px 0 0; padding:8px 12px; border-radius:14px; background:#fff; border:1px solid #efdcc4; font-size:13px; line-height:1.55; text-align:left; color:#4a3524; }
+.dm-l.me p { background:#ffe6d0; border-color:#f6c9a0; }
+.dm-none { text-align:center; color:#b09070; font-size:12px; }
+.dm-mem { margin-top:10px; padding:8px 10px; border-radius:12px; background:#fff3e2; display:flex; flex-wrap:wrap; gap:4px; }
+.dm-mem b { width:100%; font-size:11px; color:#8a5a2e; }
+.dm-mem span { font-size:10.5px; background:#fff; border-radius:8px; padding:2px 8px; color:#6a4a2e; border:1px solid #f0d8b8; }
+
+/* 実戦のドア（画像が届くまでは作戦室のドアを色変えして使う） */
+.slide.btdoor { background:#0c1a3c; cursor:pointer; }
+.btdoor .btdbox { position:absolute; --u:.45px; }
+.btdoor .btdbox > img { position:absolute; inset:0; width:100%; height:100%; }
+.btdoor.tmp .btdbox > img { filter:hue-rotate(150deg) saturate(1.3) brightness(.9); }
+.btdoor .btdo { opacity:0; transition:opacity .7s ease; }
+.btdoor.opened .btdo { opacity:1; }
+.btdoor .btsign { position:absolute; left:50%; top:13%; transform:translateX(-50%) skewX(-10deg); padding:calc(var(--u) * 14) calc(var(--u) * 40); background:linear-gradient(120deg, #ff5f8f, #ff9a5a);
+  color:#fff; font:900 calc(var(--u) * 56)/1 'Noto Sans JP',sans-serif; letter-spacing:.3em; box-shadow:0 0 calc(var(--u) * 40) rgba(255,95,143,.7); text-align:center; white-space:nowrap; transition:opacity .4s; }
+.btdoor .btsign small { display:block; font:600 calc(var(--u) * 18)/1 Quicksand,sans-serif; letter-spacing:.5em; margin-top:calc(var(--u) * 8); }
+.btdoor:not(.tmp) .btsign { display:none; }
+.btdoor.opened .btsign { opacity:0; }
+.btdoor .btap { position:absolute; left:50%; top:22%; transform:translateX(-50%); padding:calc(var(--u) * 8) calc(var(--u) * 24); border-radius:calc(var(--u) * 24); background:rgba(5,12,30,.8); border:calc(var(--u) * 3) solid rgba(255,214,102,.7);
+  color:#fff; font:600 calc(var(--u) * 28)/1 Fredoka,sans-serif; white-space:nowrap; pointer-events:none; }
+.btdoor .btap i { color:#ffd666; font-style:normal; font-size:.8em; margin-right:.3em; }
+.btdoor.opened .btap { opacity:0; transition:opacity .3s; }
+.bthint { position:absolute; left:0; right:0; bottom:calc(var(--tabH) + env(safe-area-inset-bottom) + 30px); text-align:center; font:600 12px 'Quicksand',sans-serif;
+  letter-spacing:.3em; color:#ff9ab8; text-shadow:0 0 8px rgba(255,95,143,.8); animation:dmHint 2.4s ease-in-out infinite; }
+.btdoor.opening .bthint { display:none; }
+.btflash { position:absolute; inset:0; background:radial-gradient(circle at 50% 45%, #fff, #ffd6e4 40%, rgba(255,180,200,0) 78%); opacity:0; pointer-events:none; }
+.btdoor.flash .btflash { animation:dmFlash .4s ease-in forwards; }

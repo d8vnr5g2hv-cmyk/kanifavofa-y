@@ -129,7 +129,6 @@ const Ops = (() => {
         </div>
         <div class="rdots"><i class="on"></i><i></i></div>
         <button class="ostart" id="opsStart"><span>作戦を立てる</span></button>
-        <button class="obtl" id="opsBattle"><span>実戦<small>BATTLE</small></span></button>
         <div class="vbar" id="vbar"></div>
       </section>
       <section class="meet">
@@ -169,7 +168,6 @@ const Ops = (() => {
     });
     $('opsBack').onclick = exit;
     $('opsStart').onclick = brief;
-    $('opsBattle').onclick = () => { if (busy) return; sfx('go'); Battle.open(); };
     $('opsLog').onclick = history;
     $('opsSet').onclick = settings;
     $('meetBack').onclick = () => { if (busy) return; if (op && !op.result && op.log.length > 1 && !confirm('会議を終えて待機室に戻りますか？（ここまでの会話は作戦書に残ります）')) return; if (op && op.log.length > 1) save(); toLounge(); };

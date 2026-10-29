@@ -313,13 +313,3 @@
 .bt-rx em { position:absolute; top:-8px; font:700 8px Fredoka,sans-serif; font-style:normal; color:#fff; background:#ff5f8f; padding:1px 4px; border-radius:6px; white-space:nowrap; }
 .bt-rl { font-size:13px; line-height:1.8; color:#4a5a7a; }
 
-/* 作戦室の待機室に置く入口 */
-.obtl { position:absolute; right:14px; bottom:calc(env(safe-area-inset-bottom) + 86px); z-index:4; border:none; padding:9px 18px; transform:skewX(-12deg);
-  background:linear-gradient(120deg, #ff5f8f, #ff9a5a); color:#fff; font:900 13px 'Noto Sans JP',sans-serif; letter-spacing:.2em; box-shadow:0 6px 16px rgba(255,95,143,.45), inset 0 1px 0 rgba(255,255,255,.45); }
-.obtl span { display:inline-block; transform:skewX(12deg); }
-.obtl small { display:block; font:600 8px Quicksand,sans-serif; letter-spacing:.3em; opacity:.9; }
-.obtl:active { filter:brightness(.9); }
-.lounge:has(.vbar.on) .obtl { opacity:0; pointer-events:none; }
-.bt-evt.nx { color:#8a6a10; font-size:11px; }
-.bt-evt.nx b { font-size:12px; }
-.bt-tc .bt-card { cursor:pointer; }

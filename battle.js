@@ -83,7 +83,7 @@ const Battle = (() => {
     chipA:{ name:'強化チップ（攻撃）', img:'it_chipA' }, chipD:{ name:'強化チップ（防御）', img:'it_chipD' }, star:{ name:'星の結晶', img:'it_star' },
   };
   const AP_MAX = 100, LV_MAX = 30, CHIP_MAX = 10, HAND = 5, ENERGY = 3;
-  const BGM = { fight:L('meet_a_bgm.mp3', 118), win:L('ops_result_bgm.mp3', 76.0026) };
+  const BGM = { hub:L('ops_lounge_bgm.mp3', 60.5), fight:L('meet_a_bgm.mp3', 118), win:L('ops_result_bgm.mp3', 76.0026) };
 
   // ===== 保存データ =====
   let S = null, scr = null, B = null, lastWin = false;
@@ -186,7 +186,7 @@ const Battle = (() => {
     const o = h(`<div id="bt">
       <div class="bt-grid"><i></i></div>
       <section class="bt-sc bt-hub">
-        <div class="bt-top"><button class="bt-back" data-act="out">‹ 作戦室</button><div class="bt-ttl">実戦<small>SIMULATION ROOM</small></div><div class="bt-ap" id="btAp"></div></div>
+        <div class="bt-top"><button class="bt-back" data-act="out">‹ 出る</button><div class="bt-ttl">実戦<small>SIMULATION ROOM</small></div><div class="bt-ap" id="btAp"></div></div>
         <div class="bt-stage-floor" id="btParty"></div>
         <div class="bt-menu">
           <button class="bt-go" data-act="stages"><b>演習に出撃</b><small>SORTIE</small></button>
@@ -788,10 +788,37 @@ const Battle = (() => {
     };
   }
 
+  // ===== ドア（作戦室の右・いちばん右端） =====
+  let onDoor = false;
+  function makeDoor() {
+    const s = h(`<div class="slide btdoor tmp"><div class="btdbox"><img class="btdc" src="ops_door.jpg" alt=""><img class="btdo" src="ops_door_open.jpg" alt="">
+      <div class="btsign">実戦<small>SIMULATION</small></div><div class="btap" id="btDoorAp"></div></div><div class="bthint">TAP TO ENTER</div><div class="btflash"></div></div>`);
+    slidesEl.appendChild(s);
+    const box = s.querySelector('.btdbox');
+    let W = 863, H = 1822;
+    const fit = () => { const p = box.parentNode, PW = p.clientWidth, PH = p.clientHeight; if (!PW) return; const k = Math.max(PW / W, PH / H);
+      Object.assign(box.style, { width:W * k + 'px', height:H * k + 'px', left:(PW - W * k) / 2 + 'px', top:(PH - H * k) / 2 + 'px' }); box.style.setProperty('--u', k + 'px'); };
+    fit(); addEventListener('resize', fit);
+    // 専用のドア画像（bt_door.jpg / bt_door_open.jpg）を置けば、自動でそちらに切り替わる
+    const t = new Image(); t.onload = () => { W = t.naturalWidth; H = t.naturalHeight; s.classList.remove('tmp'); box.querySelector('.btdc').src = 'bt_door.jpg'; box.querySelector('.btdo').src = 'bt_door_open.jpg'; fit(); }; t.src = 'bt_door.jpg';
+    let tx = 0, ty = 0;
+    s.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; });
+    s.addEventListener('pointerup', async e => {
+      if (Math.hypot(e.clientX - tx, e.clientY - ty) >= 10 || s.classList.contains('opening')) return;
+      ctx.resume(); haptic(); s.classList.add('opening', 'opened'); sfx('turn');
+      await sleep(800); s.classList.add('flash'); await sleep(380); await open();
+      setTimeout(() => s.classList.remove('opening', 'opened', 'flash'), 600);
+    });
+    return s;
+  }
+  async function paintDoor() { const b = $('btDoorAp'); if (!b) return; await load(); b.innerHTML = `<i>AP</i>${S.ap}/${AP_MAX}`; }
+  function setDoor(v) { if (onDoor === v) return; onDoor = v; document.body.classList.toggle('atBtDoor', v); if (v) paintDoor(); }
+
   return {
-    open, gainAP,
+    open, gainAP, makeDoor, setDoor, paintDoor,
+    isDoor:() => onDoor,
     active:() => !!scr,
-    bgm:() => scr === 'fight' ? BGM.fight : scr === 'result' && lastWin ? BGM.win : null,
+    bgm:() => scr === 'fight' ? BGM.fight : scr === 'result' ? (lastWin ? BGM.win : null) : scr ? BGM.hub : null,
     allBgm:() => Object.values(BGM),
     _dbg:() => ({ S, B }),
   };
