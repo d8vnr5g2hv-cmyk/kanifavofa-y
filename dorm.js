@@ -120,6 +120,7 @@ const Dorm = (() => {
         <div class="dm-top"><button class="dm-back" data-a="out">‹ 出る</button><div class="dm-ttl">学生寮<small>DORMITORY</small></div><div class="dm-clock" id="dmClock"></div></div>
         <div class="dm-board"><div class="dm-bh"><b>在室ボード</b><small id="dmBoardSub"></small></div><div class="dm-bgrid" id="dmBoard"></div>
           <button class="dm-go" data-a="cor">廊下へ進む <i>›</i></button></div>
+        <button class="dm-memb" data-a="mem" type="button" aria-label="思い出のボード"><i class="dm-pin"></i><span class="dm-memth"><img src="bt_c_hoshino_ex.webp" alt=""><img src="bt_c_mika_ex.webp" alt=""><img src="bt_c_mari_ex.webp" alt=""></span><b>思い出</b><small>MEMORIAL</small></button>
       </section>
       <section class="dm-sc dm-corr">
         <div class="dm-cor" id="dmCor"></div>
@@ -134,6 +135,7 @@ const Dorm = (() => {
         <div class="dm-inp"><input id="dmIn" type="text" placeholder="話しかける…" autocomplete="off" enterkeyhint="send"><button id="dmSend">送信</button></div>
       </section>
       <div class="dm-ov" id="dmOv"></div>
+      <div class="dm-mem" id="dmMem"></div>
       <div class="dm-fade" id="dmFade"></div>
     </div>`);
     document.body.appendChild(o);
@@ -301,11 +303,55 @@ const Dorm = (() => {
       if (x === 'prev' || x === 'next') { const c = $('dmCor'), i = Math.round(c.scrollLeft / c.clientWidth) + (x === 'next' ? 1 : -1); c.scrollTo({ left:c.clientWidth * Math.max(0, Math.min(KEYS.length - 1, i)), behavior:'smooth' }); return; }
       if (x === 'log') return history();
       if (x === 'ovx') { $('dmOv').className = 'dm-ov'; $('dmOv').innerHTML = ''; return; }
+      if (x === 'mem') return memBoard();
+      if (x === 'memx') { $('dmMem').className = 'dm-mem'; $('dmMem').innerHTML = ''; return; }
+      if (x === 'memback') return memBoard();
     }
     if (e.target === $('dmOv')) { $('dmOv').className = 'dm-ov'; $('dmOv').innerHTML = ''; return; }
+    const mp = e.target.closest('[data-mem]'); if (mp) return memView(mp.dataset.mem);
     const b = e.target.closest('[data-room]'); if (b) { const i = +b.dataset.room; return swap(() => toCorridor(i)); }
     const d = e.target.closest('[data-door] .dm-fit'); if (d) return knock(+d.parentNode.dataset.door);
     if (e.target.closest('#dmMw')) return tapWindow();
+  }
+
+  // ----- 思い出のボード（メモリアル）。ストーリーを入れるまでは全員分を見られる -----
+  const MEM = {
+    hoshino:'うへ〜、今日もいい夕焼けだねぇ。先生も一緒に見よっか〜',
+    mika:'ねえ先生、こっちこっち！ 一緒に見ようよ☆',
+    mari:'先生に、主のご加護がありますように',
+    hina:'……少しだけ。先生の前でなら、肩の力を抜いてもいいでしょう',
+    yuuka:'先生！ ほら、立ってください。今日のメニューはまだ残ってますよ',
+    miyako:'目標を捕捉しました。先生は、私の後ろにいてください',
+    nico:'ふふ、今日もお疲れさまです〜。少し、ここで休んでいきましょうか',
+    kisaki:'ほれ、先生。妾の飴じゃ。……特別に分けてやろう',
+  };
+  const MEM_FX = { kisaki:'petal', nico:'petal', hoshino:'petal', mika:'feather', mari:'feather', hina:'shard', yuuka:'flare', miyako:'scope' };
+  function memBoard() {
+    const later = KEYS.filter(k => !MEM[k]);
+    $('dmMem').innerHTML = `<div class="dm-cork"><div class="dm-top"><button class="dm-back" data-a="memx">‹ エントランス</button><div class="dm-ttl">思い出<small>MEMORIAL</small></div></div>
+      <div class="dm-mgrid">${Object.keys(MEM).map((k, i) => `<button class="dm-pol" data-mem="${k}" style="--r:${[-4, 3, -2, 5, -3, 2, -5, 4][i]}deg" type="button"><i class="dm-pin"></i>
+        <span class="dm-pimg"><img src="bt_c_${k}_ex.webp" alt="${ST[k].name}の思い出"></span><b>${ST[k].name}</b></button>`).join('')}
+        ${later.map((k, i) => `<div class="dm-pol lk" style="--r:${[3, -4, 2, -2][i % 4]}deg"><i class="dm-pin"></i><span class="dm-pimg"><em>？</em></span><b>${ST[k].name}</b></div>`).join('')}</div></div>`;
+    $('dmMem').className = 'dm-mem on';
+  }
+  function memView(k) {
+    const fx = MEM_FX[k] || 'petal';
+    $('dmMem').innerHTML = `<div class="dm-mview"><div class="rt-ex on"><div class="rt-exbg" style="background-image:url(bt_c_${k}_ex.webp)"></div>
+      <div class="rt-exc fx-${fx}" id="dmMc"><div class="rt-exfr"></div><div class="rt-exin">
+        <img class="rt-exl b" src="ex_${k}_bg.webp" alt=""><div class="rt-exm"></div><img class="rt-exl f" src="ex_${k}_fg.webp" alt="${ST[k].name}の思い出" onerror="this.src='bt_c_${k}_ex.webp'"><div class="rt-exm front"></div>
+      </div><span class="rt-exbadge">MEMORIAL</span></div>
+      <div class="dm-mline"><small>${ST[k].name}</small><p>${MEM[k]}</p></div></div>
+      <div class="dm-top"><button class="dm-back" data-a="memback">‹ ボード</button></div></div>`;
+    [...$('dmMem').querySelectorAll('.rt-exm')].forEach((m, j) => { for (let i = 0; i < (j ? 5 : 14); i++) { const p = document.createElement('i');
+      p.style.cssText = `left:${Math.random() * 100}%;--s:${(j ? 6 : 3) + Math.random() * 5}px;--d:${4 + Math.random() * 4}s;--dl:${-Math.random() * 6}s;--dx:${(Math.random() - .5) * 60}px`; m.appendChild(p); } });
+    // 指でなぞると傾く
+    const c = $('dmMc');
+    const tilt = e => { const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5;
+      c.style.transform = `perspective(800px) rotateY(${x * 16}deg) rotateX(${-y * 16}deg)`;
+      c.querySelector('.rt-exl.f').style.translate = `${x * 14}px ${y * 10}px`; c.querySelector('.rt-exl.b').style.translate = `${-x * 10}px ${-y * 8}px`; };
+    c.addEventListener('pointermove', tilt);
+    c.addEventListener('pointerleave', () => { c.style.transform = ''; c.querySelectorAll('.rt-exl').forEach(l => { l.style.translate = ''; }); });
+    try { ctx.resume(); playVoice(ST[k].voice); } catch (e) {}
   }
 
   return {
@@ -313,5 +359,6 @@ const Dorm = (() => {
     isDoor:() => onDoor,
     active:() => !!scene,
     bgm:() => scene ? (isNight() ? BGM.n : BGM.d) : null,
+    _enter:enter,
   };
 })();
