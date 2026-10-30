@@ -165,7 +165,10 @@ body.atDmDoor .dots, body.atBtDoor .dots { display:none !important; }
 .btdoor .btsign { position:absolute; left:50%; top:13%; transform:translateX(-50%) skewX(-10deg); padding:calc(var(--u) * 14) calc(var(--u) * 40); background:linear-gradient(120deg, #ff5f8f, #ff9a5a);
   color:#fff; font:900 calc(var(--u) * 56)/1 'Noto Sans JP',sans-serif; letter-spacing:.3em; box-shadow:0 0 calc(var(--u) * 40) rgba(255,95,143,.7); text-align:center; white-space:nowrap; transition:opacity .4s; }
 .btdoor .btsign small { display:block; font:600 calc(var(--u) * 18)/1 Quicksand,sans-serif; letter-spacing:.5em; margin-top:calc(var(--u) * 8); }
-.btdoor:not(.tmp) .btsign { display:none; }
+.btdoor:not(.tmp) .btsign { top:16.8%; padding:0; background:none; transform:translateX(-50%); box-shadow:none; color:#14315f; white-space:nowrap; text-align:center;
+  text-shadow:0 0 calc(var(--u) * 8) rgba(73,211,255,.55); }
+.btdoor:not(.tmp) .btsign small { color:#2a6fbf; margin-top:calc(var(--u) * 4); }
+.btdoor:not(.tmp) .btap { top:24.5%; }
 .btdoor.opened .btsign { opacity:0; }
 .btdoor .btap { position:absolute; left:50%; top:22%; transform:translateX(-50%); padding:calc(var(--u) * 8) calc(var(--u) * 24); border-radius:calc(var(--u) * 24); background:rgba(5,12,30,.8); border:calc(var(--u) * 3) solid rgba(255,214,102,.7);
   color:#fff; font:600 calc(var(--u) * 28)/1 Fredoka,sans-serif; white-space:nowrap; pointer-events:none; }
