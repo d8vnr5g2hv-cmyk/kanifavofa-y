@@ -20,12 +20,8 @@ const Battle = (() => {
   const SETS = { a:['atk', 'spd', 'bar', 'exa'], h:['atk', 'buf', 'heal', 'exh'] };
   const EVO_TY = { bar:1, heal:1, exa:2, exh:2 };   // 進化できるカード（1＝Lv10・結晶3／2＝Lv20・結晶5）
   // カード画像（届いている分）。ないものは立ち絵を使う
-  const ART = {
-    hoshino:['atk', 'spd', 'bar', 'bar_evo', 'exa', 'exa_evo', 'ex'],
-    mika:['atk', 'spd', 'bar', 'bar_evo', 'exa', 'exa_evo', 'ex'],
-    mari:['atk', 'buf', 'heal', 'heal_evo', 'exh', 'exh_evo', 'ex'],
-    hina:['exa', 'exa_evo', 'ex'], yuuka:['ex'], miyako:['ex'], nico:['ex'], kisaki:['ex'],
-  };
+  const ART = Object.fromEntries(Object.entries(CH).map(([k, c]) => [k, c.set === 'a'
+    ? ['atk', 'spd', 'bar', 'bar_evo', 'exa', 'exa_evo', 'ex'] : ['atk', 'buf', 'heal', 'heal_evo', 'exh', 'exh_evo', 'ex']]));
   // 効果は op の並び。数値は育成で伸びる（ダメージは攻撃力、回復・シールドはレベル）
   const C = (n, c, o, evo) => ({ n, c, o, evo });
   const ATK = n => C('通常射撃', 1, [['dmg', n]]);
@@ -73,12 +69,12 @@ const Battle = (() => {
   };
   // waves：ウェーブごとの敵／t3：★3になるクリア秒数
   const STAGES = [
-    { id:'p1', name:'ドローン迎撃', waves:[['drone'], ['drone', 'drone']], m:1.0, ap:10, exp:60, t3:50, drop:[['note1', 2]], first:[['star', 1], ['note2', 1]] },
-    { id:'p2', name:'不良生徒の鎮圧', waves:[['thug'], ['thug', 'thug']], m:1.1, ap:10, exp:90, t3:60, drop:[['note1', 3]], first:[['star', 1], ['chipA', 1]] },
-    { id:'p3', name:'警備ロボット', waves:[['drone', 'drone'], ['robot', 'drone']], m:1.2, ap:10, exp:130, t3:70, drop:[['note1', 2], ['note2', 1]], first:[['star', 2], ['chipD', 1]] },
-    { id:'p4', name:'混成部隊', waves:[['thug', 'drone'], ['robot', 'thug', 'drone']], m:1.35, ap:10, exp:180, t3:85, drop:[['note2', 2], ['chipA', 1]], first:[['star', 2], ['chipD', 1]] },
-    { id:'p5', name:'重装オートマタ', waves:[['drone', 'thug'], ['heavy']], m:1.5, ap:15, exp:260, t3:100, drop:[['note2', 2], ['chipD', 1], ['star', 1]], first:[['star', 3], ['note3', 1]] },
-    { id:'p6', name:'総力戦', waves:[['drone', 'robot'], ['thug', 'thug', 'drone'], ['heavy', 'drone']], m:1.8, ap:15, exp:360, t3:140, drop:[['note2', 3], ['chipA', 1], ['star', 1]], first:[['star', 3], ['note3', 2]] },
+    { id:'p1', bg:'bt_bg_city.webp', name:'ドローン迎撃', waves:[['drone'], ['drone', 'drone']], m:1.0, ap:10, exp:60, t3:50, drop:[['note1', 2]], first:[['star', 1], ['note2', 1]] },
+    { id:'p2', bg:'bt_bg_city.webp', name:'不良生徒の鎮圧', waves:[['thug'], ['thug', 'thug']], m:1.1, ap:10, exp:90, t3:60, drop:[['note1', 3]], first:[['star', 1], ['chipA', 1]] },
+    { id:'p3', bg:'bt_bg_city.webp', name:'警備ロボット', waves:[['drone', 'drone'], ['robot', 'drone']], m:1.2, ap:10, exp:130, t3:70, drop:[['note1', 2], ['note2', 1]], first:[['star', 2], ['chipD', 1]] },
+    { id:'p4', bg:'bt_bg_city.webp', name:'混成部隊', waves:[['thug', 'drone'], ['robot', 'thug', 'drone']], m:1.35, ap:10, exp:180, t3:85, drop:[['note2', 2], ['chipA', 1]], first:[['star', 2], ['chipD', 1]] },
+    { id:'p5', bg:'bt_bg_sand.webp', name:'重装オートマタ', waves:[['drone', 'thug'], ['heavy']], m:1.5, ap:15, exp:260, t3:100, drop:[['note2', 2], ['chipD', 1], ['star', 1]], first:[['star', 3], ['note3', 1]] },
+    { id:'p6', bg:'bt_bg_sand.webp', name:'総力戦', waves:[['drone', 'robot'], ['thug', 'thug', 'drone'], ['heavy', 'drone']], m:1.8, ap:15, exp:360, t3:140, drop:[['note2', 3], ['chipA', 1], ['star', 1]], first:[['star', 3], ['note3', 2]] },
   ];
   const ITEM = {
     note1:{ name:'訓練ノート（小）', img:'it_note1', exp:100 }, note2:{ name:'訓練ノート（中）', img:'it_note2', exp:400 }, note3:{ name:'訓練ノート（大）', img:'it_note3', exp:1500 },
@@ -396,7 +392,9 @@ const Battle = (() => {
   function cardHTML(k, ty, evo, big = false, extra = '') {
     const c = ty === 'ex' ? CARD[k].ex : cardOf(k, ty, evo), art = artOf(k, ty, evo), kind = ty === 'ex' ? 'ex' : kindOf(c);
     const frame = ty === 'ex' ? ' dia' : evo ? (ty === 'exa' || ty === 'exh' ? ' rain' : ' gold') : '';
-    const img = art ? `<img class="bt-ca" src="${art}" alt="">` : `<img class="bt-ca bt-cat" src="${tachie(k, 1)}" alt="" style="--fx:${CH[k].face[0]};--fy:${CH[k].face[1]}">`;
+    // 絵がないカードは、種類ごとの共通カード（bt_g_*）を敷く
+    const gen = ty === 'ex' ? 'ex' : c.c >= 2 && kind === 'atk' ? 'big' : kind;
+    const img = `<img class="bt-ca" src="${art || `bt_g_${gen}.webp`}" alt="">`;
     return `<div class="bt-card k-${kind}${evo ? ' evo' : ''}${frame}${big ? ' big' : ''}" ${extra}>${img}${frame ? '<i class="bt-sh"></i>' : ''}
       ${ty === 'ex' ? '' : `<i class="bt-cc">${rtCost(c)}</i>`}<img class="bt-cf" src="${faceImg(k)}" alt=""><div class="bt-cn">${evo ? '<em>★</em>' : ''}${c.n}</div>${big ? `<div class="bt-ct">${cardText(k, c)}</div>` : ''}</div>`;
   }
