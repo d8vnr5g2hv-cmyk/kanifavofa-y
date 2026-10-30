@@ -1,0 +1,43 @@
+/* Kani Favorite — タイトル画面（メモリアルの絵）。古いタイトルの部品は隠す */
+#splash.nt { background:#0b0f1e; }
+#splash.nt > :not(#ttl):not(.gear) { display:none !important; }
+#splash.nt .gear { left:auto; right:14px; z-index:12; background:rgba(10,14,30,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+#splash.nt .gear svg { stroke:rgba(255,255,255,.85); }
+#ttl { position:absolute; inset:0; overflow:hidden; background:#0b0f1e; color:#fff; cursor:pointer; -webkit-user-select:none; user-select:none; }
+#splash.nt.go #ttl { transition:opacity .8s ease, filter .8s ease; opacity:0; filter:brightness(2); }
+
+.tt-shot { position:absolute; inset:-2%; background-size:cover; background-position:center; opacity:0; will-change:opacity, transform; }
+#ttl.tt-s1 .tt-shot.a, #ttl.tt-s2 .tt-shot.a { opacity:1; transition:opacity 1.6s ease; animation:ttDrift 14s ease-in-out infinite alternate; }
+#ttl.tt-s2 .tt-shot.b { opacity:1; transition:opacity .9s ease; animation:ttDrift 14s ease-in-out infinite alternate; }
+@keyframes ttDrift { from { transform:scale(1.01); } to { transform:scale(1.045) translateY(-.6%); } }
+
+.tt-rays { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0; transition:opacity 2s; mix-blend-mode:screen; }
+#ttl.tt-s1 .tt-rays, #ttl.tt-s2 .tt-rays { opacity:1; }
+.tt-rays i { position:absolute; left:var(--x); top:-20%; width:var(--w); height:150%; transform-origin:50% 0; transform:rotate(var(--r));
+  background:linear-gradient(180deg, var(--rc), transparent 75%); filter:blur(6px); animation:ttRay var(--d) ease-in-out infinite alternate; animation-delay:var(--dl); }
+@keyframes ttRay { from { opacity:.12; } to { opacity:.5; } }
+.tt-glow { position:absolute; z-index:2; pointer-events:none; left:var(--gx); top:var(--gy); width:var(--gs); height:var(--gs); margin:calc(var(--gs) / -2) 0 0 calc(var(--gs) / -2); border-radius:50%;
+  background:radial-gradient(circle, var(--gc), transparent 65%); mix-blend-mode:screen; opacity:0; transition:opacity 2s; }
+#ttl.tt-s1 .tt-glow, #ttl.tt-s2 .tt-glow { opacity:1; animation:ttPulse 4s ease-in-out infinite; }
+@keyframes ttPulse { 50% { transform:scale(1.15); filter:brightness(1.3); } }
+.tt-vig { position:absolute; inset:0; z-index:2; pointer-events:none; background:radial-gradient(ellipse at 50% 40%, transparent 55%, var(--vg, rgba(0,0,0,0)) 100%); }
+.tt-cv { position:absolute; inset:0; z-index:3; pointer-events:none; }
+.tt-bloom { position:absolute; inset:0; z-index:4; pointer-events:none; opacity:0; background:radial-gradient(circle at 50% 42%, rgba(255,255,255,.85), rgba(255,255,255,.25) 40%, transparent 70%); }
+.tt-bloom.on { animation:ttBloom 1.2s ease-out; }
+@keyframes ttBloom { 25% { opacity:1; } 100% { opacity:0; } }
+
+.tt-clock { position:absolute; z-index:6; left:20px; top:calc(env(safe-area-inset-top) + 18px); opacity:0; transition:opacity 1.2s .4s; text-shadow:0 2px 12px rgba(20,10,50,.5); pointer-events:none; }
+#ttl.tt-s1 .tt-clock, #ttl.tt-s2 .tt-clock { opacity:1; }
+.tt-clock b { display:block; font:500 54px/1 'Quicksand', 'Noto Sans JP', sans-serif; letter-spacing:.02em; font-variant-numeric:tabular-nums; }
+.tt-clock small { display:block; margin-top:6px; font:600 13px 'Quicksand', sans-serif; letter-spacing:.18em; color:rgba(255,255,255,.78); }
+.tt-touch { position:absolute; z-index:6; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 8%); text-align:center; pointer-events:none;
+  font:600 13px 'Quicksand', sans-serif; letter-spacing:.5em; padding-left:.5em; color:rgba(255,255,255,.85); text-shadow:0 1px 8px rgba(20,10,50,.7); opacity:0; }
+.tt-touch.on { animation:ttBlink 2.6s ease-in-out infinite; }
+@keyframes ttBlink { 0%, 100% { opacity:.2; } 50% { opacity:.85; } }
+
+.tt-splash { position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; background:#0b0f1e; transition:opacity 1.2s ease; }
+.tt-splash b { font:500 15px 'Quicksand', sans-serif; letter-spacing:.6em; padding-left:.6em; color:rgba(255,255,255,.55); animation:ttBreathe 3s ease-in-out infinite; }
+.tt-splash small { font:600 11px 'Quicksand', 'Noto Sans JP', sans-serif; letter-spacing:.4em; color:rgba(255,255,255,.3); }
+@keyframes ttBreathe { 50% { opacity:.4; } }
+#ttl.tt-s1 .tt-splash, #ttl.tt-s2 .tt-splash { opacity:0; pointer-events:none; }
+@media (prefers-reduced-motion: reduce) { .tt-shot, .tt-rays i, .tt-glow { animation:none !important; } }

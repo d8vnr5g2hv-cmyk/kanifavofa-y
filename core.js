@@ -489,7 +489,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '3.3';
+const VERSION = '3.4';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -646,38 +646,34 @@ const App = {
     $('importBtn').addEventListener('click', () => $('importFile').click());
     $('importFile').addEventListener('change', e => { const f = e.target.files[0]; if (f) importData(f); e.target.value = ''; });
 
-    // 1回目のタップ：ロック解除 → タイトル曲と演出（音はその瞬間に頭から）
-    // 2回目のタップ：アプリへ
+    // タイトル：スプラッシュ →（タッチ：タイトル曲）→ 1枚目 →（タッチ：ロックがオンなら Face ID）→ 2枚目 →（タッチ）→ アプリへ
     const splash = $('splash');
-    const startTitle = () => {   // タイトルの演出とBGM（タップの流れの中で呼ぶ）
-      if (phase !== 'lock') return;
-      ctx.resume();
-      phase = 'splash';
-      if (buffers[TITLE_BGM.src]) syncBgm(0, 0.12); else titleReady.then(() => syncBgm(0, 0.25));
-      splash.classList.add('run');
-      setTimeout(() => splash.classList.add('ready'), 2200);
+    const enterApp = () => {
+      phase = 'app';
+      splash.classList.add('go');
+      stopBgm(0.7);
+      const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
+      setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
+      setTimeout(() => Room.warmup(), 8000);   // 前日の日報を裏で用意しておく
+      // 重い先読み（となりの動画・止め絵）は、今のメモロビのBGMが鳴り始めてから
+      loadBuf(chars[current].bgm.src).catch(() => {}).then(() => sleep(1500)).then(() => { bgReady = true; updateVideos(); setTimeout(preloadPosters, 1500); });
+      setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
+      setTimeout(() => { splash.style.display = 'none'; }, 1500);
     };
-    splash.addEventListener('click', async () => {
-      if (phase === 'lock') {
-        if (AppLock.locked()) return;
-        startTitle();
-      } else if (phase === 'splash' && splash.classList.contains('ready')) {
-        phase = 'app';
-        splash.classList.add('go');
-        stopBgm(0.7);
-        const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
-        setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
-        setTimeout(() => Room.warmup(), 8000);   // 前日の日報を裏で用意しておく
-        // 重い先読み（となりの動画・止め絵）は、今のメモロビのBGMが鳴り始めてから
-        loadBuf(chars[current].bgm.src).catch(() => {}).then(() => sleep(1500)).then(() => { bgReady = true; updateVideos(); setTimeout(preloadPosters, 1500); });
-        setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
-        setTimeout(() => { splash.style.display = 'none'; }, 1500);
-      }
+    Title.init({
+      start:() => { ctx.resume(); phase = 'splash'; if (buffers[TITLE_BGM.src]) syncBgm(0, 0.12); else titleReady.then(() => syncBgm(0, 0.25)); },
+      lock:() => AppLock.needAtBoot(),
+      // Face ID が使えればその場で。だめなら（またはパスワードだけなら）ロック画面
+      unlock:async (ok, ng) => {
+        const fallback = () => AppLock.show(ok, { cancel:true, onCancel:ng });
+        try { if (!(await Accounts.gate.ready())) return ok(); if (Accounts.gate.face()) { await Accounts.gate.tryFace(); haptic(); return ok(); } } catch (e) {}
+        fallback();
+      },
+      enter:enterApp,
     });
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('sw', e.message));
     this.modules.forEach(m => m.init && m.init());
     AppLock.init();
-    if (AppLock.needAtBoot()) AppLock.show(startTitle);   // ロック → 開けたらそのままタイトルへ
   },
 };
