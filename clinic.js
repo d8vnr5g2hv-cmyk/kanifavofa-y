@@ -21,9 +21,16 @@ const Clinic = (() => {
   let blinkT = 0;
 
   // ===== 表情とまばたき =====
+  // 昼休み（12〜13時）と夜（22時〜5時）は、白衣で休憩中の乃亜
+  const resting = () => { const h = new Date().getHours(); return h === 12 || h >= 22 || h < 5; };
+  function sceneEnter() {
+    const pg = $('page-sc_clinic'), nb = pg.querySelector('.nb'), r = resting();
+    pg.classList.toggle('rest', r); nb.src = r ? 'noa_rest.webp' : 'nurse_normal.webp'; face(null);
+  }
   function face(f) {
     const nf = document.querySelector('#page-sc_clinic .nf');
-    if (nf) { if (!f || f === 'normal' || f === 'smile') nf.classList.remove('on'); else { nf.src = FACE[f] || FACE.normal; nf.classList.add('on'); } }
+    if (nf && resting()) { nf.classList.remove('on'); f = f || null; }
+    else if (nf) { if (!f || f === 'normal' || f === 'smile') nf.classList.remove('on'); else { nf.src = FACE[f] || FACE.normal; nf.classList.add('on'); } }
     const c = 'noa_c_' + (f ? CHIBI[f] || 'hug' : idleChibi()) + '.webp';
     document.querySelectorAll('.clinicp .noac').forEach(i => { if (!i.src.endsWith(c)) { i.classList.remove('pop'); void i.offsetWidth; i.src = c; i.classList.add('pop'); } });
   }
@@ -175,9 +182,9 @@ const Clinic = (() => {
   // 乃亜をタップ：ひとこと
   function tapNoa() {
     const hr = new Date().getHours();
-    const L = hr >= 23 || hr < 4 ? [['ようへい、もう寝る時間だよ？', 'pout']] : [['どうしたの？ 体調、大丈夫？', 'think'], ['ふふ、来てくれたんだ', 'happy'], ['ちゃんとご飯食べた？', 'surprise'], ['……あんまり見られると、照れるんだけど', 'worry']];
+    const L = resting() && tab === 'sc_clinic' ? [['……あ、ようへい。今ちょっと休憩中', 'normal'], ['ふぁ……保健室、今日はひまだったよ', 'normal']] : hr >= 23 || hr < 4 ? [['ようへい、もう寝る時間だよ？', 'pout']] : [['どうしたの？ 体調、大丈夫？', 'think'], ['ふふ、来てくれたんだ', 'happy'], ['ちゃんとご飯食べた？', 'surprise'], ['……あんまり見られると、照れるんだけど', 'worry']];
     const [l, f] = L[Math.floor(Math.random() * L.length)]; react([l], f);
   }
-  return { init, face, tapNoa, reload:() => { if (tab === 'body') body(); if (tab === 'mind') mind(); if (tab === 'karte') karte(); } };
+  return { init, face, tapNoa, sceneEnter, reload:() => { if (tab === 'body') body(); if (tab === 'mind') mind(); if (tab === 'karte') karte(); } };
 })();
 App.modules.push(Clinic);

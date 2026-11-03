@@ -359,3 +359,18 @@ body.inRoom #rain { display:none; }
 .clinicp .noac { position:absolute; right:14px; top:calc(env(safe-area-inset-top) + 8px); height:142px; filter:drop-shadow(0 6px 8px rgba(200,80,130,.25)); cursor:pointer; z-index:2; animation:noaBr 3.6s ease-in-out infinite; transform-origin:50% 100%; }
 .clinicp .noac.pop { animation:noacPop .45s cubic-bezier(.2,1.5,.4,1); }
 @keyframes noacPop { from { transform:scale(.7) translateY(10px); opacity:.4; } }
+
+/* ===== 自室の1枚目：乃亜 ===== */
+#room .rnoa { background:#2a2440; }
+#room .rnoa .nm { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center top; animation:noaBr 4.5s ease-in-out infinite; transform-origin:50% 100%; }
+#room .rnhint { position:absolute; right:14px; bottom:calc(env(safe-area-inset-bottom) + 22px); padding:7px 12px; border-radius:14px; background:rgba(255,255,255,.85); color:#7a5ad6; font-size:11.5px; font-weight:700; display:flex; align-items:center; gap:4px; animation:rhint 2.4s ease-in-out infinite; }
+#room .rnhint i { width:7px; height:7px; border-top:2px solid currentColor; border-right:2px solid currentColor; transform:rotate(45deg); }
+#room .rnslip { position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 70px); display:none; justify-content:center; padding:0 22px; }
+#room .rnslip.on { display:flex; animation:slipIn .5s cubic-bezier(.2,.9,.3,1.1); }
+@keyframes slipIn { from { opacity:0; transform:translateY(30px) rotate(-4deg); } }
+#room .rnslip .rs-in { position:relative; width:100%; max-width:340px; background:#fffdf5; border-radius:6px; padding:14px 16px 10px; box-shadow:0 14px 30px rgba(40,30,60,.35); transform:rotate(-1.5deg); color:#3a3040; border-top:6px solid #e8b04a; }
+#room .rnslip b { font-size:15px; letter-spacing:.2em; } #room .rnslip small { float:right; font:600 11px 'Quicksand',sans-serif; color:#a09080; }
+#room .rnslip .slp { margin-top:8px; } #room .rnslip .slp > div { display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; } #room .rnslip .slp .m { color:#8a7a6a; font-size:11.5px; }
+#room .rnslip .slp .tt { border-top:1.5px solid #5a4a3a; margin-top:4px; padding-top:6px; font-weight:700; } #room .rnslip .slp .tt b { color:#3d86d6; font-size:16px; letter-spacing:0; }
+#room .rnslip .rs-st { position:absolute; right:12px; top:34px; width:42px; height:42px; border:2.5px solid #e2557d; border-radius:50%; color:#e2557d; font-style:normal; font-weight:700; font-size:12px; display:grid; place-items:center; transform:rotate(-14deg); opacity:.85; }
+#room .rnslip p { text-align:center; font-size:10px; color:#b0a090; margin-top:6px; }

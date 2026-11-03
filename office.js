@@ -24,7 +24,7 @@ const Office = (() => {
   const SLOT_NAME = Object.fromEntries(SLOTS.map(([k, n]) => [k, n]));
 
   let cfg = null, el = null, active = false, onDoor = false, tab = 'cash', api = null, month = null, foodDay = null, chat = [];
-  const fresh = () => ({ id:CFG_ID, cash:{ income:0, payday:25, bonus:[], fixed:[], saved:0, goal:0, start:'', goalBy:'', wallet:null, arrears:[], mode:'normal', lastPay:'' }, food:{ w:90, h:177, age:25, act:1.4, mode:'cut' }, sim:{ cig:30, can:200, deli:1500 } });
+  const fresh = () => ({ id:CFG_ID, cash:{ income:0, payday:15, bonus:[], fixed:[], saved:0, goal:0, start:'', goalBy:'', wallet:null, arrears:[], mode:'normal', lastPay:'' }, food:{ w:90, h:177, age:25, act:1.4, mode:'cut' }, sim:{ cig:30, can:200, deli:1500 } });
   async function loadCfg() {
     if (cfg) return cfg;
     cfg = Object.assign(fresh(), await DB.get('settings', CFG_ID).catch(() => null) || {});
@@ -47,11 +47,17 @@ const Office = (() => {
   }
   const isPrep = (c = cfg.cash) => !!c.start && D.today() < c.start;   // 貯金の開始前（準備期間）
   const daysTo = d => Math.round((D.parse(d) - D.parse(D.today())) / 86400000);
+  // その月の給料日（土日なら前の平日）
+  function paydayOf(c, m) {
+    const d = D.parse(`${m}-${p2(Math.min(c.payday || 15, daysIn(m)))}`);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1);
+    return D.key(d);
+  }
   function nextPayday(c) {
-    const t = D.today(), m = ym(t), pd = Math.min(c.payday || 25, daysIn(m)), k = `${m}-${p2(pd)}`;
+    const t = D.today(), m = ym(t), k = paydayOf(c, m);
     if (k >= t) return k;
-    const d = new Date(+m.slice(0, 4), +m.slice(5, 7), 1), m2 = `${d.getFullYear()}-${p2(d.getMonth() + 1)}`;
-    return `${m2}-${p2(Math.min(c.payday || 25, daysIn(m2)))}`;
+    const d = new Date(+m.slice(0, 4), +m.slice(5, 7), 1);
+    return paydayOf(c, `${d.getFullYear()}-${p2(d.getMonth() + 1)}`);
   }
   async function cashSum(m = ym()) {
     const c = cfg.cash, ents = (await all('cash-')).filter(e => e.date.startsWith(m)), plans = (await all('plan-')).filter(p => p.date.startsWith(m));
@@ -283,7 +289,7 @@ const Office = (() => {
     const short = v => v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1) + '万' : v.toLocaleString();
     let cells = ''; for (let i = 0; i < first; i++) cells += '<i></i>';
     for (let d = 1; d <= n; d++) {
-      const k = `${m}-${p2(d)}`, ps = plans.filter(p => p.date === k), pay = cfg.cash.income && +(cfg.cash.payday || 25) === d;
+      const k = `${m}-${p2(d)}`, ps = plans.filter(p => p.date === k), pay = cfg.cash.income && paydayOf(cfg.cash, m) === k;
       cells += `<button data-cd="${k}" class="${k === D.today() ? 'tdy' : ''} ${k === calSel ? 'sel' : ''} ${k < (cfg.cash.start || '') ? 'pre' : ''}"><b>${d}</b>
         ${inc[k] ? `<small class="in">+${short(inc[k])}</small>` : ''}${out[k] ? `<small class="out">−${short(out[k])}</small>` : ''}
         ${ps.length ? `<em class="${ps.every(p => p.done) ? 'ok' : ''}">${ps.every(p => p.done) ? '✓' : ''}</em>` : ''}${pay ? '<u>給</u>' : ''}${k === cfg.cash.start ? '<s>START</s>' : ''}</button>`;
@@ -368,7 +374,8 @@ const Office = (() => {
   // 給料日までに落ちる固定費（給料日当日に落ちるものは、給料が入ってからなので含めない）
   function fixedBefore(c) {
     const t = D.today(), pd = nextPayday(c);
-    return c.fixed.filter(f => { const d = +f.day || +c.payday || 25; const k = `${t.slice(0, 8)}${p2(Math.min(d, 28))}`; return k >= t && k < pd; }).reduce((a, f) => a + (+f.amt || 0), 0);
+    const done = c.fixedDone || {};
+    return c.fixed.filter(f => { if (!f.day || +f.day === +c.payday || done[t.slice(0, 7) + ':' + f.n]) return false; const k = `${t.slice(0, 8)}${p2(Math.min(+f.day, 28))}`; return k >= t && k < pd; }).reduce((a, f) => a + (+f.amt || 0), 0);
   }
   async function walletPlan() {
     const c = cfg.cash, now = await walletNow(); if (now == null) return null;
@@ -444,15 +451,31 @@ const Office = (() => {
   // 給料日を過ぎて開いたら：手元に手取りを足し、給料日に落ちる固定費を引いて、明細を作る
   async function autoPay() {
     await loadCfg(); const c = cfg.cash; if (!c.income) return 0;
-    const m = ym(), pd = `${m}-${p2(Math.min(c.payday || 25, daysIn(m)))}`;
+    const m = ym(), pd = paydayOf(c, m);
     if (D.today() < pd || c.lastPay === m) return 0;
-    const s = await cashSum(m), onPay = c.fixed.filter(f => !f.day || +f.day === +c.payday);
+    const s = await cashSum(m), onPay = c.fixed.filter(f => f.day && +f.day === +c.payday);
     const fx = onPay.reduce((a, f) => a + (+f.amt || 0), 0);
     if (c.wallet) c.wallet = { amt:(await walletNow()) + c.income - fx, at:Date.now() };
     await DB.put('room', { id:'slip-' + m, income:c.income, fixed:c.fixed.map(f => ({ n:f.n, amt:+f.amt || 0 })), save:s.saving ? s.saveM : 0, free:Math.max(0, c.income - s.fixed - (s.saving ? s.saveM : 0)), seen:false });
     c.lastPay = m; saveCfg(); Life.changed('money');
     return 1;
   }
+
+  // 固定費の引き落とし日を過ぎたら、手元の見込みから引く（家計簿の予算には最初から入っているので、記録は増やさない）
+  async function autoFixed() {
+    await loadCfg(); const c = cfg.cash; if (!c.wallet || !c.income) return 0;
+    const m = ym(), t = D.today(); c.fixedDone = c.fixedDone || {}; let n = 0;
+    for (const f of c.fixed) {
+      if (!f.day || +f.day === +c.payday) continue;
+      const k = `${m}-${p2(Math.min(+f.day, daysIn(m)))}`, id = m + ':' + f.n;
+      if (k <= t && !c.fixedDone[id] && D.parse(k).getTime() >= c.wallet.at - 86400e3) { c.wallet.amt -= +f.amt || 0; c.fixedDone[id] = 1; n++; }
+    }
+    Object.keys(c.fixedDone).forEach(id => { if (id.slice(0, 7) < D.addMonth(t, -2).slice(0, 7)) delete c.fixedDone[id]; });
+    if (n) { saveCfg(); Life.changed('money'); }
+    return n;
+  }
+  const isPayday = async () => { await loadCfg(); return !!cfg.cash.income && paydayOf(cfg.cash, ym()) === D.today(); };
+  const slipNow = async () => DB.get('room', 'slip-' + ym()).catch(() => null);
   // ほかの部屋から使う
   async function summary() {
     await loadCfg(); const c = cfg.cash; if (!c.income) return null;
@@ -487,7 +510,7 @@ const Office = (() => {
     c.arrears = (m.unpaid || []).map(u => ({ id:u.id || newId(), n:u.name, amt:u.amt, done:!!u.done }));
     c.mode = m.mode === 'endure' ? 'endure' : 'normal';
     if (m.goal) { c.goal = m.goal.amt; c.saved = m.goal.saved || 0; c.start = (m.goal.from || '') + (m.goal.from && m.goal.from.length === 7 ? '-01' : ''); c.goalBy = m.goal.to || ''; }
-    c.lastPay = ym(D.today() < `${ym()}-${p2(c.payday)}` ? D.addMonth(D.today(), -1) : D.today());
+    c.lastPay = ym(D.today() < paydayOf(c, ym()) ? D.addMonth(D.today(), -1) : D.today());
     for (const w of (m.wants || [])) await DB.put('room', { id:'wish-' + newId(), kind:'buy', title:w.name || w.title, price:w.amt || 0, pri:w.prio || 2, memo:'', done:false, at:Date.now() });
     saveCfg();
   }
@@ -776,6 +799,6 @@ const Office = (() => {
     isDoor:() => onDoor,
     active:() => active,
     bgm:() => active ? BGM : null,
-    summary, alerts, autoPay, quick, importMoney, setWallet,
+    summary, alerts, autoPay, autoFixed, isPayday, slipNow, slipHTML, quick, importMoney, setWallet, nextPayday:async () => { await loadCfg(); return nextPayday(cfg.cash); },
   };
 })();

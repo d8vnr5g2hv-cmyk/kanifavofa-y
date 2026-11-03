@@ -156,10 +156,36 @@ const Room = (() => {
     ['room_door_open.jpg', `room_desk_${p}.jpg`, `room_sofa_${p}.jpg`].forEach(s => { const i = new Image(); i.src = s; });
   }
 
+
+  // ===== 1枚目：乃亜（ふだんはメイド。給料日は銀行員になって明細を渡してくれる） =====
+  let payday = false;
+  async function paintNoa() {
+    payday = typeof Office !== 'undefined' && await Office.isPayday().catch(() => false);
+    $('rNoaImg').src = payday ? 'noa_bank.webp' : 'noa_maid.webp';
+    el.classList.toggle('payday', payday);
+  }
+  async function paydayEvent() {
+    if (!payday || LS.get('ys-paygift') === D.today()) return;
+    LS.set('ys-paygift', D.today());
+    const sl = await Office.slipNow();
+    await Talk.say('noa', ['ふぁ……あ、ようへい。いらっしゃいませ', 'お給料、入ったよ。はい、明細', sl && sl.free ? `自由に使えるのは${sl.free.toLocaleString()}円。……大事に使ってね？` : '使いすぎないように、ちゃんと見ててね'], 'happy');
+    Talk.close();
+    if (sl) { $('rNoaSlip').innerHTML = `<div class="rs-in"><b>給料明細</b><small>${D.ymd(D.today())}</small>${Office.slipHTML(sl)}<i class="rs-st">乃亜</i><p>タップで閉じる</p></div>`; $('rNoaSlip').classList.add('on'); }
+  }
+  function tapNoa() {
+    haptic();
+    const L = payday ? [['ふぁ……今日は窓口、ひまなんだ', 'happy'], ['お給料日くらい、ちょっといいもの食べてもいいよ？', 'happy']]
+      : new Date().getHours() >= 23 || new Date().getHours() < 4 ? [['ご主人さま……じゃなくて、ようへい。もう寝る時間だよ？', 'pout']]
+      : [['おかえりなさいませ、ご主人さま……なんてね', 'happy'], ['お部屋、片づけておいたよ', 'happy'], ['な、なに……じっと見ないで', 'shy'], ['PCばっかりしてないで、ちゃんと休んでね', 'normal']];
+    const [l, f] = L[Math.floor(Math.random() * L.length)];
+    Talk.say('noa', [l], f).then(() => Talk.close());
+  }
+
   // ===== 部屋 =====
   function build() {
     el = h(`<div id="room">
       <div class="rs" id="rs">
+        <div class="rsl rnoa" id="rNoa"><img class="nm" id="rNoaImg" alt=""><div class="rnslip" id="rNoaSlip"></div><div class="rnhint">机は となりへ<i></i></div></div>
         <div class="rsl"><div class="rbx" data-w="${W}" data-h="${H}"><img class="bg" id="rbgDesk" alt="">
           <div class="hs" data-k="pc" style="${pct(DESK.pc)}"></div>
           <div class="hs" data-k="report" style="${pct(DESK.tray)}"></div>
@@ -184,6 +210,8 @@ const Room = (() => {
     el.addEventListener('click', e => {
       const hs = e.target.closest('.hs'); if (hs) return openItem(hs.dataset.k, hs);
       if (e.target.closest('#rduty')) return tapDuty();
+      if (e.target.closest('#rNoaSlip')) { haptic(); $('rNoaSlip').classList.remove('on'); return; }
+      if (e.target.closest('#rNoa')) return tapNoa();
     });
     $('rBack').onclick = exit;
     $('rSet').onclick = () => Menu.open('自室', [
@@ -210,6 +238,7 @@ const Room = (() => {
     per = period(); const p = per === 'day' ? 'd' : 'n';
     el.classList.toggle('night', per !== 'day');
     $('rbgDesk').src = `room_desk_${p}.jpg`;
+    paintNoa();
   }
   async function pickDuty() {
     const day = dutyDay(), rec = await DB.get('room', 'duty-' + day).catch(() => null);
@@ -237,6 +266,7 @@ const Room = (() => {
     el.className = 'show' + (per !== 'day' ? ' night' : '');
     fit(); requestAnimationFrame(fit);
     $('rs').scrollLeft = 0;
+    setTimeout(() => { if (active) paydayEvent(); }, 900);
     active = true;
     musicSel = (await DB.get('settings', 'roomMusic').catch(() => null) || {}).sel || null;
     syncBgm(0, .8);

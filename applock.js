@@ -1,4 +1,4 @@
-// Kani Favorite — アプリのロック（開くときに Face ID／マスターパスワード。Accountsと同じ鍵を使う）
+// Yohei Support — アプリのロック（開くときに Face ID／マスターパスワード。Accountsと同じ鍵を使う）
 'use strict';
 const AppLock = (() => {
   const RELOCK = 10 * 60 * 1000;   // 裏に回して10分たったら、戻ったときにもう一度ロック

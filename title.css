@@ -1,4 +1,4 @@
-/* Kani Favorite — タイトル画面（メモリアルの絵）。古いタイトルの部品は隠す */
+/* Yohei Support — タイトル画面（メモリアルの絵）。古いタイトルの部品は隠す */
 #splash.nt { background:#0b0f1e; }
 #splash.nt > :not(#ttl):not(.gear) { display:none !important; }
 #splash.nt .gear { left:auto; right:14px; z-index:12; background:rgba(10,14,30,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }

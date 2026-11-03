@@ -1,4 +1,4 @@
-// Kani Favorite — タイトル画面（メモリアルの絵）
+// Yohei Support — タイトル画面（メモリアルの絵）
 // 流れ：うっすらスプラッシュ →（タッチ：タイトル曲）→ 1枚目 →（タッチ：ロックがオンなら Face ID）→ 2枚目＋ボイス →（タッチ）→ ロビー
 // 起動ごとに8人から1人が出迎える。上に、絵の雰囲気に合わせた淡い光の粒・光の筋を重ねる
 'use strict';
@@ -10,6 +10,7 @@ const Title = (() => {
     mari:   { face:[.54, .47, .21, .13], col:['#fffaf0', '#ffe6ef'], rays:['rgba(255,245,225,.45)', [55, 75]], voice:'mari' },
     hina:   { face:[.5, .33, .2, .12], col:['#f1dcff', '#c99bff'], rays:null, glow:['50%', '8%', '260px', 'rgba(190,110,255,.45)'], vig:'rgba(20,0,40,.55)', voice:'hina' },
     miyako: { face:[.52, .39, .22, .13], col:['#eef8ff', '#cfe9ff'], rays:['rgba(200,230,255,.35)', [70, 85]], vig:'rgba(0,10,30,.35)', voice:'miyako' },
+    noay:   { face:[.54, .36, .2, .11], col:['#fff3f7', '#ffd6e6'], rays:['rgba(255,225,200,.4)', [8, 20]], glow:['20%', '10%', '260px', 'rgba(255,200,170,.6)'], voice:null },
     yuuka:  { face:[.6, .46, .2, .12], col:['#fffbe6', '#e6f4ff'], rays:['rgba(255,250,220,.5)', [78, 90]], glow:['86%', '5%', '300px', 'rgba(255,245,200,.85)'], voice:'office' },
   };
   const KEYS = Object.keys(FX), N = 30, IW = 853, IH = 1843;
@@ -29,7 +30,7 @@ const Title = (() => {
       <canvas class="tt-cv"></canvas><div class="tt-bloom"></div>
       <div class="tt-clock"><b></b><small></small></div>
       <div class="tt-touch"></div>
-      <div class="tt-splash"><b>KANI FAVORITE</b><small id="ttState">TAP TO START</small></div>
+      <div class="tt-splash"><b>YOHEI SUPPORT</b><small id="ttState">TAP TO START</small></div>
     </div>`);
     const sp = $('splash'); sp.classList.add('nt'); sp.insertBefore(root, sp.firstChild);
     cv = root.querySelector('.tt-cv'); g = cv.getContext('2d');
@@ -121,7 +122,7 @@ const Title = (() => {
     root.querySelector('.tt-touch').className = 'tt-touch';
     const b = root.querySelector('.tt-bloom'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');
     root.className = 'tt-s2'; step = 2;
-    try { playVoice(FX[k].voice); } catch (e) {}
+    try { if (FX[k].voice) playVoice(FX[k].voice); } catch (e) {}
     touch('TOUCH TO ENTER', 1800);
     await sleep(1200); busy = false;
   }

@@ -390,7 +390,7 @@ const Scene = (() => {
       }
       pg.querySelector('.sp').addEventListener('load', () => size(pg));
       TabHooks[key] = {
-        enter:() => { size(pg); if (v) { if (!v.src) v.src = pg.dataset.v + '_tall_h264.mp4'; v.preload = 'auto'; v.play().catch(() => {}); } pg.classList.add('hint'); setTimeout(() => pg.classList.remove('hint'), 3200); },
+        enter:() => { if (pg.dataset.who === 'noa' && typeof Clinic !== 'undefined') Clinic.sceneEnter(); size(pg); if (v) { if (!v.src) v.src = pg.dataset.v + '_tall_h264.mp4'; v.preload = 'auto'; v.play().catch(() => {}); } pg.classList.add('hint'); setTimeout(() => pg.classList.remove('hint'), 3200); },
         leave:() => { if (v) v.pause(); },
         visibility:hidden => { if (v && tab === key) { if (hidden) v.pause(); else v.play().catch(() => {}); } },
       };

@@ -1,8 +1,8 @@
 // Yohei Support：オフライン用
 // 画面のしくみ（html・js・css）はネット優先＝更新がすぐ反映。画像・音は端末にためて速く。動画は再生の都合でネットから。
-const CACHE = 'yohei-support-v1';
+const CACHE = 'yohei-support-v2';
 const SHELL = ['./', 'index.html', 'app.css', 'core.js', 'ui.js', 'motion.js', 'data.js', 'rooms.js', 'todo.js', 'love.js', 'accounts.js', 'office.js', 'office.css', 'room.js', 'room.css', 'hall.js', 'secretary.js', 'life.js', 'friends.js', 'clinic.js', 'rabbit.js',
-               'applock.js', 'deco.css', 'deco.js', 'stats.js', 'title.js', 'title.css', 'ys.css', 'manifest.json', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'splash_bg.jpg', 'bgm_title.mp3'];
+               'applock.js', 'deco.css', 'deco.js', 'stats.js', 'title.js', 'title.css', 'ys.css', 'manifest.json', 'icon-ys-180.png', 'icon-ys-192.png', 'icon-ys-512.png', 'splash_bg.jpg', 'bgm_title.mp3'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

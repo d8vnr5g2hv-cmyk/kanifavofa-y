@@ -650,7 +650,7 @@ const App = {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('sw', e.message));
     this.modules.forEach(m => m.init && m.init());
     Rooms.init(); Ambient.init(); Hall.paint(); Rooms.paintDoors();
-    Office.autoPay().then(n => { if (n) setTimeout(() => toast('給料の入金と引き落としを記録しました', 2600), 4000); }).catch(() => {});
+    Office.autoPay().then(async n => { await Office.autoFixed(); if (n) setTimeout(() => toast('給料の入金と引き落としを記録しました', 2600), 4000); }).catch(() => {});
     Inbox.pull().catch(() => {}); setTimeout(() => Backup.auto(), 15000);
     AppLock.init();
   },
