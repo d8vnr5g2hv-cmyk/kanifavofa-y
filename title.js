@@ -10,8 +10,6 @@ const Title = (() => {
     mari:   { face:[.54, .47, .21, .13], col:['#fffaf0', '#ffe6ef'], rays:['rgba(255,245,225,.45)', [55, 75]], voice:'mari' },
     hina:   { face:[.5, .33, .2, .12], col:['#f1dcff', '#c99bff'], rays:null, glow:['50%', '8%', '260px', 'rgba(190,110,255,.45)'], vig:'rgba(20,0,40,.55)', voice:'hina' },
     miyako: { face:[.52, .39, .22, .13], col:['#eef8ff', '#cfe9ff'], rays:['rgba(200,230,255,.35)', [70, 85]], vig:'rgba(0,10,30,.35)', voice:'miyako' },
-    kisaki: { face:[.33, .43, .22, .12], col:['#fff4f8', '#ffdbe8'], rays:null, voice:'sofa' },
-    nico:   { face:[.6, .39, .22, .13], col:['#fff4f8', '#ffe0ea'], rays:['rgba(255,250,235,.4)', [62, 80]], voice:'kitchen' },
     yuuka:  { face:[.6, .46, .2, .12], col:['#fffbe6', '#e6f4ff'], rays:['rgba(255,250,220,.5)', [78, 90]], glow:['86%', '5%', '300px', 'rgba(255,245,200,.85)'], voice:'office' },
   };
   const KEYS = Object.keys(FX), N = 30, IW = 853, IH = 1843;

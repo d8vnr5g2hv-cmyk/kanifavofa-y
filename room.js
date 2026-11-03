@@ -1,8 +1,8 @@
-// Kani Favorite — 自室（メモロビの左端の扉 → 机／部屋）
+// Yohei Support — 自室（メモロビの左端の扉 → 机）と、廊下の掲示板（カレンダー・新聞）の中身
 'use strict';
 const Room = (() => {
   // ===== 12人 =====
-  const NAME = { hoshino:'ホシノ', mika:'ミカ', miyako:'ミヤコ', mari:'マリー', serina:'セリナ', kisaki:'キサキ', hina:'ヒナ', seia:'セイア', noa:'ノア', yuuka:'ユウカ', hikari:'ヒカリ', nico:'ニコ' };
+  const NAME = { hoshino:'ホシノ', mika:'ミカ', miyako:'ミヤコ', mari:'マリー', hina:'ヒナ', yuuka:'ユウカ', noa:'乃亜' };
   // 名前の横に出る所属（空欄なら出さない）
   const CLUB = { hoshino:'対策委員会', mika:'ティーパーティー', miyako:'RABBIT小隊', mari:'シスターフッド', serina:'救護騎士団', kisaki:'玄龍門',
                  hina:'風紀委員会', seia:'ティーパーティー', noa:'セミナー', yuuka:'セミナー', hikari:'', nico:'' };
@@ -28,7 +28,7 @@ const Room = (() => {
     hina:'……日報は出したわ。先生も、もう休んで', seia:'日報は届けておいたよ。夜は眠るためにあるものだ、先生',
     noa:'日報は提出済みです♪ 先生のお休みも、記録しておきますね', yuuka:'日報は出しました！先生、もう寝てください。明日に響きますよ？',
     hikari:'にっぽう、だしたーー……ねむいーー……', nico:'日報、出しておきましたよ〜。先生も、おやすみなさい〜' };
-  const img = (k, p) => { if (k === 'hikari' && p === 'stand') p = 'sit'; return `o_${k}_${p}.webp`; };
+  const img = (k, p) => k === 'noa' ? 'noa_face.webp' : `o_${k}_${p}.webp`;
 
   // ===== 時間帯 =====
   // 6:00〜17:59 昼／18:00〜23:59 夜／0:00〜2:00 夜（見るだけ）／2:01〜5:59 入れない
@@ -70,7 +70,7 @@ const Room = (() => {
   function builtinTracks() {
     const seen = new Set(), list = [];
     const push = b => { if (!b || seen.has(b.src)) return; seen.add(b.src); const n = TRACK_NAME[b.src] || [b.src.replace(/\.mp3$/, ''), '']; list.push({ id:b.src, name:n[0], sub:n[1], bgm:b }); };
-    chars.forEach(c => push(c.bgm)); push(TITLE_BGM); Object.values(TAB_BGM).forEach(push); Ops.allBgm().forEach(push);
+    chars.forEach(c => push(c.bgm)); push(TITLE_BGM); Object.values(TAB_BGM).forEach(push);
     return list;
   }
   const DEFAULT_BGM = { day:'bgm.mp3', night:'night_bgm.mp3' };
@@ -166,16 +166,9 @@ const Room = (() => {
           <div class="hs" data-k="drawer" style="${pct(DESK.drawer1)}"></div>
           <div class="hs" data-k="drawer" style="${pct(DESK.drawer2)}"></div>
         </div></div>
-        <div class="rsl"><div class="rbx" data-w="${W}" data-h="${H}"><img class="bg" id="rbgSofa" alt="">
-          <div class="hs" data-k="paper" style="${pct(SOFA.board)}"></div>
-          <div class="hs" data-k="cal" style="${pct(SOFA.cal)}"></div>
-          <div class="hs" data-k="game" style="${pct(SOFA.game)}"></div>
-          <div class="duty" id="rduty"><div class="dw"><img class="s" alt=""><img class="t" alt=""></div></div>
-        </div></div>
       </div>
-      <div class="rhud"><button class="rback" id="rBack">‹ 出る</button><div class="rttl">SENSEI'S ROOM<small id="rDuty"></small><small id="rBudget"></small></div>
+      <div class="rhud"><button class="rback" id="rBack">‹ 出る</button><div class="rttl">MY ROOM<small id="rBudget"></small></div>
         <button class="rset" id="rSet" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button></div>
-      <div class="rmdots"><i class="on"></i><i></i></div>
       <div id="rz"></div>
       <div id="rmw"><div class="shade"></div><div class="pt" id="rpt"><img class="s" alt=""><img class="t" alt=""></div>
         <div class="top"><button id="rmwLog">LOG</button><button id="rmwEnd">CLOSE</button></div>
@@ -185,6 +178,7 @@ const Room = (() => {
       </div>
     </div>`);
     document.body.appendChild(el);
+    document.body.appendChild($('rz'));   // 掲示板のアップは廊下でも使うので、外に出しておく
     const rs = $('rs');
     rs.addEventListener('scroll', () => { const i = Math.round(rs.scrollLeft / rs.clientWidth); el.querySelectorAll('.rmdots i').forEach((d, k) => d.classList.toggle('on', k === i)); }, { passive:true });
     el.addEventListener('click', e => {
@@ -193,9 +187,11 @@ const Room = (() => {
     });
     $('rBack').onclick = exit;
     $('rSet').onclick = () => Menu.open('自室', [
-      { label:'今日の当番', sub:duty ? NAME[duty] : '', fn:() => toast(`今日の当番は${NAME[duty]}です`) },
+      { label:'データの書き出し・読み込み', sub:'初期データの読み込みもここから', fn:() => { $('gearBtn').click(); } },
       { label:'今月のAIの使いみち', sub:'種類ごとの金額', fn:() => budgetDetail() },
-      { label:'AIの設定', sub:'作戦室と同じGASを使います', fn:() => opsSettings() },
+      { label:'AIの設定', sub:'GASのURLと合言葉', fn:() => opsSettings() },
+      { label:'ドライブに控えをとる', sub:Backup.last() ? `前回：${new Date(Backup.last()).toLocaleDateString('ja-JP')}（週に1回は自動）` : '週に1回、自動でもとります', fn:() => Backup.now() },
+      { label:'ドライブの控えから戻す', sub:'機種変更やデータが消えたとき', fn:() => Backup.restore() },
     ]);
     $('rz').addEventListener('click', e => { if (e.target.id === 'rz' || e.target.closest('.rzx')) closeZoom(); });
     // メッセージウィンドウ
@@ -213,7 +209,7 @@ const Room = (() => {
   function paintRoom() {
     per = period(); const p = per === 'day' ? 'd' : 'n';
     el.classList.toggle('night', per !== 'day');
-    $('rbgDesk').src = `room_desk_${p}.jpg`; $('rbgSofa').src = `room_sofa_${p}.jpg`;
+    $('rbgDesk').src = `room_desk_${p}.jpg`;
   }
   async function pickDuty() {
     const day = dutyDay(), rec = await DB.get('room', 'duty-' + day).catch(() => null);
@@ -237,8 +233,6 @@ const Room = (() => {
   async function enter() {
     if (!el) build();
     paintRoom();
-    duty = await pickDuty();
-    placeDuty();
     document.body.classList.add('roomOn');
     el.className = 'show' + (per !== 'day' ? ' night' : '');
     fit(); requestAnimationFrame(fit);
@@ -248,14 +242,11 @@ const Room = (() => {
     syncBgm(0, .8);
     await loadApi();
     if (api && api.url) call('budget', {}, true).catch(() => {}); else $('rBudget').textContent = '';
-    checkReport(); markPaper();
-    // その日はじめて入ったら、当番があいさつ（部屋のほうへ移ってから）
-    const day = dutyDay(), log = await DB.get('room', 'chat-' + day).catch(() => null);
-    if (!viewOnly() && (!log || !log.greeted)) setTimeout(() => { if (!active) return; $('rs').scrollTo({ left:$('rs').clientWidth, behavior:'smooth' }); setTimeout(() => openTalk('open'), 650); }, 900);
+    checkReport();
   }
   function exit() {
     if (!active) return;
-    closeZoom(); endTalk(false); if (typeof Games !== 'undefined') Games.close(true);
+    closeZoom(); endTalk(false);
     el.classList.add('out');
     setTimeout(() => { el.className = ''; document.body.classList.remove('roomOn'); }, 350);
     active = false; syncBgm(200); paintBadges();
@@ -266,7 +257,7 @@ const Room = (() => {
     sfx('tap'); haptic();
     if (k === 'drawer') return;   // 引き出しは、あとでギミックを入れる
     const r = hs.getBoundingClientRect(), cx = r.left + r.width / 2 - innerWidth / 2, cy = r.top + r.height / 2 - innerHeight / 2;
-    const F = { pc:openPC, report:openReport, paper:openPaper, cal:openCal, game:openGame }[k];
+    const F = { pc:openPC, report:openReport, paper:openPaper, cal:openCal }[k];
     if (F) F({ fx:cx + 'px', fy:cy + 'px' });
   }
   function zoom(html, from = {}, cls = '') {
@@ -488,7 +479,7 @@ const Room = (() => {
     if (!api || !api.url) return markNew();
     reportBusy = true;
     try {
-      const drec = await DB.get('room', 'duty-' + day).catch(() => null), who = drec ? drec.who : (duty || await pickDuty());
+      const who = 'hoshino';   // 日報は秘書のホシノが書く
       const todos = await DB.all('todos'), evs = await DB.all('events').catch(() => []);
       const inDay = t => t && D.key(new Date(t)) === day;
       const chat = await DB.get('room', 'chat-' + day).catch(() => null);
@@ -513,8 +504,8 @@ const Room = (() => {
       c.querySelector('[data-rn="1"]').disabled = i >= list.length - 1; c.querySelector('[data-rn="-1"]').disabled = i <= 0;
       $('rph').innerHTML = r ? `<b>日報</b><span>${D.ymd(r.date)}（${D.dow(r.date)}）</span>` : '<b>日報</b>';
       $('rstamp').innerHTML = r ? `<i>${NAME[r.who] || ''}<small>確認</small></i>` : '';
-      if (!r) { s.innerHTML = `<div class="rload">${reportBusy ? `<img src="${img(duty, 'stand')}" alt="">当番が日報を書いています…` : 'まだ日報はありません。<br>毎日0時に、その日の当番が書いてくれます。' + (api && api.url ? '' : '<br><br>（右上の設定から、AIの設定をすると届くようになります）')}</div>`; return; }
-      s.innerHTML = `<div class="meta">当番：${NAME[r.who] || ''}　提出 0:00</div><div class="body">${esc(r.text)}</div>`;
+      if (!r) { s.innerHTML = `<div class="rload">${reportBusy ? `<img src="${img('hoshino', 'stand')}" alt="">ホシノが日報を書いています…` : 'まだ日報はありません。<br>毎日0時に、秘書のホシノが書いてくれます。' + (api && api.url ? '' : '<br><br>（右上の設定から、AIの設定をすると届くようになります）')}</div>`; return; }
+      s.innerHTML = `<div class="meta">${NAME[r.who] || ''}　提出 0:00</div><div class="body">${esc(r.text)}</div>`;
       s.scrollTop = 0;
       if (!r.read) { r.read = true; await DB.put('room', r); markNew(); }
     };
@@ -549,7 +540,7 @@ const Room = (() => {
                  c3:[675, 762, 957, 1075], bl:[62, 1112, 325, 1387], br:[675, 1100, 957, 1387] };
   const PLACE = [['big', 'c1'], ['right', 'c3'], ['bl', 'c2a'], ['br', 'c2b']];   // 1面・2面それぞれ4つの記事の置き場（写真, 本文）
   const KIND_COLOR = { 急募:'#ff6b8a', 速報:'#ff9a3c', インタビュー:'#3d9cf0', コラム:'#7c8fd6', お悩み相談:'#b47ce0', 特集:'#20b39a', ひとこと:'#8a9ab0', 募集中:'#e06c9f' };
-  const COLOR = { hoshino:'#ff9ec4', mika:'#f2a2d6', miyako:'#8fb8ff', mari:'#ffb26b', serina:'#ff8f9a', kisaki:'#e6b24f', hina:'#b48cff', seia:'#f5c95c', noa:'#aab8f0', yuuka:'#5c9cff', hikari:'#86d86a', nico:'#ffa98f' };
+  const COLOR = { noa:'#ff8fb6', hoshino:'#ff9ec4', mika:'#f2a2d6', miyako:'#8fb8ff', mari:'#ffb26b', serina:'#ff8f9a', kisaki:'#e6b24f', hina:'#b48cff', seia:'#f5c95c', noa:'#aab8f0', yuuka:'#5c9cff', hikari:'#86d86a', nico:'#ffa98f' };
   const ADS = [
     { head:'ゲーム開発部　テストプレイヤー募集中！', body:'新作のテストプレイをしてくれる人を探しています。報酬はクリアしたときの達成感です。先生も大歓迎！' },
     { head:'給食部　試食係、募集中！', body:'新メニューの味見をしてくれる人を探しています。おかわり自由。ただし感想は正直にお願いします。' },
@@ -585,7 +576,7 @@ const Room = (() => {
         html += `<div class="npp ad" style="${rect(SLOT[ps], mir)}"><i>📣</i></div>
           <div class="npx ad" style="${rect(SLOT[ts], mir)}"><span class="kd" style="background:${KIND_COLOR['募集中']}">募集中！</span><h6>${esc(ad.head)}</h6><p>${esc(ad.body)}</p></div>`;
       } else if (!a) {
-        html += `<div class="npp none" style="${rect(SLOT[ps], mir)}"></div><div class="npx none" style="${rect(SLOT[ts], mir)}"><div class="stk">取材中…<small>当番がネタを集めています</small></div></div>`;
+        html += `<div class="npp none" style="${rect(SLOT[ps], mir)}"></div><div class="npx none" style="${rect(SLOT[ts], mir)}"><div class="stk">取材中…<small>みんながネタを集めています</small></div></div>`;
       } else {
         const u = photoUrl(a), c = COLOR[a.who] || '#9ab';
         html += `<div class="npp ${u ? '' : 'nophoto'}" data-art="${a.id}" style="${rect(SLOT[ps], mir)};--c:${c}">${u ? `<img src="${u}" alt="">` : `<img class="ch" src="${img(a.who, 'stand')}" alt=""><em>写真なし</em>`}</div>
@@ -617,7 +608,7 @@ const Room = (() => {
       ${NP.quads.map((q, i) => `<div class="npq" data-pg="${i}" style="width:${PW}px;height:${PH}px">${sheetHTML(i, pages[i], npWeek, no)}</div>`).join('')}
       ${NP.front.map(f => `<img class="npfr" src="${wb}" style="clip-path:polygon(${f.map(([x, y]) => `${(x / NP.W * 100).toFixed(2)}% ${(y / NP.H * 100).toFixed(2)}%`).join(',')})" alt="">`).join('')}
       </div><div class="npnav"><button data-wk="-7">‹ 前の号</button><span>第${no}号</span><button data-wk="7" ${npWeek >= monday() ? 'disabled' : ''}>次の号 ›</button></div>
-      <p class="nphint">${arts.length ? '紙をタップすると読めます' : '今週はまだ記事がありません。当番が取材に来るのを待ってね'}</p>`, week ? {} : from);
+      <p class="nphint">${arts.length ? '紙をタップすると読めます' : '今週はまだ記事がありません。曜日の担当が、その日はじめて会ったときに取材に来ます'}</p>`, week ? {} : from);
     requestAnimationFrame(() => fitQuads(c));
     c.onclick = e => {
       const w = e.target.closest('[data-wk]'); if (w) { if (w.disabled) return; sfx('tap'); return openPaper(null, D.add(npWeek, +w.dataset.wk)); }
@@ -930,9 +921,13 @@ const Room = (() => {
     makeDoor, setDoor,
     isDoor:() => onDoor,
     active:() => active,
-    async todayDuty() { return pickDuty(); },   // ロック画面の「本日の当番」用
+    async todayDuty() { return 'hina'; },   // ロック画面の警備はヒナ
     nameOf:k => NAME[k] || '',
-    bgm:() => active ? (typeof Games !== 'undefined' && Games.bgm()) || roomBgm() : null,
+    bgm:() => active ? roomBgm() : null,
+    // 廊下の掲示板から開く
+    async openBoard(k, from) { if (!el) build(); per = period(); await loadApi(); if (k === 'cal') return openCal(from || {}); return openPaper(from || {}); },
+    closeZoom:() => closeZoom(),
+    weekArts, monday, NAME, img, COLOR:k => COLOR[k], period,
     paintDoor,
     // アプリを開いて少ししたら：前日の日報を裏で用意する
     async warmup() {

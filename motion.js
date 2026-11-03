@@ -1,11 +1,11 @@
-// Kani Favorite — デフォルメの動き（ポーズ画像のコマ送り＋コードの動き）
+// Yohei Support — デフォルメの動き（ポーズ画像のコマ送り＋コードの動き）
 // 決まりごと：普段は止まっている／タップで一連の動き → 普段の位置に戻る／動いている途中のタップは無視
 'use strict';
 // 各ポーズの置き場所：[左%, 上%, 幅%]（普段の画像に対する割合。足元をそろえてある）
 const POSE = {"hoshino":{"_":[900,915],"aim":[10.71,-1.42,97.69],"fire":[5.96,0.63,103.53],"lean":[6.23,-1.51,97.61],"notice":[0.29,0.22,99.36],"shy":[0.16,0.22,99.53]},"mika":{"_":[900,1117],"dream":[-0.98,0.21,110.71],"drop":[2.95,0.29,112.22],"ouch":[-0.93,0.13,105.49],"pop":[-1.21,0.38,113.32],"think":[-1.05,0.21,110.81]},"hina":{"_":[900,900],"found":[2.9,0.64,98.62],"guardL":[5.38,1.04,96.77],"guardR":[3.28,1.28,98.06],"jito":[1.78,0.23,98.62],"shy":[3.67,0.56,95.17]},"mari":{"_":[900,1576],"bow":[-14.82,-0.5,127.44],"found":[-20.16,-0.67,141.63],"pray":[-1.74,-0.02,105.87],"singA":[-17.23,0.39,125.17],"singB":[-13.9,-0.26,135.1]},"miyako":{"_":[900,1582],"land":[-16.53,26.14,127.36],"ok":[-8.6,21.18,129.74],"rope":[22.33,24.47,109.15],"scopeL":[-1.28,23.05,121.82],"scopeR":[-2.36,23.5,121.93],"warn":[14.12,20.15,127.36]}};
 const Motion = (() => {
   const busy = {}, loops = {}, keep = [];
-  const el = ch => document.querySelector(`.chibi.real[data-char="${ch}"]`);
+  const el = ch => document.querySelector(`.page.show .chibi.real[data-char="${ch}"]`) || document.querySelector(`.chibi.real[data-char="${ch}"]`);
   const src = (ch, p) => `m_${ch}_${p}.webp`;
   function ensure(ch) {
     const c = el(ch);
@@ -16,11 +16,13 @@ const Motion = (() => {
     return c;
   }
   function preload(ch) {
+    if (!el(ch)) return;
     if (preload[ch]) return; preload[ch] = true;
     Object.keys(POSE[ch]).filter(k => k !== '_').forEach(p => { const i = new Image(); i.src = src(ch, p); if (i.decode) i.decode().catch(() => {}); keep.push(i); });
   }
   // ポーズを切り替える（新しいほうを上に重ねて溶かす）
   async function pose(ch, p) {
+    if (!el(ch)) return;
     const c = ensure(ch), [Lx, Ty, Wd] = POSE[ch][p];
     const nxt = c._imgs[1 - c._ai], cur = c._imgs[c._ai];
     Object.assign(nxt.style, { left:Lx + '%', top:Ty + '%', width:Wd + '%', zIndex:2 }); cur.style.zIndex = 1;
@@ -171,6 +173,7 @@ const Motion = (() => {
 
   // 一連の動きを流す（動いている途中は受け付けない）
   async function play(ch, ev = 'tap', arg) {
+    if (!el(ch)) return;
     if (busy[ch] || !SEQ[ch]) return false;
     busy[ch] = true; preload(ch);
     try { await SEQ[ch](ev, arg); } catch(e) { console.warn(e); }
@@ -179,6 +182,7 @@ const Motion = (() => {
   }
   // ミヤコの登場：上からロープで降りてくる
   async function rappel() {
+    if (!el('miyako')) return;
     const ch = 'miyako'; if (busy[ch]) return; busy[ch] = true; preload(ch);
     const c = ensure(ch), sh = c.querySelector('.shadow');
     try {

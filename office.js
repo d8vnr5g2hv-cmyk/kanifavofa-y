@@ -1,4 +1,4 @@
-// Kani Favorite — 執務室（自室の扉の右。ユウカと家計簿・食事管理）
+// Yohei Support — 執務室（メモロビの左どなり）。ユウカの銀行：家計簿・財布・滞納・給料日・貯金
 'use strict';
 const Office = (() => {
   const BGM = { src:'yuuka_bgm.mp3', loopStart:0.2, loopEnd:0.2 + 128.9192 };
@@ -11,7 +11,7 @@ const Office = (() => {
   const CATS = [
     ['食費', 'cf_ing2', '#5cc8a8'], ['外食', 'cf_food3', '#ff9a6b'], ['飲み会', 'cf_drink6', '#ffb84d'], ['カフェ', 'cf_drink2', '#c9a27a'],
     ['タバコ', 'dc_stk10', '#a99be0'], ['日用品', 'dc_note1', '#7cc4ff'], ['交通', 'dc_stk12', '#5aa0e8'], ['趣味', 'dc_stk9', '#6fa8ff'],
-    ['交際費', 'dc_stk7', '#ff8fb6'], ['服・美容', 'dc_stk8', '#f7a8c6'], ['医療', 'dc_stk3', '#ffd36b'], ['その他', 'dc_stk6', '#a8b4c4'],
+    ['交際費', 'dc_stk7', '#ff8fb6'], ['服・美容', 'dc_stk8', '#f7a8c6'], ['医療', 'dc_stk3', '#ffd36b'], ['滞納の支払い', 'dc_note2', '#ff7a8a'], ['なぜか消えた', 'dc_stk11', '#c0a8d8'], ['その他', 'dc_stk6', '#a8b4c4'],
   ];
   const CAT = Object.fromEntries(CATS.map(([n, i, c]) => [n, { n, i, c }]));
   const KEYWORD = [[/タバコ|たばこ|煙草|アイコス|iqos/i, 'タバコ'], [/飲み会|居酒屋|バー|ビール|酒/, '飲み会'], [/カフェ|スタバ|ドトール|コーヒー|珈琲/, 'カフェ'],
@@ -24,11 +24,11 @@ const Office = (() => {
   const SLOT_NAME = Object.fromEntries(SLOTS.map(([k, n]) => [k, n]));
 
   let cfg = null, el = null, active = false, onDoor = false, tab = 'cash', api = null, month = null, foodDay = null, chat = [];
-  const fresh = () => ({ id:CFG_ID, cash:{ income:0, payday:25, bonus:[], fixed:[], saved:0, goal:0, start:'', goalBy:'' }, food:{ w:90, h:177, age:25, act:1.4, mode:'cut' } });
+  const fresh = () => ({ id:CFG_ID, cash:{ income:0, payday:25, bonus:[], fixed:[], saved:0, goal:0, start:'', goalBy:'', wallet:null, arrears:[], mode:'normal', lastPay:'' }, food:{ w:90, h:177, age:25, act:1.4, mode:'cut' }, sim:{ cig:30, can:200, deli:1500 } });
   async function loadCfg() {
     if (cfg) return cfg;
     cfg = Object.assign(fresh(), await DB.get('settings', CFG_ID).catch(() => null) || {});
-    cfg.cash = Object.assign(fresh().cash, cfg.cash);
+    cfg.cash = Object.assign(fresh().cash, cfg.cash); cfg.sim = Object.assign(fresh().sim, cfg.sim || {});
     return cfg;
   }
   const saveCfg = () => DB.put('settings', cfg).catch(() => {});
@@ -122,8 +122,8 @@ const Office = (() => {
   async function paintDoor() {
     const b = $('ofBadge'); if (!b) return;
     await loadCfg();
-    const r = await dayRec(D.today()), n = Object.keys(r.meals || {}).length, hr = new Date().getHours();
-    b.innerHTML = hr >= 9 && n === 0 ? '<span class="nt">ごはん<br>記録まだ</span>' : '';
+    const c = cfg.cash, ar = (c.arrears || []).filter(a => !a.done).reduce((x, a) => x + a.amt, 0);
+    b.innerHTML = ar ? `<span class="nt">滞納<br>${yen(ar)}</span>` : c.income && daysTo(nextPayday(c)) <= 3 ? '<span class="nt">給料日<br>まもなく</span>' : '';
   }
   async function openDoor(s) {
     if (s.classList.contains('opening')) return;
@@ -144,10 +144,10 @@ const Office = (() => {
     el = h(`<div id="office">
       <video class="ofv" id="ofV" muted playsinline loop preload="auto" poster="${VIDEO.poster}" src="${VIDEO.src}"></video>
       <div class="ofaces">${Object.entries(FACES).map(([k, f]) => `<img data-face="${k}" src="${f}" alt="">`).join('')}</div>
-      <div class="ofhud"><button class="ofback" id="ofBack">‹ 出る</button><div class="ofttl"><b>OFFICE</b><span>セミナー会計 出張所</span></div>
+      <div class="ofhud"><button class="ofback" id="ofBack">‹ 出る</button><div class="ofttl"><b>OFFICE</b><span>ユウカの銀行窓口</span></div>
         <button class="ofbtn" id="ofTalk">話す</button><button class="ofbtn ic" id="ofSet" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button></div>
       <div class="ofw" id="ofW"><i class="tp1"></i><img class="sk1" src="dc_stk4.webp" alt=""><img class="sk2" src="dc_stk11.webp" alt="">
-        <div class="ofh"><span class="dot"></span><div class="ofts"><button data-tab="cash" class="on">Cash</button><button data-tab="food">Food</button></div><span class="tm" id="ofTm"></span><button class="fold" id="ofFold" aria-label="たたむ">▾</button></div>
+        <div class="ofh"><span class="dot"></span><div class="ofts"><button data-tab="cash" class="on">Bank</button></div><span class="tm" id="ofTm"></span><button class="fold" id="ofFold" aria-label="たたむ">▾</button></div>
         <div class="ofb" id="ofB"></div></div>
       <div class="omw" id="ofMW"><div class="who"><b>ユウカ</b><span>セミナー</span></div><div class="tx" id="ofMT"></div><i class="nx"></i>
         <div class="ochips" id="ofChips"></div><div class="oinp" id="ofInp"><input id="ofIn" autocomplete="off" enterkeyhint="send"><button id="ofSend">送る</button></div></div>
@@ -155,6 +155,7 @@ const Office = (() => {
     </div>`);
     document.body.appendChild(el);
     el.addEventListener('click', onClick);
+    el.addEventListener('input', e => { const r = e.target.closest('[data-sim]'); if (!r) return; simV[r.dataset.sim] = +r.value; const y = $('ofB').scrollTop; const card = r.closest('.sim'); cashSum(month).then(s => { const n = h(simHTML(s)); ['.sr', 'p.oem'].forEach(q => card.querySelector(q).replaceWith(n.querySelector(q))); card.querySelectorAll('label b').forEach((x, i) => x.textContent = n.querySelectorAll('label b')[i].textContent); }); });
     $('ofBack').onclick = exit;
     $('ofTalk').onclick = () => { sfx('tap'); talk(); };
     $('ofSet').onclick = () => { sfx('tap'); openSettings(); };
@@ -267,7 +268,7 @@ const Office = (() => {
     const body = sub === 'plan' ? (s.prep ? lockHTML(c) : await calHTML()) : sub === 'wish' ? await wishHTML() : await budgetHTML();
     const checkable = !s.prep;
     return `<div class="omon"><button data-mon="-1">‹</button><b>${+s.m.slice(5)}月</b><span>${s.m.slice(0, 4)}</span><button data-mon="1">›</button></div>
-      ${top}${goal}
+      ${top}${cur ? await bankHTML(s) : ''}${goal}${c.goal ? simHTML(s) : ''}
       <div class="osub">${tabs.map(([k, n, i]) => `<button data-sub="${k}" class="${k === sub ? 'on' : ''} ${k === 'plan' && s.prep ? 'lk' : ''}"><img src="${i}.webp" alt="">${n}${k === 'plan' && s.prep ? '<i class="ltp"></i>' : ''}</button>`).join('')}</div>
       <div class="osubb">${body}</div>
       <button class="ochk" data-x="check" ${checkable ? '' : 'disabled'}><img src="dc_stk4.webp" alt=""><span>ユウカにチェックしてもらう<small>${checkable ? `${s.prep ? '' : (c.start && ym(c.start) === s.m ? D.md(c.start) : (+s.m.slice(5)) + '/1')}から今日までを分析します` : `${D.md(c.start)}から使えます`}</small></span></button>
@@ -356,9 +357,145 @@ const Office = (() => {
       <p class="onote">カロリーと栄養素はAIによる目安です。基準：基礎代謝 約${T.bmr.toLocaleString()}kcal</p>`;
   }
 
+
+  // ===== 銀行：財布（手元のお金）・滞納・給料日 =====
+  // 手元＝財布と口座を合わせた「今使えるお金」。最後に合わせた額から、そのあとの記録を足し引きして見込みを出す
+  async function walletNow() {
+    const w = cfg.cash.wallet; if (!w) return null;
+    const ents = (await all('cash-')).filter(e => (e.at || 0) > w.at && !e.noWallet);
+    return w.amt + ents.filter(e => e.kind === 'in').reduce((a, e) => a + e.amt, 0) - ents.filter(e => e.kind !== 'in').reduce((a, e) => a + e.amt, 0);
+  }
+  // 給料日までに落ちる固定費（給料日当日に落ちるものは、給料が入ってからなので含めない）
+  function fixedBefore(c) {
+    const t = D.today(), pd = nextPayday(c);
+    return c.fixed.filter(f => { const d = +f.day || +c.payday || 25; const k = `${t.slice(0, 8)}${p2(Math.min(d, 28))}`; return k >= t && k < pd; }).reduce((a, f) => a + (+f.amt || 0), 0);
+  }
+  async function walletPlan() {
+    const c = cfg.cash, now = await walletNow(); if (now == null) return null;
+    const dl = Math.max(1, daysTo(nextPayday(c))), fx = fixedBefore(c);
+    return { now, fx, dl, perDay:Math.floor((now - fx) / dl) };
+  }
+  async function bankHTML(s) {
+    const c = cfg.cash, wp = await walletPlan(), ar = (c.arrears || []).filter(a => !a.done);
+    const arTot = ar.reduce((a, x) => a + x.amt, 0);
+    const slip = await DB.get('room', 'slip-' + ym()).catch(() => null);
+    const leakM = s.ents.filter(e => e.cat === 'なぜか消えた').reduce((a, e) => a + e.amt, 0);
+    return `${c.mode === 'endure' ? `<div class="oendure"><b>耐える期間</b><span>${arTot ? `滞納 ${yen(arTot)} を払い終えるまで、給料日までつなぐことを最優先にします` : '滞納はありません。通常モードに切り替えられます'}</span><button data-bk="mode">${arTot ? '' : '通常にする'}</button></div>` : ''}
+      <div class="ocard wal"><h6>手元のお金<em>財布＋口座</em><button data-bk="wallet">合わせる</button></h6>
+        ${wp ? `<div class="wl"><b>${yen(wp.now)}</b><span>見込み</span></div><p class="wd">給料日（${D.md(nextPayday(c))}）まで <b>${wp.dl}</b>日${wp.fx ? `・その前に引き落とし ${yen(wp.fx)}` : ''}</p>
+          <div class="wday ${wp.perDay < 500 ? 'bad' : ''}"><small>1日に使っていい額</small><b>${yen(Math.max(0, wp.perDay))}</b></div>` : '<p class="oem">「合わせる」から、今の財布と口座の合計を入れてください</p>'}
+        ${leakM ? `<p class="wleak">今月の「なぜか消えたお金」 ${yen(leakM)}</p>` : ''}</div>
+      ${ar.length || (c.arrears || []).length ? `<div class="ocard arr"><h6>滞納・未払い<em>払ったら完了</em><button data-bk="arAdd">＋</button></h6>${(c.arrears || []).map(a => `<div class="orow ar ${a.done ? 'done' : ''}" data-ar="${a.id}"><span class="t">${esc(a.n)}${a.done ? `<small>${D.md(a.doneAt)} 完了</small>` : ''}</span><b>${yen(a.amt)}</b>${a.done ? '<img class="st" src="dc_stamp1.webp" alt="">' : '<button data-arpay="' + a.id + '">払った</button>'}</div>`).join('')}</div>` : ''}
+      ${slip && !slip.seen ? `<div class="ocard slip" data-bk="slip"><h6>給料明細<em>${+ym().slice(5)}月${c.payday}日</em></h6>${slipHTML(slip)}<p class="oem">タップで閉じる</p></div>` : ''}`;
+  }
+  const slipHTML = sl => `<div class="slp"><div><span>手取り</span><b>${yen(sl.income)}</b></div>${sl.fixed.map(f => `<div class="m"><span>${esc(f.n)}</span><b>−${yen(f.amt)}</b></div>`).join('')}<div class="m"><span>貯金の積立</span><b>−${yen(sl.save)}</b></div><div class="tt"><span>自由に使える</span><b>${yen(sl.free)}</b></div></div>`;
+  // 同棲資金シミュレーター
+  function simHTML(s) {
+    const c = cfg.cash, S = cfg.sim, left = Math.max(0, c.goal - c.saved);
+    const base = Math.max(1, s.saveM), months = Math.ceil(left / base);
+    const extra = (simV.cig * S.cig + simV.can * S.can) * 30 + Math.round(simV.deli * 4.3 * S.deli);
+    const m2 = Math.ceil(left / Math.max(1, base + extra));
+    const st = c.start && c.start > D.today() ? c.start : D.today(), when = n => { const d = D.addMonth(st.slice(0, 7) + '-01', n - 1); return `${d.slice(0, 4)}年${+d.slice(5, 7)}月`; };
+    return `<div class="ocard sim"><h6>シミュレーター<em>同棲資金 ${yen(c.goal)}</em></h6>
+      <div class="sm">${[['cig', 'タバコを1日', '本へらす', 15], ['can', 'お酒を1日', '缶へらす', 3], ['deli', '出前を週', '回へらす', 5]].map(([k, a, b, mx]) => `<label><span>${a}<b>${simV[k]}</b>${b}</span><input type="range" min="0" max="${mx}" step="1" value="${simV[k]}" data-sim="${k}"></label>`).join('')}</div>
+      <div class="sr"><div><small>今のペース</small><b>${when(months)}</b></div><i>→</i><div class="${extra ? 'up' : ''}"><small>こうすると</small><b>${when(m2)}</b></div></div>
+      <p class="oem">${extra ? `毎月 ${yen(extra)} 多く貯められます（タバコ1本${S.cig}円・1缶${S.can}円・出前1回${S.deli}円で計算）` : 'つまみを動かすと、目標に届く月が変わります'}</p></div>`;
+  }
+  const simV = { cig:0, can:0, deli:0 };
+  async function bankClick(t) {
+    const sim = t.closest('[data-sim]'); if (sim) return;
+    const b = t.closest('[data-bk]'), k = b && b.dataset.bk;
+    if (k === 'wallet') return setWallet();
+    if (k === 'mode') { cfg.cash.mode = cfg.cash.mode === 'endure' ? 'normal' : 'endure'; saveCfg(); return draw(true); }
+    if (k === 'slip') { const sl = await DB.get('room', 'slip-' + ym()); if (sl) { sl.seen = true; await DB.put('room', sl); } return draw(true); }
+    if (k === 'arAdd') {
+      const n = await ask('滞納・未払いの名前を教えてください', { ph:'例：家賃（1か月分）' }); if (!n) return mwClose();
+      const a = Math.round(+String(await ask('金額は？', { type:'number' }) || '').replace(/[^\d]/g, '')); if (!a) return mwClose();
+      cfg.cash.arrears.push({ id:newId(), n:n.slice(0, 20), amt:a, done:false }); cfg.cash.mode = 'endure'; saveCfg(); draw(true);
+      await say([`${yen(a)}、記録しました。払い終えるまで、一緒に耐えましょう`], 'normal'); return mwClose();
+    }
+    const ap = t.closest('[data-arpay]'); if (ap) return payArrear(ap.dataset.arpay);
+    return false;
+  }
+  async function payArrear(id) {
+    const a = cfg.cash.arrears.find(x => x.id === id); if (!a) return;
+    const v = await choose(`「${a.n}」${yen(a.amt)}、払いましたか？`, [{ label:'払った', v:'y' }, { label:'まだ', v:'n', cls:'x' }]);
+    if (v !== 'y') return mwClose();
+    a.done = true; a.doneAt = D.today();
+    await DB.put('room', { id:'cash-' + newId(), date:D.today(), at:Date.now(), title:a.n, amt:a.amt, kind:'out', cat:'滞納の支払い' });
+    const left = cfg.cash.arrears.filter(x => !x.done).length;
+    if (!left) cfg.cash.mode = 'normal';
+    saveCfg(); sfx('coin'); draw(true);
+    const st = h('<img class="ofstart" src="dc_stamp1.webp" alt="">'); el.appendChild(st); setTimeout(() => st.remove(), 2600);
+    await say(left ? ['払えましたね。あと少しです'] : ['先生……滞納、ぜんぶ払い終わりました！', 'ここからは通常モードです。貯金に向けて、きっちりいきましょう'], 'smile'); mwClose();
+  }
+  async function setWallet(v) {
+    const now = await walletNow();
+    if (v == null) {
+      const a = await ask(`今の財布と口座、合わせていくらありますか？${now != null ? `（記録上は ${yen(now)}）` : ''}`, { type:'number', ph:'例：3000' });
+      v = Math.round(+String(a || '').replace(/[^\d]/g, '')); if (!a) return mwClose();
+    }
+    const diff = now != null ? now - v : 0;
+    if (diff > 0) await DB.put('room', { id:'cash-' + newId(), date:D.today(), at:Date.now() - 1, title:'なぜか消えたお金', amt:diff, kind:'out', cat:'なぜか消えた', noWallet:true });
+    cfg.cash.wallet = { amt:v, at:Date.now() }; saveCfg(); sfx('coin'); draw(true); Life.changed('money');
+    if (el && active) { await say(diff > 0 ? [`合わせました。記録より ${yen(diff)} 少なかったので、「なぜか消えたお金」に入れておきます`, '……どこで使ったか、思い出したら教えてくださいね'] : ['合わせました。ちゃんと記録できてますね'], diff > 0 ? 'panic' : 'smile'); mwClose(); }
+    return diff;
+  }
+  // 給料日を過ぎて開いたら：手元に手取りを足し、給料日に落ちる固定費を引いて、明細を作る
+  async function autoPay() {
+    await loadCfg(); const c = cfg.cash; if (!c.income) return 0;
+    const m = ym(), pd = `${m}-${p2(Math.min(c.payday || 25, daysIn(m)))}`;
+    if (D.today() < pd || c.lastPay === m) return 0;
+    const s = await cashSum(m), onPay = c.fixed.filter(f => !f.day || +f.day === +c.payday);
+    const fx = onPay.reduce((a, f) => a + (+f.amt || 0), 0);
+    if (c.wallet) c.wallet = { amt:(await walletNow()) + c.income - fx, at:Date.now() };
+    await DB.put('room', { id:'slip-' + m, income:c.income, fixed:c.fixed.map(f => ({ n:f.n, amt:+f.amt || 0 })), save:s.saving ? s.saveM : 0, free:Math.max(0, c.income - s.fixed - (s.saving ? s.saveM : 0)), seen:false });
+    c.lastPay = m; saveCfg(); Life.changed('money');
+    return 1;
+  }
+  // ほかの部屋から使う
+  async function summary() {
+    await loadCfg(); const c = cfg.cash; if (!c.income) return null;
+    const s = await cashSum(), wp = await walletPlan(), ar = (c.arrears || []).filter(a => !a.done);
+    return Object.assign(sumForAI(s), { 手元:wp ? wp.now : '未設定', 給料日まで1日あたり:wp ? wp.perDay : '未設定', モード:c.mode === 'endure' ? '耐える期間' : '通常',
+      滞納:ar.map(a => `${a.n} ${a.amt}円`), 貯金:`${c.saved}円 / 目標${c.goal}円（${c.goalBy}まで）` });
+  }
+  async function alerts() {
+    await loadCfg(); const c = cfg.cash, out = []; if (!c.income) return out;
+    const wp = await walletPlan(), dl = daysTo(nextPayday(c));
+    if (wp && wp.perDay < 300) out.push(`手元が少なめ。給料日まで1日 ${yen(Math.max(0, wp.perDay))} でつなごう`);
+    if (dl <= 2) out.push(`給料日まであと${dl}日。${(c.arrears || []).some(a => !a.done) ? '入ったら、まず滞納を払おう' : '固定費の引き落としを確認しよう'}`);
+    const plans = (await all('plan-')).filter(p => !p.done && p.date <= D.add(D.today(), 2)); plans.forEach(p => out.push(`${D.md(p.date)}に「${p.title}」${yen(p.amt)} の支払い予定`));
+    return out;
+  }
+  // Siri・ひとこと入力から
+  async function quick(g) {
+    await loadCfg();
+    if (g.k === 'wallet') return setWallet(g.amt);
+    if (g.k === 'save') { cfg.cash.saved = (+cfg.cash.saved || 0) + g.amt; saveCfg(); Life.changed('money'); return; }
+    if (g.k === 'wish') { await DB.put('room', { id:'wish-' + newId(), kind:'buy', title:g.title.slice(0, 30), price:0, pri:2, memo:'', done:false, at:Date.now() }); return; }
+    if (g.k === 'cash') { await DB.put('room', { id:'cash-' + newId(), date:D.today(), at:Date.now(), title:(g.title || '支出').slice(0, 20), amt:g.amt, kind:'out', cat:guessCat(g.title || '') }); Life.changed('money'); }
+  }
+  // 初期データのお金
+  async function importMoney(m) {
+    await loadCfg(); const c = cfg.cash;
+    c.income = m.takehome || c.income; c.payday = m.payday || c.payday;
+    const KIND = n => /家賃/.test(n) ? '家賃' : /携帯|通信/.test(n) ? '通信' : /返済|借金|ローン/.test(n) ? 'ローン' : 'その他';
+    c.fixed = (m.fixed || []).map(f => ({ kind:KIND(f.name), n:f.name, amt:f.amt, day:f.day || '' }));
+    if (m.leak) c.fixed.push({ kind:'その他', n:'なぜか消えるお金（見込み）', amt:m.leak, day:'' });
+    if (m.cash) c.wallet = { amt:m.cash.amt, at:Date.now() };
+    c.arrears = (m.unpaid || []).map(u => ({ id:u.id || newId(), n:u.name, amt:u.amt, done:!!u.done }));
+    c.mode = m.mode === 'endure' ? 'endure' : 'normal';
+    if (m.goal) { c.goal = m.goal.amt; c.saved = m.goal.saved || 0; c.start = (m.goal.from || '') + (m.goal.from && m.goal.from.length === 7 ? '-01' : ''); c.goalBy = m.goal.to || ''; }
+    c.lastPay = ym(D.today() < `${ym()}-${p2(c.payday)}` ? D.addMonth(D.today(), -1) : D.today());
+    for (const w of (m.wants || [])) await DB.put('room', { id:'wish-' + newId(), kind:'buy', title:w.name || w.title, price:w.amt || 0, pri:w.prio || 2, memo:'', done:false, at:Date.now() });
+    saveCfg();
+  }
+
   // ===== クリック =====
   async function onClick(e) {
     const t = e.target;
+    if (t.closest('[data-bk],[data-arpay]') && await bankClick(t) !== false) return;
     const tb = t.closest('[data-tab]'); if (tb) { sfx('tap'); tab = tb.dataset.tab; return draw(); }
     const mo = t.closest('[data-mon]'); if (mo && !mo.disabled) { sfx('tap'); const [y, m] = month.split('-').map(Number), d = new Date(y, m - 1 + +mo.dataset.mon, 1); month = `${d.getFullYear()}-${p2(d.getMonth() + 1)}`; calSel = null; return draw(true); }
     const dy = t.closest('[data-day]'); if (dy && !dy.disabled) { sfx('tap'); foodDay = D.add(foodDay || D.today(), +dy.dataset.day); return draw(); }
@@ -624,7 +761,7 @@ const Office = (() => {
     const v = $('ofV'); v.currentTime = 0; v.play().catch(() => {});
     active = true; syncBgm(0, .8); clock(); clearInterval(enter._t); enter._t = setInterval(clock, 15000);
     await draw();
-    setTimeout(() => { if (active) greet(); }, 900);
+    setTimeout(async () => { if (!active) return; await greet(); if (active && Interview.whoToday() === 'yuuka') Interview.meet('yuuka'); }, 900);
   }
   function exit() {
     if (!active) return;
@@ -639,5 +776,6 @@ const Office = (() => {
     isDoor:() => onDoor,
     active:() => active,
     bgm:() => active ? BGM : null,
+    summary, alerts, autoPay, quick, importMoney, setWallet,
   };
 })();

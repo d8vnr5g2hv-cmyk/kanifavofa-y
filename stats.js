@@ -3,7 +3,7 @@
 const Stats = (() => {
   const ID = 'stats';
   const ME_RATE = [['stamina', '体力'], ['focus', '集中力'], ['social', '社交性'], ['plan', '計画性'], ['keep', '継続力'], ['self', '自己肯定']];
-  const NAME = { hoshino:'ホシノ', mika:'ミカ', miyako:'ミヤコ', mari:'マリー', serina:'セリナ', kisaki:'キサキ', hina:'ヒナ', seia:'セイア', noa:'ノア', yuuka:'ユウカ', hikari:'ヒカリ', nico:'ニコ' };
+  const NAME = { hoshino:'ホシノ', mika:'ミカ', miyako:'ミヤコ', mari:'マリー', hina:'ヒナ', yuuka:'ユウカ', noa:'乃亜' };
   const TAG = { classify:'分類', discuss:'会議', room:'会話', interview:'取材', article:'記事', report:'日報', other:'その他' };
   const C = ['#7fe0ff', '#ffd27a', '#ff9fb6', '#9ff0b8', '#c9a7ff', '#ffb27a'];
   let S = null, tab = 'todo', saveT = 0;

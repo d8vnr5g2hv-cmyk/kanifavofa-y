@@ -14,7 +14,7 @@ const AppLock = (() => {
   let el = null, done = null, locked = false, hiddenAt = 0, busy = false, lastGuard = -1;
 
   function clock() { const d = new Date(); return { t:`${p2(d.getHours())}:${p2(d.getMinutes())}`, d:`${d.getMonth() + 1}月${d.getDate()}日（${'日月火水木金土'[d.getDay()]}）` }; }
-  const VOICE = { hoshino:'hoshino', mika:'mika', hina:'hina', miyako:'miyako', mari:'mari', nico:'kitchen', serina:'christmas', hikari:'conductor', seia:'drive', kisaki:'sofa', noa:'bedtime', yuuka:'office' };
+  const VOICE = { hoshino:'hoshino', mika:'mika', hina:'hina', miyako:'miyako', mari:'mari', yuuka:'office' };
   let duty = null, woke = false;
   // 最初に画面に触れた瞬間：タイトルの曲と、当番のひとこと（iPhoneは触れるまで音を出せない）
   function wake() {
@@ -43,7 +43,7 @@ const AppLock = (() => {
         <div class="gpw"><input id="gPw" type="password" placeholder="マスターパスワード" autocomplete="current-password" enterkeyhint="go"><button id="gGo">開く</button></div>
         ${opt.cancel ? '<button class="gcancel" id="gCancel">やめる</button>' : ''}
       </div>
-      <div class="gguard" id="gGuard"><div class="gplate"><small>本日の当番</small><b>${esc(Room.nameOf(duty))}</b></div><img class="gc" src="${duty}_chibi.webp" alt=""></div></div>`);
+      <div class="gguard" id="gGuard"><div class="gplate"><small>本日の警備</small><b>${esc(Room.nameOf(duty))}</b></div><img class="gc" src="${duty}_chibi.webp" alt=""></div></div>`);
     document.body.appendChild(el);
     el.addEventListener('pointerdown', wake, { capture:true });
     $('gGuard').onclick = () => { wake(); voice(); };

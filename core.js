@@ -1,4 +1,4 @@
-// Kani Favorite — 土台（音・メモロビ・スプラッシュ・タブ・保存）
+// Yohei Support — 土台（音・メモロビ・スプラッシュ・部屋のページ・保存）
 'use strict';
 const $ = id => document.getElementById(id);
 const p2 = n => String(n).padStart(2, '0');
@@ -13,12 +13,6 @@ const CHARS = {
   hina:     { name:'ヒナ',   voices:vname('c3', 12) },
   miyako:   { name:'ミヤコ', voices:vname('c4', 12) },
   mari:     { name:'マリー', voices:vname('c5', 10) },
-  kitchen:  { name:'ニコ',   voices:vname('nico', 8) },
-  christmas:{ name:'セリナ', voices:vname('serina', 4) },
-  conductor:{ name:'ヒカリ', voices:vname('hikari', 5) },
-  drive:    { name:'セイア', voices:vname('seia', 4) },
-  sofa:     { name:'キサキ', voices:vname('kisaki', 7) },
-  bedtime:  { name:'ノア',   voices:vname('noa', 4) },
   office:   { name:'ユウカ', voices:vname('yuuka', 10) },
 };
 // タブ専用ボイスの差し込み口（ファイル名を入れると、その場面ではこちらが優先される）
@@ -32,9 +26,7 @@ const VOICE_EVENTS = {
 };
 // スプラッシュに出るキャラ（画像名）と、そのキャラのメモロビ
 const SPLASH = [
-  { n:'hoshino', who:'hoshino' }, { n:'mika', who:'mika' }, { n:'hina', who:'hina' }, { n:'miyako', who:'miyako' }, { n:'mari', who:'mari' },
-  { n:'serina', who:'christmas' }, { n:'yuuka', who:'office' }, { n:'nico', who:'kitchen' }, { n:'hikari', who:'conductor' },
-  { n:'seia', who:'drive' }, { n:'kisaki', who:'sofa' }, { n:'noa', who:'bedtime' },
+  { n:'hoshino', who:'hoshino' }, { n:'mika', who:'mika' }, { n:'hina', who:'hina' }, { n:'miyako', who:'miyako' }, { n:'mari', who:'mari' }, { n:'yuuka', who:'office' },
 ];
 
 // ===== メモロビ（Favoriteの並び順）＋時計の色 =====
@@ -45,31 +37,26 @@ const C = (acc, acc2, glow) => ({ acc, acc2, glow });
 const PAT = (n, box, zone) => ({ tall:`${n}_pat_tall_h264.mp4`, wide:`${n}_pat_h264.mp4`, box, zone });
 const chars = [
   { who:'hoshino',   ...LOB('lobby'),         bgm:L('bgm.mp3', 117.25),          clock:C('#ffc6d9', '#bfe9ff', 'rgba(30,90,150,.45)') },
-  { who:'christmas', ...LOB('06_christmas'),  bgm:L('serina_bgm.mp3', 120.5),   clock:C('#ffd27a', '#ff9a9a', 'rgba(140,30,40,.55)') },
   { who:'mika',      ...LOB('mika'),          bgm:L('c2_bgm.mp3', 67.54),       clock:C('#f5c6ff', '#a9b8ff', 'rgba(60,30,130,.6)'),
     pat:PAT('mika', [2, 871, 1166, 539], [.36, .0, .62, .42]) },
   { who:'office',    ...LOB('10_office'),     bgm:L('yuuka_bgm.mp3', 128.9192), clock:C('#a8d8ff', '#c9b8ff', 'rgba(40,60,120,.5)') },
   { who:'hina',      ...LOB('hina'),          bgm:L('c3_bgm.mp3', 177.5),       clock:C('#d8b4ff', '#9ec7ff', 'rgba(30,20,80,.65)') },
-  { who:'drive',     ...LOB('13_drive'),      bgm:L('seia_bgm.mp3', 87.0),      clock:C('#ffc48a', '#ff9ccf', 'rgba(120,40,90,.55)') },
   { who:'miyako',    ...LOB('miyako'),        bgm:L('bgm_profile.mp3', 123.9652), clock:C('#bfe9ff', '#ffd0dc', 'rgba(30,90,150,.45)') },
-  { who:'kitchen',   ...LOB('11_kitchen'),    bgm:L('nico_bgm.mp3', 135.0),     clock:C('#ffb3c8', '#ffe08a', 'rgba(120,70,60,.5)') },
   { who:'mari',      ...LOB('mari'),          bgm:L('c5_bgm.mp3', 113.6872),    clock:C('#ffcf7a', '#ffa58a', 'rgba(90,30,20,.6)') },
   { who:'hoshino',   ...LOB('09_aquarium'),   bgm:L('noa_bgm.mp3', 115.7314),   clock:C('#8fe3ff', '#ffc0dc', 'rgba(10,60,130,.55)') },
-  { who:'conductor', ...LOB('12_conductor'),  bgm:L('yuuka_bgm.mp3', 128.9192), clock:C('#c9f27a', '#ffd27a', 'rgba(30,40,90,.55)') },
-  { who:'sofa',      ...LOB('14_sofa'),       bgm:L('kisaki_bgm.mp3', 140.7833), clock:C('#e8c47a', '#9fb7ff', 'rgba(0,0,0,.65)') },
-  // ヒナ（08_rest）とミカ（16_mika_night）は学生寮の部屋に移動
-  { who:'bedtime',   ...LOB('15_bedtime'),    bgm:L('noa_bgm.mp3', 115.7314),   clock:C('#cfe0ff', '#eef2ff', 'rgba(20,30,80,.65)') },
   { who:'mari',      ...LOB('07_staff'),      bgm:L('nico_bgm.mp3', 135.0),     clock:C('#ffbe8a', '#bdf0c8', 'rgba(40,60,60,.5)') },
 ];
 chars.forEach(c => { c.voices = CHARS[c.who].voices; });
 const TITLE_BGM = L('bgm_title.mp3', 34.4441);
-const TAB_BGM = { todo:L('bgm_todo.mp3', 135.179), love:L('bgm_love.mp3', 138.0889),
-                  accounts:L('bgm_accounts.mp3', 139.054), profile:L('bgm_profile.mp3', 123.9652) };
-const TAB_ACCENT = { todo:'#e7779f', love:'#f27ea7', accounts:'#2f9fd6', profile:'#ef86a9' };
+const TAB_BGM = (() => {   // 部屋ごとの曲（1枚目のメモロビもパネルも同じ曲）
+  const R = { sec:L('noa_bgm.mp3', 115.7314), mika:L('night_bgm.mp3', 132.0), mari:L('c5_bgm.mp3', 113.6872), rabbit:L('bgm_profile.mp3', 123.9652), security:L('c3_bgm.mp3', 177.5), clinic:L('serina_bgm.mp3', 120.5) };
+  return { sc_sec:R.sec, brief:R.sec, todo:R.sec, sc_mika:R.mika, wear:R.mika, food:R.mika, love:R.mika, sc_mari:R.mari, home:R.mari, friends:R.mari,
+    sc_rabbit:R.rabbit, rabbit:R.rabbit, sc_security:R.security, accounts:R.security, sc_clinic:R.clinic, body:R.clinic, mind:R.clinic, karte:R.clinic };
+})();
 
 const slidesEl = $('slides'), dotsEl = $('dots');
 let bgReady = false;   // BGMが鳴り始めたら、重い先読みを始めてよい
-const OFF = 3;   // 左端にカフェ・自室・執務室の扉があるので、メモロビは3枚ずれる
+const OFF = 3;   // 左に自室・保健室・執務室の扉があるので、メモロビは3枚ずれる
 const slideOf = i => slidesEl.children[i + OFF];
 let current = 0, tab = 'favorite', phase = 'lock';   // lock → splash → app
 
@@ -131,8 +118,7 @@ function trimBgmCache() {
   if (bgmNode) keep.add(bgmNode._src);
   [current - 1, current, current + 1].forEach(i => keep.add(chars[(i + chars.length) % chars.length].bgm.src));
   if (TAB_BGM[tab]) keep.add(TAB_BGM[tab].src);
-  const all = new Set([...chars.map(c => c.bgm.src), ...Object.values(TAB_BGM).map(b => b.src), TITLE_BGM.src, ...Ops.allBgm().map(b => b.src), ...Cafe.allBgm().map(b => b.src)]);
-  if (Ops.active()) Ops.allBgm().forEach(b => keep.add(b.src));
+  const all = new Set([...chars.map(c => c.bgm.src), ...Object.values(TAB_BGM).map(b => b.src), TITLE_BGM.src]);
   Object.keys(buffers).forEach(u => { if (all.has(u) && !keep.has(u)) delete buffers[u]; });
 }
 function ramp(to, sec) {
@@ -143,12 +129,8 @@ function wantedBgm() {
   if (typeof AppLock !== 'undefined' && AppLock.locked()) return TITLE_BGM;   // ロック画面からタイトルの曲
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
-  const bb = typeof Battle !== 'undefined' && Battle.bgm(); if (bb) return bb;   // 実戦
   const fb = typeof Office !== 'undefined' && Office.bgm(); if (fb) return fb;   // 執務室
-  const cb = typeof Cafe !== 'undefined' && Cafe.bgm(); if (cb) return cb;   // カフェ
-  const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室
-  const db = typeof Dorm !== 'undefined' && Dorm.bgm(); if (db) return db;   // 学生寮
-  const ob = typeof Ops !== 'undefined' && Ops.bgm(); if (ob) return ob;   // 作戦室
+  const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室・廊下
   if (tab === 'favorite') return bgmOn ? chars[current].bgm : null;
   return TAB_BGM[tab] || null;
 }
@@ -199,7 +181,6 @@ async function playVoice(idx = current, hooks = {}, list = null) {
     const n = ctx.createBufferSource(); n.buffer = buf; n.connect(voiceGain);
     voiceNode = n;
     if (bgmNode) ramp(DUCK_VOL, 0.25);
-    if (tab === 'favorite') hideTabs();
     n._end = hooks.end || null;
     if (hooks.start) hooks.start(buf.duration);
     n.onended = () => { if (n._end) { const f = n._end; n._end = null; f(); } if (voiceNode === n) { voiceNode = null; if (bgmNode) ramp(BGM_VOL, 0.8); } };
@@ -208,8 +189,8 @@ async function playVoice(idx = current, hooks = {}, list = null) {
 }
 
 // ===== タブの表示・非表示（Favoriteでボイス中は隠す） =====
-function hideTabs() { if (tab === 'favorite') document.body.classList.add('tabsHidden'); }
-function showTabs() { document.body.classList.remove('tabsHidden'); }
+function hideTabs() {}
+function showTabs() {}
 
 // ===== スライド =====
 function loadChar(i) {
@@ -384,7 +365,7 @@ function layoutChibis() {
     const cs = [...pg.querySelectorAll('.chibi.real')]; if (!cs.length) return;
     const W = pg.clientWidth, H = pg.clientHeight;
     const safeTop = parseFloat(getComputedStyle(probe).paddingTop) || 0;
-    const tabH = $('tabs').offsetHeight;
+    const tabH = $('roomBar').offsetHeight || 64;
     const K = 1.12;   // デフォルメを少しだけ大きく（足元を基準に）
     const R = cs.map(c => {
       const ww = +c.dataset.ww, wh = +c.dataset.wh, s = Math.max(W / ww, H / wh), ox = (W - ww * s) / 2;
@@ -413,20 +394,17 @@ function switchTab(next) {
   const prev = tab;
   if (TabHooks[prev] && TabHooks[prev].leave) TabHooks[prev].leave();
   tab = next;
-  [...$('tabs').children].forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
   const leaving = $('page-' + prev);
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('show', p.id === 'page-' + tab));
   if (leaving) { leaving.classList.add('leaving'); clearTimeout(leaving._lt); leaving._lt = setTimeout(() => leaving.classList.remove('leaving'), 260); }
   haptic();
-  $('tabs').classList.toggle('light', tab !== 'favorite');
-  $('tabs').style.setProperty('--tabAccent', TAB_ACCENT[tab] || '');
   layoutChibis();
   if (tab === 'favorite') updateVideos();
   else { showTabs(); slidesEl.querySelectorAll('video').forEach(v => v.pause()); }
   syncBgm(120);
   setTimeout(trimBgmCache, 1500);
   if (TabHooks[tab] && TabHooks[tab].enter) TabHooks[tab].enter(prev);
-  if (tab !== 'favorite') stagger($('page-' + tab).querySelector('.scroll'));
+  if (tab !== 'favorite' && $('page-' + tab)) stagger($('page-' + tab).querySelector('.scroll'));
 }
 
 // ===== トースト =====
@@ -476,10 +454,10 @@ const D = {
 
 // ===== 書き出し・読み込み =====
 async function exportData() {
-  const data = { app:'kani-favorite', version:1, exportedAt:new Date().toISOString(), stores:{} };
+  const data = { app:'yohei-support', version:1, exportedAt:new Date().toISOString(), stores:{} };
   for (const s of DB.STORES) if (!DB.BLOBS.includes(s)) data.stores[s] = await DB.all(s);
   const d = new Date(), stamp = `${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}`;
-  const name = `kani-favorite-${stamp}.json`;
+  const name = `yohei-support-${stamp}.json`;
   const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
   const file = new File([blob], name, { type:'application/json' });
   try {
@@ -489,7 +467,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '3.4';
+const VERSION = '4.0';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -498,13 +476,18 @@ async function fillInfo() {
   const last = LS.get('kf-lastExport');
   el.innerHTML = `<div><span>Todo</span><b>${n.todos}</b></div><div><span>Love</span><b>${n.loves}</b></div><div><span>Profile</span><b>${n.profile}</b></div><div><span>Accounts</span><b>${n.accounts}</b></div>
     <div class="w"><span>最後に書き出した日</span><b>${last ? new Date(+last).toLocaleDateString('ja-JP') : 'まだありません'}</b></div>${size ? `<div class="w"><span>使っている容量</span><b>${size}</b></div>` : ''}
-    <div class="w ver"><span>Kani Favorite</span><b>v${VERSION}</b></div>`;
+    <div class="w ver"><span>Yohei Support</span><b>v${VERSION}</b></div>`;
 }
-async function importData(file) {
+async function importData(file, skip) {
   try {
     const data = JSON.parse(await file.text());
-    if (data.app !== 'kani-favorite' || !data.stores) throw new Error('format');
-    if (!confirm('今のデータを、このファイルの内容で置き換えます。よろしいですか？')) return;
+    // 初期データ（秘書アプリの初期データ／Yohei Supportの初期データ）
+    if (data.kind === 'seed' && ['life-partner', 'yohei-support'].includes(data.app)) {
+      if (!confirm('初期データ（生活DB・お金・ひと・家事など）を読み込みます。よろしいですか？')) return;
+      await Life.importSeed(data); App.reloadAll(); return toast('初期データを読み込みました');
+    }
+    if (!['kani-favorite', 'yohei-support'].includes(data.app) || !data.stores) throw new Error('format');
+    if (!skip && !confirm('今のデータを、このファイルの内容で置き換えます。よろしいですか？')) return;
     for (const s of DB.STORES) { if (DB.BLOBS.includes(s) || !data.stores[s] && ['room', 'events'].includes(s)) continue; await DB.clear(s); await DB.putMany(s, data.stores[s] || []); }
     App.reloadAll();
     toast('読み込みました');
@@ -557,7 +540,7 @@ async function buildSplash() {
 }
 function buildLogo() {
   const w = $('sword');
-  [...'Favorite'].forEach((c, i) => { const s = document.createElement('span'); s.className = 'ch'; s.innerHTML = `<span class="bk">${c}</span><span class="fg">${c}</span>`; s.style.setProperty('--i', i); w.appendChild(s); });
+  [...'Support'].forEach((c, i) => { const s = document.createElement('span'); s.className = 'ch'; s.innerHTML = `<span class="bk">${c}</span><span class="fg">${c}</span>`; s.style.setProperty('--i', i); w.appendChild(s); });
   w.insertAdjacentHTML('beforeend', '<svg class="star" viewBox="0 0 24 24"><path d="M12 1.5l3 6.8 7.3.6-5.5 4.8 1.7 7.2L12 17l-6.5 3.9 1.7-7.2L1.7 8.9l7.3-.6z" fill="#FFD866" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/></svg>');
   const place = () => {
     const r0 = w.getBoundingClientRect(), W = r0.width, L0 = r0.left;
@@ -581,7 +564,9 @@ const App = {
     titleReady.then(() => loadBuf(chars[current].bgm.src).catch(() => {}));
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
-    Office.makeDoor(); Room.makeDoor(); Dorm.makeDoor(); Ops.makeDoor(); Battle.makeDoor(); Cafe.makeDoor();   // 左：カフェ・自室・執務室／右：学生寮・作戦室・実戦
+    // 左（メモロビに近い順）：執務室・保健室・自室／右：廊下・秘書室・ミカの部屋・マリーの部屋・ウサギ・生徒会室
+    Office.makeDoor(); Rooms.makeDoor('clinic', 'start'); Room.makeDoor();
+    Hall.makeSlide(); ['sec', 'mika', 'mari', 'rabbit', 'security'].forEach(k => Rooms.makeDoor(k));
     chars.forEach((c, i) => loadChar(i));
     slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
     requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
@@ -595,23 +580,18 @@ const App = {
       const f = slidesEl.scrollLeft / slidesEl.clientWidth - OFF, nb = f > current ? current + 1 : current - 1;
       if (tab === 'favorite' && Math.abs(f - current) > 0.04) { const ns = slideOf(nb), nv = ns && ns.querySelector('video.lv'); if (nv && nv.paused) { nv.preload = 'auto'; nv.play().catch(() => {}); } }
       const i = Math.round(f);
-      Dorm.setDoor(i === chars.length);       // メモロビの右隣は学生寮
-      Ops.setDoor(i === chars.length + 1);   // その右は作戦室
-      Battle.setDoor(i === chars.length + 2);   // いちばん右は実戦
+      const RIGHT = [null, 'sec', 'mika', 'mari', 'rabbit', 'security'];
+      Hall.setOn(i === chars.length);
+      Rooms.setDoor(i === -2 ? 'clinic' : i > chars.length ? RIGHT[i - chars.length] : null);
       Office.setDoor(i === -1);          // メモロビの左隣は執務室
-      Room.setDoor(i === -2);            // その左は自室
-      Cafe.setDoor(i === -3);            // いちばん左はカフェ
+      Room.setDoor(i === -3);            // いちばん左は自室
       if (i !== current && i >= 0 && i < chars.length) { current = i; updateVideos(); syncBgm(250); prefetchNear(); setTimeout(trimBgmCache, 1500); }
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
     slidesEl.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; tt = Date.now(); });
-    slidesEl.addEventListener('pointerup', e => { if (Ops.isDoor() || Room.isDoor() || Cafe.isDoor() || Office.isDoor() || Dorm.isDoor() || Battle.isDoor()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
+    slidesEl.addEventListener('pointerup', e => { if (Rooms.isDoor() || Room.isDoor() || Office.isDoor() || Hall.isOn()) return; if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10 && Date.now() - tt < 500) { wake(); playVoice(); } });
     document.addEventListener('pointerdown', wake, { passive:true, capture:true });
 
-    const handle = $('handle'); let hy = 0;
-    handle.addEventListener('pointerdown', e => { hy = e.clientY; e.stopPropagation(); });
-    handle.addEventListener('pointerup', e => { e.stopPropagation(); showTabs(); wake(); });
-    handle.addEventListener('pointermove', e => { if (hy && hy - e.clientY > 20) { showTabs(); wake(); hy = 0; } });
 
     $('bgmBtn').addEventListener('click', e => { e.stopPropagation(); bgmOn = !bgmOn; drawIcons(); syncBgm(); });
     $('landBtn').addEventListener('click', e => {
@@ -621,17 +601,12 @@ const App = {
     });
     document.querySelectorAll('.icons button').forEach(b => ['pointerdown','pointerup'].forEach(ev => b.addEventListener(ev, e => e.stopPropagation())));
 
-    $('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) switchTab(b.dataset.tab); });
-    $('tabs').addEventListener('pointerdown', e => {   // 指が触れた瞬間にそのタブの曲を先読み
-      const b = e.target.closest('button'); if (b && TAB_BGM[b.dataset.tab]) loadBuf(TAB_BGM[b.dataset.tab].src).catch(() => {});
-      if (b && TabHooks[b.dataset.tab] && TabHooks[b.dataset.tab].press) TabHooks[b.dataset.tab].press();
-    }, { passive:true });
     addEventListener('resize', layoutChibis);
 
     document.addEventListener('visibilitychange', () => {
       if (phase === 'lock') return;
       if (document.hidden) { stopBgm(0.1); ctx.suspend(); }
-      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Cafe.paintDoor(); Office.paintDoor(); Dorm.paintDoor(); Battle.paintDoor(); });
+      else ctx.resume().then(() => { updateVideos(); syncBgm(); Room.paintDoor(); Office.paintDoor(); Rooms.paintDoors(); Hall.paint(); Ambient.paint(); });
       Object.values(TabHooks).forEach(h => h.visibility && h.visibility(document.hidden));
     });
 
@@ -674,6 +649,9 @@ const App = {
 
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('sw', e.message));
     this.modules.forEach(m => m.init && m.init());
+    Rooms.init(); Ambient.init(); Hall.paint(); Rooms.paintDoors();
+    Office.autoPay().then(n => { if (n) setTimeout(() => toast('給料の入金と引き落としを記録しました', 2600), 4000); }).catch(() => {});
+    Inbox.pull().catch(() => {}); setTimeout(() => Backup.auto(), 15000);
     AppLock.init();
   },
 };
