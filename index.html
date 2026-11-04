@@ -13,7 +13,7 @@
 <title>Yohei Support</title>
 <link rel="preload" href="bgm_title.mp3" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@400;600&family=Klee+One:wght@400;600&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700&family=Hachi+Maru+Pop&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Barlow:ital,wght@0,500;0,600;1,600;1,700&family=Quicksand:wght@300;500;600&family=Fredoka:wght@400;600&family=Klee+One:wght@400;600&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700&family=Hachi+Maru+Pop&display=block" rel="stylesheet">
 <style>html,body{background:#fbeaf2}</style>
 <!-- 起動したときの画面（白く光らないように、ロック画面と同じ見た目を出す） -->
 <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="launch-1170x2532.png">
@@ -72,52 +72,52 @@
 <div class="page scenep" id="page-sc_security" data-v="08_rest" data-who="hina"><img class="sp" src="08_rest_tall_poster.jpg" alt=""><video class="sv" muted playsinline loop preload="none"></video></div>
 <div class="page scenep noa" id="page-sc_clinic" data-who="noa"><img class="sp nb" src="nurse_normal.webp" alt=""><img class="sp nf" alt=""></div>
 <!-- ===== 秘書室（ホシノ） ===== -->
-<div class="page bandBottom ysp" id="page-brief">
+<div class="page bandBottom ysp ui2" id="page-brief">
   <div class="wall"><img class="wallimg exbg" src="ex_hoshino_bg.webp" alt=""></div>
   <div class="frame"><div class="head" id="briefHead"></div><div class="scroll" id="briefList"></div></div><div class="band left"><h2>Brief<small>SECRETARY ROOM</small></h2></div><div class="chibi real" data-char="hoshino" data-name="ホシノ" data-x="449.7" data-y="1250.5" data-w="328.1" data-h="333.4" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="hoshino_chibi.webp" alt=""></div></div>
 </div>
-<div class="page bandBottom" id="page-todo">
+<div class="page bandBottom ui2" id="page-todo">
   <div class="wall"><img class="wallimg exbg" src="ex_hoshino_bg.webp" alt=""></div>
   <div class="frame"><div class="head" id="todoHead"></div><div class="scroll" id="todoList"></div><button class="addBtn" id="todoAdd" aria-label="追加">＋</button></div>
   <div class="band left"><h2>Todo<small>THINGS TO DO</small></h2></div>
   <div class="chibi real" data-char="hoshino" data-name="ホシノ" data-x="449.7" data-y="1250.5" data-w="328.1" data-h="333.4" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="hoshino_chibi.webp" alt=""></div></div>
 </div>
 <!-- ===== 衣食住（ミカ・マリー） ===== -->
-<div class="page bandTop ysp" id="page-wear">
+<div class="page bandTop ysp ui2" id="page-wear">
   <div class="wall"><img class="wallimg exbg" src="ex_mika_bg.webp" alt=""></div>
   <div class="band right"><h2>Wear<small>CLOSET &amp; LAUNDRY</small></h2></div><div class="chibi real" data-char="mika" data-name="ミカ" data-x="28.7" data-y="124.2" data-w="284.7" data-h="353.2" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.webp" alt=""></div></div><div class="frame"><div class="head" id="wearHead"></div><div class="scroll" id="wearList"></div><button class="addBtn" id="wearListAdd" aria-label="追加">＋</button></div>
 </div>
-<div class="page bandTop ysp" id="page-food">
+<div class="page bandTop ysp ui2" id="page-food">
   <div class="wall"><img class="wallimg exbg" src="ex_mika_bg.webp" alt=""></div>
   <div class="band right"><h2>Food<small>MEALS &amp; DRINKS</small></h2></div><div class="chibi real" data-char="mika" data-name="ミカ" data-x="28.7" data-y="124.2" data-w="284.7" data-h="353.2" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.webp" alt=""></div></div><div class="frame"><div class="head" id="foodHead"></div><div class="scroll" id="foodList"></div></div>
 </div>
-<div class="page bandTop" id="page-love">
+<div class="page bandTop ui2" id="page-love">
   <div class="wall"><img class="wallimg exbg" src="ex_mika_bg.webp" alt=""></div>
   <div class="band right"><h2>Love<small>MY FAVORITE THINGS</small></h2></div>
   <div class="chibi real" id="loveChibi" data-char="mika" data-name="ミカ" data-x="28.7" data-y="124.2" data-w="284.7" data-h="353.2" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="mika_chibi.webp" alt=""></div></div>
   <div class="frame"><div class="head" id="loveHead"></div><div class="scroll" id="loveList"></div><button class="addBtn" id="loveAdd" aria-label="追加">＋</button></div>
 </div>
-<div class="page bandTop ysp" id="page-home">
+<div class="page bandTop ysp ui2" id="page-home">
   <div class="wall"><img class="wallimg exbg" src="ex_mari_bg.webp" alt=""></div>
   <div class="band left"><h2>Home<small>HOUSE &amp; ROUTINE</small></h2></div><div class="chibi real" data-char="mari" data-name="マリー" data-x="519.0" data-y="117.7" data-w="252.0" data-h="441.3" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="mari_chibi.webp" alt=""></div></div><div class="frame"><div class="head" id="homeHead"></div><div class="scroll" id="homeList"></div><button class="addBtn" id="homeListAdd" aria-label="追加">＋</button></div>
 </div>
-<div class="page bandTop ysp" id="page-friends">
+<div class="page bandTop ysp ui2" id="page-friends">
   <div class="wall"><img class="wallimg exbg" src="ex_mari_bg.webp" alt=""></div>
   <div class="band left"><h2>Friends<small>RELATIONSHIP MAP</small></h2></div><div class="chibi real" data-char="mari" data-name="マリー" data-x="519.0" data-y="117.7" data-w="252.0" data-h="441.3" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="mari_chibi.webp" alt=""></div></div><div class="frame"><div class="head" id="frHead"></div><div class="scroll" id="frList"></div><button class="addBtn" id="frListAdd" aria-label="追加">＋</button></div>
 </div>
 <!-- ===== ウサギ飼育ルーム（ミヤコ） ===== -->
-<div class="page rabbitp" id="page-rabbit"><div class="wall"><img class="wallimg" id="rbWall" src="miyako_tall_poster.jpg" alt=""></div><div id="rbStage" class="rb-stage"></div><div id="rbUI" class="rb-ui"></div></div>
+<div class="page rabbitp ui2" id="page-rabbit"><div class="wall"><img class="wallimg" id="rbWall" src="miyako_tall_poster.jpg" alt=""></div><div id="rbStage" class="rb-stage"></div><div id="rbUI" class="rb-ui"></div></div>
 <!-- ===== セキュリティ（ヒナ） ===== -->
-<div class="page bandBottom" id="page-accounts">
+<div class="page bandBottom ui2" id="page-accounts">
   <div class="wall"><img class="wallimg exbg" src="ex_hina_bg.webp" alt=""></div>
   <div class="frame"><div class="head" id="accHead"></div><div class="scroll" id="accList"></div><button class="addBtn" id="accAdd" aria-label="追加" hidden>＋</button></div>
   <div class="band right"><h2>Security<small>KEEP IT SAFE</small></h2></div>
   <div class="chibi real" data-char="hina" data-name="ヒナ" data-x="5.3" data-y="1279.2" data-w="326.2" data-h="326.2" data-ww="853" data-wh="1844"><div class="shadow"></div><div class="body"><img class="c-normal" src="hina_chibi.webp" alt=""></div></div>
 </div>
 <!-- ===== 保健室（乃亜） ===== -->
-<div class="page clinicp" id="page-body"><div class="wall noa"></div><div class="cl-band"><h2>Body<small>INFIRMARY</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="bodyHead"></div><div class="scroll" id="bodyList"></div></div></div>
-<div class="page clinicp" id="page-mind"><div class="wall noa"></div><div class="cl-band"><h2>Mind<small>INFIRMARY</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="mindHead"></div><div class="scroll" id="mindList"></div></div></div>
-<div class="page clinicp" id="page-karte"><div class="wall noa"></div><div class="cl-band"><h2>Karte<small>MEDICAL RECORD</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="karteHead"></div><div class="scroll" id="karteList"></div></div></div>
+<div class="page clinicp ui2" id="page-body"><div class="wall noa"></div><div class="cl-band"><h2>Body<small>INFIRMARY</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="bodyHead"></div><div class="scroll" id="bodyList"></div></div></div>
+<div class="page clinicp ui2" id="page-mind"><div class="wall noa"></div><div class="cl-band"><h2>Mind<small>INFIRMARY</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="mindHead"></div><div class="scroll" id="mindList"></div></div></div>
+<div class="page clinicp ui2" id="page-karte"><div class="wall noa"></div><div class="cl-band"><h2>Karte<small>MEDICAL RECORD</small></h2></div><img class="noac" src="noa_c_hug.webp" alt=""><div class="frame"><div class="head" id="karteHead"></div><div class="scroll" id="karteList"></div></div></div>
 
 
 <div class="toast" id="toast"></div>

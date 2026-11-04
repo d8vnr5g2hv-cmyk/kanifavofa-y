@@ -82,20 +82,32 @@ const Sec = (() => {
     const props = await rules(), ai = await Life.getS('ys-prop-' + t, null), done = await Life.getS('ys-propDone', { id:'ys-propDone', d:t, k:[] });
     const dk = done.d === t ? done.k : [];
     const inbox = await Inbox.items(), sum = await Life.getS('ys-brief-' + t, null);
-    head.innerHTML = `<div class="yb-top"><div class="yb-d"><b>${p2(now.getMonth() + 1)}.${p2(now.getDate())}</b><span>${'SUN MON TUE WED THU FRI SAT'.split(' ')[now.getDay()]}</span></div>
-      ${w ? `<div class="yb-w"><b>${w.now}℃</b><span>${esc(w.text)}</span><small>${w.days[0].max}/${w.days[0].min}℃・雨${w.days[0].rain}%</small></div>` : '<div class="yb-w"><span>天気を取得中</span></div>'}</div>`;
+    const all = [...(ai ? ai.list.map((x, i) => ({ k:'ai' + i, t:x.text, todo:x.todo })) : []), ...props].filter(p => !dk.includes(p.k));
+    const top = all.slice(0, 3);
+    const n = today.length + late.length, slot = hr < 11 ? 'MORNING' : hr < 18 ? 'AFTERNOON' : 'NIGHT';
+    const line = sum ? sum.text.split('\n')[0] : n ? `今日やることは${n}件だよ〜。${late.length ? '期限切れからいこっか' : 'のんびりいこ〜'}` : 'やることは、ぜんぶおしまい。のんびりしよ〜';
+    head.innerHTML = `<div class="u-hd"><div class="u-tt"><small>SECRETARY ROOM</small><b>秘書室</b></div>
+      <div class="u-clk"><b>${p2(now.getHours())}<i>:</i>${p2(now.getMinutes())}</b><span>${p2(now.getMonth() + 1)}.${p2(now.getDate())} ${'SUN MON TUE WED THU FRI SAT'.split(' ')[now.getDay()]}</span></div></div>`;
     box.innerHTML = `
-      <div class="ykpi">${[['今日', today.length, '件'], ['期限切れ', late.length, '件'], ['今週の予定', evs.length, '件']].map(([l, v, u]) => `<div class="${l === '期限切れ' && v ? 'bad' : ''}"><small>${l}</small><b>${v}</b><span>${u}</span></div>`).join('')}</div>
-      <div class="yc brief"><h6>${hr < 12 ? '朝のまとめ' : hr < 18 ? '昼のまとめ' : '夜のまとめ'}<button class="ylink" data-x="brief">${busy ? 'まとめ中…' : 'ホシノにまとめてもらう'}</button></h6>
-        ${sum ? `<p class="yb-sum">${esc(sum.text)}</p>` : '<p class="mu">ボタンを押すと、天気・予定・お金・体調をまとめて教えてくれるよ</p>'}</div>
-      <div class="yc prop"><h6>提案書<em>${D.md(t)}</em><button class="ylink" data-x="propose">AIに提案してもらう</button></h6>
-        ${[...(ai ? ai.list.map((x, i) => ({ k:'ai' + i, t:x.text, todo:x.todo })) : []), ...props].map(p => `<div class="yprop ${dk.includes(p.k) ? 'done' : ''}" data-pk="${p.k}"><i></i><span>${esc(p.t)}</span>
-          ${p.todo ? `<button data-todo="${esc(p.todo)}" data-pk2="${p.k}">やることへ</button>` : `<button data-ok="${p.k}">OK</button>`}</div>`).join('') || '<p class="mu">今のところ、気になることはないよ〜</p>'}
-        <div class="ystamp">ホシノ<small>承認</small></div></div>
-      ${inbox.length ? `<div class="yc inbox"><h6>Siriからの一言<em>${inbox.length}件</em></h6>${inbox.map(x => { const g = Inbox.guess(x.text); return `<div class="yin" data-in="${x.id}"><p>${esc(x.text)}</p><div><button data-ap="${x.id}">${esc(g.l)}</button><button data-alt="${x.id}">ほかに</button><button class="x" data-rm="${x.id}">消す</button></div></div>`; }).join('')}</div>` : ''}
-      <div class="yc"><h6>これからの予定<em>7日間</em><button class="ylink" data-x="ev">＋ 予定</button></h6>
-        ${evs.length ? evs.map(e => `<div class="yev" data-ev="${e.id}"><b>${D.md(e.date)}<small>${D.dow(e.date)}</small></b><span>${e.time ? `<i>${e.time}</i>` : ''}${esc(e.title)}</span></div>`).join('') : '<p class="mu">予定はないよ。廊下のカレンダーからも入れられるよ</p>'}</div>
-      <div class="yc quick"><h6>ひとこと入力<em>Siriと同じ言い方でOK</em></h6><div class="yqi"><input id="secQ" placeholder="例：明日 歯医者 15時／洗剤切れた／ランチ 800円" enterkeyhint="send"><button data-x="q">入れる</button></div></div>`;
+      <section class="u-hero">
+        <div class="u-lab"><i></i>${slot} BRIEF</div>
+        <div class="u-big"><b>${n}</b><span>件</span><em>今日のやること${late.length ? `<u>うち期限切れ ${late.length}</u>` : ''}</em></div>
+        <p class="u-say">${esc(line)}</p>
+        ${w ? `<div class="u-wx"><b>${w.now}°</b><span>${esc(w.text)}</span><small>${w.days[0].max}° / ${w.days[0].min}°　雨 ${w.days[0].rain}%</small></div>` : ''}
+      </section>
+      <section class="u-sec">
+        <div class="u-sh"><b>提案書</b><small>PROPOSAL</small><button class="u-more" data-x="propose">AIで作る</button></div>
+        ${top.map((p, i) => `<div class="u-row" data-pk="${p.k}"><i>${p2(i + 1)}</i><span>${esc(p.t)}</span>${p.todo ? `<button data-todo="${esc(p.todo)}" data-pk2="${p.k}" aria-label="やることへ">＋</button>` : `<button data-ok="${p.k}" aria-label="OK">✓</button>`}</div>`).join('') || '<p class="u-empty">今のところ、気になることはないよ〜</p>'}
+        ${all.length > 3 ? `<p class="u-rest">ほか ${all.length - 3}件</p>` : ''}
+      </section>
+      ${inbox.length ? `<section class="u-sec"><div class="u-sh"><b>Siriからの一言</b><small>INBOX ${inbox.length}</small></div>${inbox.map(x => { const g = Inbox.guess(x.text); return `<div class="u-row in" data-in="${x.id}"><i>IN</i><span>${esc(x.text)}<small>${esc(g.l)}</small></span><button data-ap="${x.id}" aria-label="入れる">＋</button><button class="x" data-rm="${x.id}" aria-label="消す">×</button></div>`; }).join('')}</section>` : ''}
+      <section class="u-sec">
+        <div class="u-sh"><b>これからの予定</b><small>7 DAYS</small><button class="u-more" data-x="ev">＋追加</button></div>
+        <div class="u-evs hscroll">${evs.map(e => `<div class="u-ev" data-ev="${e.id}"><b>${D.md(e.date)}</b><small>${D.dow(e.date)}${e.time ? ' ' + e.time : ''}</small><span>${esc(e.title)}</span></div>`).join('') || '<p class="u-empty">予定はないよ</p>'}</div>
+      </section>
+      <div class="u-acts"><button class="u-btn pri" data-x="brief">${busy ? 'まとめ中…' : 'ホシノにまとめてもらう'}</button></div>
+      <div class="u-q"><input id="secQ" placeholder="ひとこと入力　例：明日 歯医者 15時" enterkeyhint="send"><button data-x="q">入れる</button></div>`;
+    box.querySelectorAll('.u-hero, .u-sec, .u-acts, .u-q').forEach((el, i) => el.animate([{ opacity:0, transform:'translateX(28px)' }, { opacity:1, transform:'none' }], { duration:460, delay:60 + i * 70, easing:'cubic-bezier(.2,.8,.2,1)', fill:'backwards' }));
   }
   async function onClick(e) {
     const t = e.target.closest('button'); if (!t) return; haptic();

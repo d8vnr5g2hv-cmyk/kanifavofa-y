@@ -311,8 +311,18 @@ const Rooms = (() => {
     b.classList.add('on'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('on'), 4500);
   }
 
+  // 新UIのページ見出し（英字の小見出し＋日本語の大見出し）
+  const TITLE = { todo:['TO DO', 'やること'], wear:['WEAR', '衣'], food:['FOOD', '食'], love:['FAVORITES', 'すき'], home:['HOME', '住'], friends:['RELATIONSHIP', '友好関係'],
+    accounts:['SECURITY', 'アカウント'], body:['BODY', 'からだ'], mind:['MIND', 'こころ'], karte:['MEDICAL RECORD', 'カルテ'] };
+  function titles() {
+    Object.entries(TITLE).forEach(([p, [en, jp]]) => {
+      const pg = $('page-' + p), fr = pg && pg.querySelector('.frame'); if (!fr || fr.querySelector('.u-pt')) return;
+      const R = Object.values(DEF).find(d => d.pages.includes(p));
+      fr.insertBefore(h(`<div class="u-pt"><div class="u-tt"><small>${R ? esc(R.name) + '　' : ''}${en}</small><b>${jp}</b></div></div>`), fr.firstChild);
+    });
+  }
   function init() {
-    Scene.init();
+    Scene.init(); titles();
     pager = h('<div id="rpager"></div>'); dots = h('<div id="rdots"></div>');
     document.body.append(pager, dots);
     pager.addEventListener('scroll', () => {
