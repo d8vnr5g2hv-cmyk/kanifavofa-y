@@ -374,3 +374,57 @@ body.inRoom #rain { display:none; }
 #room .rnslip .slp .tt { border-top:1.5px solid #5a4a3a; margin-top:4px; padding-top:6px; font-weight:700; } #room .rnslip .slp .tt b { color:#3d86d6; font-size:16px; letter-spacing:0; }
 #room .rnslip .rs-st { position:absolute; right:12px; top:34px; width:42px; height:42px; border:2.5px solid #e2557d; border-radius:50%; color:#e2557d; font-style:normal; font-weight:700; font-size:12px; display:grid; place-items:center; transform:rotate(-14deg); opacity:.85; }
 #room .rnslip p { text-align:center; font-size:10px; color:#b0a090; margin-top:6px; }
+
+/* ===== v4.2：扉は1枚絵、部屋の中は本物のスワイプ ===== */
+.slide.ydoor { background:#e9ecf8; overflow:hidden; }
+.slide.ydoor .ydimg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 30%; transition:transform .9s cubic-bezier(.3,.1,.2,1), filter .9s ease; transform-origin:50% 42%; }
+.slide.ydoor.opened .ydimg { transform:scale(1.55); filter:brightness(1.12); }
+.slide.ydoor .ybadge { position:absolute; left:50%; top:auto; bottom:calc(env(safe-area-inset-bottom) + 92px); transform:translateX(-50%); display:flex; gap:6px; pointer-events:none; z-index:2; }
+.slide.ydoor .ybadge i { font-style:normal; font-size:12px; font-weight:700; color:#fff; background:#ff6f96; padding:6px 13px; border-radius:14px; box-shadow:0 4px 12px rgba(255,90,140,.35); white-space:nowrap; animation:ybd 1.8s ease-in-out infinite; }
+.slide.ydoor .ybadge:empty { display:none; }
+.slide.ydoor .rhint { position:absolute; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 50px); text-align:center; font:600 12px 'Quicksand',sans-serif; letter-spacing:.3em; color:#6a72b0; text-shadow:0 0 8px #fff; animation:rhint 2.4s ease-in-out infinite; }
+.slide.ydoor.opening .rhint, .slide.ydoor.opening .ybadge { display:none; }
+.slide.ydoor .rflash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; }
+.slide.ydoor.flash .rflash { animation:rflash .4s ease-in forwards; }
+.slide.odoor.ydoor .obadge .nt { display:none; }
+
+#rpager { position:fixed; inset:0; z-index:7; display:none; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; scrollbar-width:none; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; background:#0e1630; --out:0; }
+#rpager::-webkit-scrollbar { display:none; }
+#rpager.on { display:flex; animation:rpIn .45s ease; }
+@keyframes rpIn { from { opacity:0; } }
+#rpager > .page { position:relative; inset:auto; flex:none; width:100%; height:100%; display:block; scroll-snap-align:start; scroll-snap-stop:always; animation:none !important; --tabH:0px; --bot:calc(env(safe-area-inset-bottom) + 14px); }
+#rpager > .page.leaving { display:block; }
+#rpager > .rexit { background:#e9ecf8; overflow:hidden; }
+#rpager > .rexit img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 30%; transform:scale(calc(1 + (1 - var(--out)) * .3)); }
+#rpager > .rexit .rx-h { position:absolute; right:22px; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:6px; padding:9px 16px; border-radius:18px; background:rgba(255,255,255,.88); color:#6a72b0; font-size:12px; font-weight:700; box-shadow:0 4px 14px rgba(60,70,140,.18); }
+#rpager > .rexit .rx-h i { width:8px; height:8px; border-left:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(45deg); }
+#rdots { position:fixed; left:0; right:0; bottom:calc(env(safe-area-inset-bottom) + 12px); z-index:8; display:none; justify-content:center; gap:6px; pointer-events:none; opacity:0; transition:opacity .3s; }
+body.inRoom #rdots { display:flex; }
+#rdots.show { opacity:1; }
+#rdots i { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.55); box-shadow:0 1px 4px rgba(0,0,0,.25); transition:.2s; }
+#rdots i.on { background:#fff; width:16px; border-radius:4px; }
+body.inRoom .roomBar { display:none !important; }
+.scenep .sc-talk { position:absolute; right:16px; bottom:calc(env(safe-area-inset-bottom) + 40px); z-index:3; display:flex; align-items:center; gap:6px; border:none; padding:10px 18px; border-radius:22px;
+  background:rgba(255,255,255,.9); color:#e7779f; font-size:13px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,.2); opacity:0; transform:translateY(12px) scale(.9); transition:.3s cubic-bezier(.2,.9,.3,1.2); pointer-events:none; }
+.page .sc-talk { position:absolute; right:16px; bottom:calc(env(safe-area-inset-bottom) + 40px); z-index:9; display:flex; align-items:center; gap:6px; border:none; padding:10px 18px; border-radius:22px;
+  background:rgba(255,255,255,.95); color:#e7779f; font-size:13px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,.2); opacity:0; transform:translateY(12px) scale(.9); transition:.3s cubic-bezier(.2,.9,.3,1.2); pointer-events:none; }
+.sc-talk svg { width:15px; height:15px; fill:#e7779f; }
+.sc-talk.on { opacity:1 !important; transform:none !important; pointer-events:auto !important; }
+.rabbitp .rb-stage { top:calc(env(safe-area-inset-top) + 30%); }
+
+/* 廊下：本物のカレンダーと週報を貼る */
+.yhall .hwall { position:absolute; left:4%; right:4%; top:calc(env(safe-area-inset-top) + 7%); display:flex; flex-direction:column; align-items:center; gap:14px; }
+.yhall .hpost { position:relative; width:100%; cursor:pointer; filter:drop-shadow(0 12px 18px rgba(60,30,10,.35)); }
+.yhall .hpost.cal { width:92%; transform:rotate(-1.2deg); }
+.yhall .hpost.np { width:96%; transform:rotate(.9deg); }
+.yhall .hpost .hbox { pointer-events:none; }
+.yhall .hpost .rcal { width:100%; }
+.yhall .hpost .rcal .nav { display:none; }
+.yhall .pin { position:absolute; left:50%; top:-7px; z-index:3; width:15px; height:15px; margin-left:-7px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#ff9cb8,#e2557d); box-shadow:0 2px 3px rgba(0,0,0,.35); }
+.yhall .pin.b { background:radial-gradient(circle at 35% 35%,#8fd0ff,#3d86d6); }
+.yhall .hnew { position:absolute; right:-4px; top:-8px; z-index:3; background:#ff5c8a; color:#fff; font:700 10px 'Quicksand',sans-serif; padding:4px 8px; border-radius:9px; letter-spacing:.1em; }
+.yhall .hnew:empty { display:none; }
+.yhall .hiv { display:flex; align-items:center; gap:10px; background:rgba(255,253,248,.95); border-radius:12px; padding:6px 14px 6px 6px; box-shadow:0 4px 10px rgba(60,30,10,.2); }
+.yhall .hiv img { width:36px; height:36px; object-fit:contain; border-radius:50%; background:#fff3f7; }
+.yhall .hiv span { font-size:11px; color:#8a6a4a; } .yhall .hiv b { margin-left:8px; font-size:14px; color:#e2557d; } .yhall .hiv em { font-style:normal; margin-left:8px; font-size:10px; background:#8fd6b4; color:#fff; padding:2px 7px; border-radius:8px; }

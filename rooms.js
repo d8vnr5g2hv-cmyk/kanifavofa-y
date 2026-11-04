@@ -216,50 +216,37 @@ const Ambient = (() => {
   return { paint, init() { paint(); setInterval(paint, 10 * 60e3); document.addEventListener('visibilitychange', () => { if (!document.hidden) paint(); }); } };
 })();
 
-// ===== 部屋（扉とページ） =====
+// ===== 部屋（扉 → 中は横にスワイプ：0枚目＝扉（戻ると出る）／1枚目＝メモロビ／2枚目から＝パネル） =====
 const Rooms = (() => {
-  // 部屋の定義：扉の絵（閉・開）、BGM、ページ
   const DEF = {
-    sec:     { name:'秘書室', en:'SECRETARY ROOM', door:['dm_door.jpg', 'dm_door_open.jpg'], dw:853, dh:1843, pages:['sc_sec', 'brief', 'todo'], who:'hoshino' },
-    mika:    { name:'ミカの部屋', en:"MIKA'S ROOM", door:['dm_rdoor_d.jpg', null], dw:853, dh:1844, pages:['sc_mika', 'wear', 'food', 'love'], who:'mika' },
-    mari:    { name:'マリーの部屋', en:"MARIE'S ROOM", door:['cafe_door_d.jpg', 'cafe_door_open_d.jpg'], dw:1024, dh:1536, pages:['sc_mari', 'home', 'friends'], who:'mari' },
-    rabbit:  { name:'ウサギ飼育ルーム', en:'RABBIT ROOM', door:['dm_rdoor_n.jpg', null], dw:853, dh:1843, pages:['sc_rabbit', 'rabbit'], stickers:true, who:'miyako' },
-    security:{ name:'生徒会室', en:'STUDENT COUNCIL', door:['ops_door.jpg', 'ops_door_open.jpg'], dw:1170, dh:2470, pages:['sc_security', 'accounts'], who:'hina' },
-    clinic:  { name:'保健室', en:'INFIRMARY', door:['bt_door.jpg', 'bt_door_open.jpg'], dw:853, dh:1843, pages:['sc_clinic', 'body', 'mind', 'karte'], who:'noa' },
+    sec:     { name:'秘書室', door:'door_sec.jpg', pages:['sc_sec', 'brief', 'todo'], who:'hoshino' },
+    mika:    { name:'ミカの宿泊室', door:'door_mika.jpg', pages:['sc_mika', 'wear', 'food', 'love'], who:'mika' },
+    mari:    { name:'練習所', door:'door_mari.jpg', pages:['sc_mari', 'home', 'friends'], who:'mari' },
+    rabbit:  { name:'屋外エリア', door:'door_rabbit.jpg', pages:['sc_rabbit', 'rabbit'], who:'miyako' },
+    security:{ name:'風紀委員室', door:'door_security.jpg', pages:['sc_security', 'accounts'], who:'hina' },
+    clinic:  { name:'乃亜の保健室', door:'door_clinic.jpg', pages:['sc_clinic', 'body', 'mind', 'karte'], who:'noa' },
   };
-  // ページ：ラベル・担当（sc_〜 は1枚目のメモロビ）
-  const PAGE = {
-    sc_sec:{ l:'お部屋', who:'hoshino', sc:1 }, brief:{ l:'まとめ', who:'hoshino' }, todo:{ l:'やること', who:'hoshino' },
-    sc_mika:{ l:'お部屋', who:'mika', sc:1 }, wear:{ l:'衣', who:'mika' }, food:{ l:'食', who:'mika' }, love:{ l:'すき', who:'mika' },
-    sc_mari:{ l:'お部屋', who:'mari', sc:1 }, home:{ l:'住', who:'mari' }, friends:{ l:'友好関係', who:'mari' },
-    sc_rabbit:{ l:'お部屋', who:'miyako', sc:1 }, rabbit:{ l:'飼育', who:'miyako' },
-    sc_security:{ l:'お部屋', who:'hina', sc:1 }, accounts:{ l:'アカウント', who:'hina' },
-    sc_clinic:{ l:'お部屋', who:'noa', sc:1 }, body:{ l:'からだ', who:'noa' }, mind:{ l:'こころ', who:'noa' }, karte:{ l:'カルテ', who:'noa' },
-  };
-  let room = null, doors = {}, onDoorKey = null;
-  const bar = () => $('roomBar');
+  const PAGE = {};
+  Object.values(DEF).forEach(R => R.pages.forEach(p => PAGE[p] = { who:R.who, sc:p.startsWith('sc_') }));
+  let room = null, doors = {}, onDoorKey = null, pager = null, dots = null, idx = 1, settleT = 0;
 
   function makeDoor(key, after) {
     const R = DEF[key];
-    const s = h(`<div class="slide ydoor" data-room="${key}"><div class="ydbox"><img class="c" src="${R.door[0]}" alt="">${R.door[1] ? `<img class="o" src="${R.door[1]}" alt="">` : ''}
-      ${R.stickers ? '<img class="ystk a" src="usagi_sit.webp" alt=""><img class="ystk b" src="usagi_hop.webp" alt="">' : ''}</div>
-      <div class="yplate"><b>${R.name}</b><small>${R.en}</small><span class="ybadge"></span></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
+    const s = h(`<div class="slide ydoor" data-room="${key}"><img class="ydimg" src="${R.door}" alt=""><span class="ybadge"></span><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
     if (after === 'start') slidesEl.insertBefore(s, slidesEl.firstChild); else slidesEl.appendChild(s);
-    const box = s.querySelector('.ydbox'), fit = () => { const PW = s.clientWidth, PH = s.clientHeight; if (!PW) return; const k = Math.max(PW / R.dw, PH / R.dh); Object.assign(box.style, { width:R.dw * k + 'px', height:R.dh * k + 'px', left:(PW - R.dw * k) / 2 + 'px', top:(PH - R.dh * k) / 2 + 'px' }); };
-    fit(); addEventListener('resize', fit);
     let tx = 0, ty = 0;
     s.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; });
     s.addEventListener('pointerup', e => { if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10) openDoor(key, s); });
     doors[key] = s;
     return s;
   }
-  async function badge(key, html) { const s = doors[key]; if (s) s.querySelector('.ybadge').innerHTML = html || ''; }
+  const badge = (key, html) => { const s = doors[key]; if (s) s.querySelector('.ybadge').innerHTML = html || ''; };
   async function openDoor(key, s) {
     if (s.classList.contains('opening') || room) return;
     ctx.resume(); haptic();
     s.classList.add('opening', 'opened'); doorSfx();
-    await sleep(700); s.classList.add('flash');
-    await sleep(360); enter(key);
+    await sleep(620); s.classList.add('flash');
+    await sleep(320); enter(key);
     setTimeout(() => s.classList.remove('opening', 'opened', 'flash'), 600);
   }
   function doorSfx() {
@@ -268,64 +255,79 @@ const Rooms = (() => {
       [[988, 0], [1319, .1]].forEach(([f, at]) => { const o = ctx.createOscillator(), gg = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; gg.gain.setValueAtTime(0, t + at); gg.gain.linearRampToValueAtTime(.16, t + at + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + at + .25); o.connect(gg); gg.connect(g); o.start(t + at); o.stop(t + at + .3); });
     } catch (e) {}
   }
-  function setDoor(key) {   // 今見えているスライドが扉なら、その部屋の名前
-    if (onDoorKey === key) return; onDoorKey = key;
-    document.body.classList.toggle('atDoor', !!key);
-    if (key && DEF[key]) { const p = new Image(); if (DEF[key].door[1]) p.src = DEF[key].door[1]; }
-  }
+  function setDoor(key) { if (onDoorKey === key) return; onDoorKey = key; document.body.classList.toggle('atDoor', !!key); }
 
   // ===== 入る・出る =====
-  function enter(key, page) {
+  const pagesOf = () => [...pager.querySelectorAll(':scope > .page')];
+  function enter(key) {
     room = key; const R = DEF[key];
     document.body.classList.add('inRoom');
     slidesEl.querySelectorAll('video').forEach(v => v.pause());
-    drawBar(page || R.pages[0]);
-    switchTab(page || R.pages[0]);
-    setTimeout(() => { if (room === key) Interview.meet(R.who); }, 1200);
+    pager.innerHTML = '';
+    pager.appendChild(h(`<div class="page rexit"><img src="${R.door}" alt=""><div class="rx-h"><i></i>もどる</div></div>`));
+    R.pages.forEach(p => { const pg = $('page-' + p); pg.classList.add('inpager', 'show'); pager.appendChild(pg); });
+    dots.innerHTML = R.pages.map(() => '<i></i>').join('');
+    pager.classList.add('on');
+    idx = 1; pager.scrollLeft = pager.clientWidth;
+    requestAnimationFrame(() => { pager.scrollLeft = pager.clientWidth; });
+    tab = R.pages[0];
+    // パネルは先に描いておく（スワイプした瞬間に中身が見えるように）
+    R.pages.forEach(p => { const H = TabHooks[p]; if (H && H.enter) try { H.enter('favorite'); } catch (e) { console.warn(e); } });
+    if (TabHooks[tab] && TabHooks[tab].enter) TabHooks[tab].enter();
+    layoutChibis(); markDots();
+    syncBgm(120); setTimeout(trimBgmCache, 1500);
+    setTimeout(() => { if (room === key) Interview.meet(R.who); }, 1300);
   }
   function exit() {
     if (!room) return;
-    Talk.close(); room = null;
+    Talk.close();
+    pagesOf().forEach(pg => { const k = pg.id.replace('page-', ''); if (TabHooks[k] && TabHooks[k].leave) try { TabHooks[k].leave(); } catch (e) {} });
+    pager.classList.remove('on');
+    pagesOf().forEach(pg => { if (pg.id) { pg.classList.remove('inpager', 'show'); document.body.appendChild(pg); } });
+    pager.innerHTML = ''; room = null; tab = 'favorite';
     document.body.classList.remove('inRoom');
-    switchTab('favorite');
-    paintDoors();
+    updateVideos(); syncBgm(200); paintDoors();
   }
-  function drawBar(cur) {
-    const R = DEF[room];
-    bar().innerHTML = `<button class="rb-x" data-x="out" aria-label="出る"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <div class="rb-pg">${R.pages.map(p => `<button data-p="${p}" class="${p === cur ? 'on' : ''} ${PAGE[p].sc ? 'sc' : ''}">${PAGE[p].sc ? '<i class="rb-sc"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>' : `<img src="${PAGE[p].who === 'noa' ? 'noa_face.webp' : 'icon_' + PAGE[p].who + '.png'}" alt="">`}<span>${PAGE[p].l}</span></button>`).join('')}</div>
-      <button class="rb-t" data-x="talk" aria-label="話す"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg><span>話す</span></button>`;
-    bar().dataset.room = room;
+  function settle() {
+    if (!room) return;
+    const W = pager.clientWidth, i = Math.round(pager.scrollLeft / W);
+    if (i === 0) return exit();   // 扉までもどったら、部屋を出る
+    if (i === idx) return;
+    const R = DEF[room], prev = tab, next = R.pages[i - 1];
+    idx = i;
+    if (PAGE[prev] && PAGE[prev].sc && TabHooks[prev]) TabHooks[prev].leave();
+    tab = next; haptic();
+    if (PAGE[next].sc && TabHooks[next]) TabHooks[next].enter();
+    layoutChibis(); markDots();
   }
-  function go(p) {
-    if (!room || p === tab) return;
-    const R = DEF[room], from = R.pages.indexOf(tab), to = R.pages.indexOf(p); if (to < 0) return;
-    document.body.dataset.dir = to > from ? 'next' : 'prev';
-    bar().querySelectorAll('[data-p]').forEach(b => b.classList.toggle('on', b.dataset.p === p));
-    const prevWho = PAGE[tab] && PAGE[tab].who;
-    switchTab(p);
+  function markDots() { [...dots.children].forEach((d, k) => d.classList.toggle('on', k === idx - 1)); }
+  function go(p) { if (!room) return; const i = DEF[room].pages.indexOf(p); if (i < 0) return; pager.scrollTo({ left:(i + 1) * pager.clientWidth, behavior:'instant' }); idx = -1; settle(); }
+
+  // メモロビ・デフォルメから話す
+  function talk(w) { Talk.chat(w, { first:GREET[w], onFace:w === 'noa' && typeof Clinic !== 'undefined' ? Clinic.face : null }); }
+  function bubble(pg, w) {
+    let b = pg.querySelector('.sc-talk');
+    if (!b) { b = h('<button class="sc-talk"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>話す</button>'); pg.appendChild(b); b.addEventListener('pointerup', e => e.stopPropagation()); b.addEventListener('click', e => { e.stopPropagation(); haptic(); b.classList.remove('on'); talk(w); }); }
+    b.classList.add('on'); clearTimeout(b._t); b._t = setTimeout(() => b.classList.remove('on'), 4500);
   }
-  function step(d) { if (!room) return; const P = DEF[room].pages, i = P.indexOf(tab) + d; if (i >= 0 && i < P.length) { haptic(); go(P[i]); } }
 
   function init() {
     Scene.init();
-    bar().addEventListener('click', e => {
-      const b = e.target.closest('button'); if (!b) return;
-      haptic();
-      if (b.dataset.p) return go(b.dataset.p);
-      if (b.dataset.x === 'out') return exit();
-      if (b.dataset.x === 'talk') return Talk.chat(PAGE[tab].who, { first:greetLine(PAGE[tab].who), onFace:typeof Clinic !== 'undefined' && PAGE[tab].who === 'noa' ? Clinic.face : null });
-    });
-    // ページを横にスワイプ
-    let sx = 0, sy = 0, st = 0;
-    document.addEventListener('pointerdown', e => { if (!room || !e.target.closest('.page')) return; sx = e.clientX; sy = e.clientY; st = Date.now(); }, { passive:true });
-    document.addEventListener('pointerup', e => {
-      if (!room || !st || !e.target.closest('.page')) return;
-      const dx = e.clientX - sx, dy = e.clientY - sy, dt = Date.now() - st; st = 0;
-      if (typeof Sortable !== 'undefined' && Sortable.recent()) return;
-      if (e.target.closest('.noswipe, input, textarea, .hscroll')) return;
-      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6 && dt < 700) step(dx < 0 ? 1 : -1);
+    pager = h('<div id="rpager"></div>'); dots = h('<div id="rdots"></div>');
+    document.body.append(pager, dots);
+    pager.addEventListener('scroll', () => {
+      dots.classList.add('show'); clearTimeout(settleT);
+      settleT = setTimeout(() => { settle(); dots.classList.remove('show'); }, 140);
+      // 扉に近づくほど、部屋がうすくなる
+      const f = Math.min(1, pager.scrollLeft / pager.clientWidth); pager.style.setProperty('--out', (1 - f).toFixed(3));
     }, { passive:true });
+    if ('onscrollend' in window) pager.addEventListener('scrollend', () => { clearTimeout(settleT); settle(); dots.classList.remove('show'); });
+    addEventListener('resize', () => { if (room) { pager.scrollLeft = idx * pager.clientWidth; layoutChibis(); } });
+    // パネルのデフォルメをタップ：その子と話す（ふだんの動きのあとで）
+    Object.keys(PAGE).filter(p => !PAGE[p].sc).forEach(p => {
+      const pg = $('page-' + p); if (!pg) return;
+      pg.querySelectorAll('.chibi.real, .noac').forEach(c => c.addEventListener('click', () => { if (!room) return; setTimeout(() => bubble(pg, PAGE[p].who), 300); }));
+    });
   }
   const GREET = {
     hoshino:'うへ〜、どうしたの先生？', mika:'なになに、先生？☆', mari:'はい、先生。どうされましたか？', hina:'……なに、先生？',
@@ -333,7 +335,6 @@ const Rooms = (() => {
   };
   const greetLine = w => GREET[w];
   async function paintDoors() {
-    // 札：やることの期限・在庫・ウサギ・カルテ
     try {
       const t = D.today(), todos = (await DB.all('todos')).filter(x => !x.done && x.due && x.due <= t).length;
       badge('sec', todos ? `<i>期限 ${todos}</i>` : '');
@@ -344,7 +345,7 @@ const Rooms = (() => {
       const td = await Life.day(); badge('clinic', !td.sleep && new Date().getHours() >= 9 ? '<i>睡眠まだ</i>' : !td.chk ? '<i>3問まだ</i>' : '');
     } catch (e) {}
   }
-  return { DEF, PAGE, makeDoor, setDoor, enter, exit, go, init, paintDoors, active:() => room, isDoor:() => !!onDoorKey, greetLine };
+  return { DEF, PAGE, makeDoor, setDoor, enter, exit, go, init, paintDoors, bubble, talk, active:() => room, isDoor:() => !!onDoorKey, greetLine };
 })();
 
 // ===== 自動の控え（週に1回、Googleドライブへ） =====
@@ -390,7 +391,7 @@ const Scene = (() => {
       }
       pg.querySelector('.sp').addEventListener('load', () => size(pg));
       TabHooks[key] = {
-        enter:() => { if (pg.dataset.who === 'noa' && typeof Clinic !== 'undefined') Clinic.sceneEnter(); size(pg); if (v) { if (!v.src) v.src = pg.dataset.v + '_tall_h264.mp4'; v.preload = 'auto'; v.play().catch(() => {}); } pg.classList.add('hint'); setTimeout(() => pg.classList.remove('hint'), 3200); },
+        enter:() => { if (pg.dataset.who === 'noa' && typeof Clinic !== 'undefined') Clinic.sceneEnter(); size(pg); if (v) { if (!v.src) v.src = pg.dataset.v + '_tall_h264.mp4'; v.preload = 'auto'; v.play().catch(() => {}); } },
         leave:() => { if (v) v.pause(); },
         visibility:hidden => { if (v && tab === key) { if (hidden) v.pause(); else v.play().catch(() => {}); } },
       };
@@ -399,8 +400,8 @@ const Scene = (() => {
       pg.addEventListener('pointerup', e => {
         if (Math.hypot(e.clientX - sx, e.clientY - sy) > 10) return;
         ctx.resume(); wake(); const w = pg.dataset.who;
-        if (w === 'noa') return Clinic.tapNoa();
-        if (VOICE[w]) playVoice(VOICE[w]);
+        if (w === 'noa') Clinic.tapNoa(); else if (VOICE[w]) playVoice(VOICE[w]);
+        Rooms.bubble(pg, w);
       });
     });
     addEventListener('resize', () => document.querySelectorAll('.scenep.show').forEach(size));

@@ -106,12 +106,8 @@ const Office = (() => {
 
   // ===== 入口 =====
   function makeDoor() {
-    const s = h(`<div class="slide odoor"><div class="odbox"><img class="odc" src="office_door.jpg" alt=""><img class="odo" src="office_door_open.jpg" alt="">
-      <div class="oplate">執務室<small>OFFICE</small></div><img class="ostk a" src="dc_stk6.webp" alt=""><img class="ostk b" src="dc_stk11.webp" alt=""><i class="otape"></i>
-      <div class="obadge" id="ofBadge"></div></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
+    const s = h(`<div class="slide odoor ydoor"><img class="ydimg" src="door_office.jpg" alt=""><div class="obadge ybadge" id="ofBadge"></div><div class="rhint">TAP TO ENTER</div><div class="rflash"></div></div>`);
     slidesEl.insertBefore(s, slidesEl.firstChild);
-    const box = s.querySelector('.odbox'), fit = () => fitBox(box, 1027, 1531, 940);
-    fit(); addEventListener('resize', fit);
     let tx = 0, ty = 0;
     s.addEventListener('pointerdown', e => { tx = e.clientX; ty = e.clientY; });
     s.addEventListener('pointerup', e => { if (Math.hypot(e.clientX - tx, e.clientY - ty) < 10) openDoor(s); });
@@ -129,7 +125,7 @@ const Office = (() => {
     const b = $('ofBadge'); if (!b) return;
     await loadCfg();
     const c = cfg.cash, ar = (c.arrears || []).filter(a => !a.done).reduce((x, a) => x + a.amt, 0);
-    b.innerHTML = ar ? `<span class="nt">滞納<br>${yen(ar)}</span>` : c.income && daysTo(nextPayday(c)) <= 3 ? '<span class="nt">給料日<br>まもなく</span>' : '';
+    b.innerHTML = ar ? `<i>滞納 ${yen(ar)}</i>` : c.income && daysTo(nextPayday(c)) <= 3 ? '<i>給料日まもなく</i>' : '';
   }
   async function openDoor(s) {
     if (s.classList.contains('opening')) return;
@@ -142,7 +138,7 @@ const Office = (() => {
   function setDoor(v) {
     if (onDoor === v) return;
     onDoor = v; document.body.classList.toggle('atOfficeDoor', v);
-    if (v) { paintDoor(); const i = new Image(); i.src = 'office_door_open.jpg'; Object.values(FACES).forEach(f => { const x = new Image(); x.src = f; }); }
+    if (v) { paintDoor(); const i = new Image(); Object.values(FACES).forEach(f => { const x = new Image(); x.src = f; }); }
   }
 
   // ===== 画面 =====

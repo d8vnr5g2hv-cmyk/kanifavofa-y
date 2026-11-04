@@ -543,6 +543,27 @@ const Room = (() => {
     c.querySelector('.rnav').onclick = e => { const b = e.target.closest('[data-rn]'); if (!b || b.disabled) return; i += +b.dataset.rn; sfx('tap'); show(i); };
   }
 
+
+  // 廊下の掲示板に貼る（アップと同じ見た目で、さわれない小さい版）
+  async function boardCal(box) {
+    per = period();
+    const save = [calMonth, calSel]; calMonth = D.today().slice(0, 7); calSel = null;
+    const holder = h('<div class="rcal" id="rcal"></div>'), old = $('rcal'); if (old) old.id = 'rcal_tmp';
+    document.body.appendChild(holder); holder.style.cssText = 'position:fixed;left:-9999px;top:0;width:400px';
+    const rd = $('rday'); if (rd) rd.id = 'rday_tmp';
+    await drawCal(); holder.onclick = null; holder.removeAttribute('id'); holder.style.cssText = '';
+    if (old) old.id = 'rcal'; if (rd) rd.id = 'rday';
+    box.innerHTML = ''; box.appendChild(holder); [calMonth, calSel] = save;
+  }
+  async function boardPaper(box) {
+    const wk = monday(), { pages, no, arts } = await issue(wk);
+    const wb = `room_wb_${period() === 'day' ? 'd' : 'n'}.jpg`;
+    box.innerHTML = `<div class="rnp"><img class="npwb" src="${wb}" alt="">${NP.quads.map((q, i) => `<div class="npq" style="width:${PW}px;height:${PH}px">${sheetHTML(i, pages[i], wk, no)}</div>`).join('')}
+      ${NP.front.map(f => `<img class="npfr" src="${wb}" style="clip-path:polygon(${f.map(([x, y]) => `${(x / NP.W * 100).toFixed(2)}% ${(y / NP.H * 100).toFixed(2)}%`).join(',')})" alt="">`).join('')}</div>`;
+    requestAnimationFrame(() => fitQuads(box));
+    return arts;
+  }
+
   // ----- 新聞（ホワイトボードのアップ） -----
   // アップ画像（1440×1200）と、その中の2枚の紙の位置 [左, 上, 幅, 高さ]
   // 紙は少し傾いて貼ってあるので、四隅の位置（左上・右上・右下・左下）に合わせて変形して重ねる
@@ -956,7 +977,7 @@ const Room = (() => {
     bgm:() => active ? roomBgm() : null,
     // 廊下の掲示板から開く
     async openBoard(k, from) { if (!el) build(); per = period(); await loadApi(); if (k === 'cal') return openCal(from || {}); return openPaper(from || {}); },
-    closeZoom:() => closeZoom(),
+    closeZoom:() => closeZoom(), boardCal, boardPaper, fitQuads,
     weekArts, monday, NAME, img, COLOR:k => COLOR[k], period,
     paintDoor,
     // アプリを開いて少ししたら：前日の日報を裏で用意する

@@ -365,7 +365,7 @@ function layoutChibis() {
     const cs = [...pg.querySelectorAll('.chibi.real')]; if (!cs.length) return;
     const W = pg.clientWidth, H = pg.clientHeight;
     const safeTop = parseFloat(getComputedStyle(probe).paddingTop) || 0;
-    const tabH = $('roomBar').offsetHeight || 64;
+    const tabH = 14;
     const K = 1.12;   // デフォルメを少しだけ大きく（足元を基準に）
     const R = cs.map(c => {
       const ww = +c.dataset.ww, wh = +c.dataset.wh, s = Math.max(W / ww, H / wh), ox = (W - ww * s) / 2;

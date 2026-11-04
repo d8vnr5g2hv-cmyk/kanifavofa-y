@@ -64,10 +64,10 @@ const Rabbit = (() => {
   const bar = (n, v, c) => `<div class="rbs"><small>${n}</small><b><i style="width:${v}%;background:${c}"></i></b><em>${Math.round(v)}</em></div>`;
   async function draw() {
     await load(); S.rabbits.forEach(r => tick(r)); save();
-    $('rbWall').src = night() || new Date().getHours() >= 18 ? 'room_sofa_n.jpg' : 'room_sofa_d.jpg';
+    $('rbWall').src = 'miyako_tall_poster.jpg';
     stageEl = $('rbStage'); drawStage();
     const ui = $('rbUI'), r = S.rabbits[sel];
-    if (!r) { ui.innerHTML = `<div class="rbcard first"><img class="mc" src="miyako_chibi.webp" alt=""><p>ここはRABBIT小隊の飼育ルームです。<br>先生、一緒にウサギを育てませんか？</p><button class="rbgo" data-a="adopt">お迎えする</button></div>`; return; }
+    if (!r) { ui.innerHTML = `<div class="rbcard first"><img class="mc" src="miyako_chibi.webp" alt=""><p>ここは浜辺プールのウサギ小屋です。<br>先生、一緒にウサギを育てませんか？</p><button class="rbgo" data-a="adopt">お迎えする</button></div>`; return; }
     const age = Math.floor((Date.now() - r.born) / 86400e3), ear = await earned(), can = ear.reduce((a, x) => a + Math.max(0, x.got - x.done) * x.c, 0);
     ui.innerHTML = `<div class="rbtop"><div class="rbname"><b>${esc(r.name)}</b><span>${BREED[r.breed][0]}・${PERS[r.pers]}・${r.stage === 'baby' ? '子ども' : '大人'}・${age}日目</span></div>
         <div class="rbcar"><i></i><b>${S.carrots}</b></div></div>
