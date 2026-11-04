@@ -131,9 +131,9 @@ const Office = (() => {
     if (s.classList.contains('opening')) return;
     ctx.resume(); haptic();
     s.classList.add('opening', 'opened');
-    await sleep(750); s.classList.add('flash');
-    await sleep(380); await enter();
-    setTimeout(() => s.classList.remove('opening', 'opened', 'flash'), 600);
+    await sleep(260);
+    await Wipe.play(() => enter());
+    s.classList.remove('opening', 'opened', 'flash');
   }
   function setDoor(v) {
     if (onDoor === v) return;
@@ -164,16 +164,7 @@ const Office = (() => {
     $('ofFold').onclick = () => { sfx('tap'); el.classList.toggle('folded'); };
     $('ofMW').addEventListener('click', e => { if (!e.target.closest('.oinp,.ochips')) advance(); });
   }
-  function sfx(k) {
-    try {
-      const t = ctx.currentTime, g = ctx.createGain(); g.gain.value = .3; g.connect(ctx.destination);
-      const tone = (f, a, d, at = 0, type = 'triangle') => { const o = ctx.createOscillator(), gg = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t + at); gg.gain.setValueAtTime(0, t + at); gg.gain.linearRampToValueAtTime(a, t + at + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + at + d); o.connect(gg); gg.connect(g); o.start(t + at); o.stop(t + at + d + .05); };
-      if (k === 'tap') tone(1175, .12, .1);
-      if (k === 'msg') tone(880, .1, .08);
-      if (k === 'ok') { tone(988, .14, .12); tone(1319, .14, .2, .07); }
-      if (k === 'coin') { tone(1976, .12, .08, 0, 'square'); tone(2637, .12, .22, .06, 'square'); }
-    } catch(e) {}
-  }
+  function sfx(k) { Sfx.play({ tap:'tap', msg:'msg', ok:'ok', coin:'coin' }[k] || 'tap'); }
   const clock = () => { const d = new Date(), t = $('ofTm'); if (t) t.textContent = `${p2(d.getHours())}:${p2(d.getMinutes())}`; };
   function setFace(f) { el.querySelectorAll('.ofaces img').forEach(i => i.classList.toggle('on', i.dataset.face === f)); el.classList.toggle('faced', !!f); }
 

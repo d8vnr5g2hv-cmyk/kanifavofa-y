@@ -138,7 +138,7 @@ const Rabbit = (() => {
         sfx(1); await save(); draw(); toast(`${n}を買いました`);
       } })));
   }
-  function sfx(k) { try { const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(k ? 1320 : 990, t); o.frequency.exponentialRampToValueAtTime(k ? 1980 : 1180, t + .08); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.14, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .2); o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + .22); } catch (e) {} }
+  function sfx(k) { Sfx.play(k ? 'coin' : 'pop'); }
   // ときどき勝手に動く
   function wander() {
     clearTimeout(walkT); if (tab !== 'rabbit') return;

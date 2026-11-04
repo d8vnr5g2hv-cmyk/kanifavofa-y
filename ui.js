@@ -6,9 +6,10 @@ const hashN = (s, n) => { let x = 0; for (const c of String(s)) x = (x * 31 + c.
 
 // ===== 軽い振動（iPhoneは「スイッチ」を押したときの振動を借りる） =====
 const haptic = (() => {
-  let lb = null;
+  let lb = null, lastH = 0;
   return () => {
     try {
+      const n = performance.now(); if (n - lastH < 90) return; lastH = n;
       if (navigator.vibrate) { navigator.vibrate(8); return; }
       if (!lb) {
         lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true');

@@ -592,3 +592,25 @@ body.inRoom .roomBar { display:none !important; }
 #office .ocard { border-radius:3px 16px 3px 16px !important; }
 #office .okpi b, #office .wl b, #office .wday b, #office .ocard.sim .sr b { font-family:'Barlow','Quicksand',sans-serif !important; font-style:italic; font-weight:700 !important; }
 #office .ocard h6 > button, #office .orec, #office .ochk { border-radius:3px !important; }
+
+/* ===== 動き：押したとき・扉のワイプ ===== */
+button, .yitem, .ymeal, .u-row, .u-ev, .yev, .fpr, .orow, .owish, .omeal, .hpost, .app { transition:scale .14s cubic-bezier(.3,.7,.4,1.4), filter .14s; }
+.prs { scale:.95; filter:brightness(.97); }
+#wipe { position:fixed; inset:0; z-index:60; pointer-events:none; overflow:hidden; display:none; }
+#wipe.in, #wipe.out { display:block; pointer-events:auto; }
+#wipe i { position:absolute; top:-20%; bottom:-20%; left:-30%; width:160%; transform:translateX(110%) skewX(-18deg); }
+#wipe .w1 { background:linear-gradient(100deg,#ffffff 0%,#eef6ff 100%); }
+#wipe .w2 { background:linear-gradient(100deg,#1fa3ff,#7fd0ff); width:8%; left:-6%; }
+#wipe .w3 { background:linear-gradient(100deg,#ff9ac4,#ff5f9e); width:4%; left:4%; }
+#wipe.in .w1 { animation:wpIn .42s cubic-bezier(.7,0,.3,1) .06s forwards; }
+#wipe.in .w2 { animation:wpIn .42s cubic-bezier(.7,0,.3,1) forwards; }
+#wipe.in .w3 { animation:wpIn .42s cubic-bezier(.7,0,.3,1) .03s forwards; }
+#wipe.out i { transform:translateX(0) skewX(-18deg); }
+#wipe.out .w1 { animation:wpOut .5s cubic-bezier(.7,0,.3,1) forwards; }
+#wipe.out .w2 { animation:wpOut .5s cubic-bezier(.7,0,.3,1) .05s forwards; }
+#wipe.out .w3 { animation:wpOut .5s cubic-bezier(.7,0,.3,1) .08s forwards; }
+@keyframes wpIn { from { transform:translateX(110%) skewX(-18deg); } to { transform:translateX(0) skewX(-18deg); } }
+@keyframes wpOut { from { transform:translateX(0) skewX(-18deg); } to { transform:translateX(-120%) skewX(-18deg); } }
+#wipe .wl { position:absolute; left:0; right:0; top:50%; text-align:center; font:italic 700 15px 'Barlow',sans-serif; letter-spacing:.4em; color:#24314d; opacity:0; }
+#wipe.in .wl { animation:wpL .5s ease .25s forwards; }
+@keyframes wpL { to { opacity:.8; } }

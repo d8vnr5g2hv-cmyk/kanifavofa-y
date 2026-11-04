@@ -121,34 +121,17 @@ const Room = (() => {
     ctx.resume(); haptic(); paintDoor(s);
     if (period() === 'closed') { toast('もう遅い時間です。先生、おやすみなさい', 2200); return; }
     s.classList.add('opening'); preload();
-    sfx('open');
     s.classList.add('opened');
-    await sleep(750);
-    s.classList.add('flash');
-    await sleep(380);
-    enter();
-    setTimeout(() => s.classList.remove('opening', 'opened', 'flash'), 600);
+    await sleep(260);
+    await Wipe.play(() => enter());
+    s.classList.remove('opening', 'opened', 'flash');
   }
   function setDoor(v) {
     if (onDoor === v) return;
     onDoor = v; document.body.classList.toggle('atRoomDoor', v);
     if (v) { paintDoor(); preload(); }
   }
-  function sfx(kind) {
-    const t = ctx.currentTime, g = ctx.createGain(); g.gain.value = .4; g.connect(ctx.destination);
-    const tone = (f, a, d, at = 0, type = 'sine') => { const o = ctx.createOscillator(), gg = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t + at);
-      gg.gain.setValueAtTime(0, t + at); gg.gain.linearRampToValueAtTime(a, t + at + .01); gg.gain.exponentialRampToValueAtTime(.0001, t + at + d); o.connect(gg); gg.connect(g); o.start(t + at); o.stop(t + at + d + .05); };
-    if (kind === 'open') {
-      tone(988, .18, .15); tone(1319, .18, .25, .1);
-      const n = ctx.createBufferSource(), b = ctx.createBuffer(1, ctx.sampleRate * .6, ctx.sampleRate), d = b.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2) * .6;
-      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.setValueAtTime(500, t); f.frequency.exponentialRampToValueAtTime(2200, t + .5);
-      n.buffer = b; n.connect(f); f.connect(g); n.start(t + .15);
-    }
-    if (kind === 'tap') tone(1175, .12, .1, 0, 'triangle');
-    if (kind === 'pc') { tone(784, .12, .12, 0, 'triangle'); tone(1175, .12, .2, .08, 'triangle'); }
-    if (kind === 'msg') tone(880, .1, .08, 0, 'triangle');
-  }
+  function sfx(kind) { Sfx.play({ open:'door', tap:'tap', pc:'pop', msg:'msg' }[kind] || 'tap'); }
   let pre = false;
   function preload() {
     if (pre) return; pre = true;

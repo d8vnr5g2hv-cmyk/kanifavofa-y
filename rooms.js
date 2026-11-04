@@ -68,7 +68,7 @@ const Talk = (() => {
   function typeLine(text, face) {
     const t = $('tkT'); clearInterval(typing); t.textContent = ''; let i = 0; t._full = text;
     if (onFace && face) onFace(face);
-    el.classList.remove('think'); mouth(true); sfxTap(880, .08);
+    el.classList.remove('think'); mouth(true); Sfx.play('msg');
     typing = setInterval(() => { i += 2; t.textContent = text.slice(0, i); if (i >= text.length) { clearInterval(typing); typing = 0; mouth(false); } }, 30);
   }
   function think(text = '……') { $('tkT').textContent = text; el.classList.add('think'); }
@@ -244,10 +244,10 @@ const Rooms = (() => {
   async function openDoor(key, s) {
     if (s.classList.contains('opening') || room) return;
     ctx.resume(); haptic();
-    s.classList.add('opening', 'opened'); doorSfx();
-    await sleep(620); s.classList.add('flash');
-    await sleep(320); enter(key);
-    setTimeout(() => s.classList.remove('opening', 'opened', 'flash'), 600);
+    s.classList.add('opening', 'opened');
+    await sleep(260);
+    await Wipe.play(() => enter(key));
+    s.classList.remove('opening', 'opened', 'flash');
   }
   function doorSfx() {
     try {
@@ -296,9 +296,10 @@ const Rooms = (() => {
     const R = DEF[room], prev = tab, next = R.pages[i - 1];
     idx = i;
     if (PAGE[prev] && PAGE[prev].sc && TabHooks[prev]) TabHooks[prev].leave();
-    tab = next; haptic();
+    tab = next; haptic(); Sfx.play('page');
     if (PAGE[next].sc && TabHooks[next]) TabHooks[next].enter();
     layoutChibis(); markDots();
+    if (!PAGE[next].sc) slideIn($('page-' + next));
   }
   function markDots() { [...dots.children].forEach((d, k) => d.classList.toggle('on', k === idx - 1)); }
   function go(p) { if (!room) return; const i = DEF[room].pages.indexOf(p); if (i < 0) return; pager.scrollTo({ left:(i + 1) * pager.clientWidth, behavior:'instant' }); idx = -1; settle(); }
