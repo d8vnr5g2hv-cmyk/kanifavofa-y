@@ -289,6 +289,7 @@ const Room = (() => {
   const IC = {
     music:'<svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>',
     stats:'<svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/><circle cx="19" cy="6" r="1.3"/></svg>',
+    status:'<svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>',
     mem:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/></svg>',
   };
   const viewUrls = {};
@@ -311,7 +312,7 @@ const Room = (() => {
       const due = x => x.due < t ? '<em class="late">期限切れ</em>' : x.due === t ? '<em>今日</em>' : '<em>明日</em>';
       const nowName = (() => { if (musicSel && musicSel.startsWith('c:')) return '追加した曲'; const b = roomBgm(), n = TRACK_NAME[b.src]; return n ? n[0] : 'Music'; })();
       p.innerHTML = pcHead('SCHALE OS') + `<div class="bd"><div class="wel">${greet()}, Sensei<small>${D.ymd(t)} ${DOW[new Date().getDay()]}</small></div>
-        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div><div class="app" data-pc="stats">${IC.stats}<b>Analytics</b></div></div>
+        <div class="apps"><div class="app" data-pc="music">${IC.music}<b>Music</b></div><div class="app" data-pc="mem">${IC.mem}<b>Memories</b></div><div class="app" data-pc="stats">${IC.stats}<b>Analytics</b></div><div class="app" data-pc="status">${IC.status}<b>Status</b></div></div>
         <div class="wdg"><h6>TODAY</h6>${ev.length ? ev.map(e => `<p><i>${e.time || '終日'}</i>${esc(e.title)}</p>`).join('') : '<p class="mu">今日の予定はありません</p>'}</div>
         <div class="wdg"><h6>TODO</h6>${td.length ? td.map(x => `<p>${due(x)}${esc(x.title)}</p>`).join('') : '<p class="mu">期限の近いTodoはありません</p>'}</div>
         <div class="wdg now" data-pc="music"><h6>NOW PLAYING</h6><p><span class="eq"><i></i><i></i><i></i></span>${esc(nowName)}</p></div></div>`;
@@ -329,6 +330,10 @@ const Room = (() => {
       const body = await Stats.html(); if (!$('rpc')) return;
       p.innerHTML = pcHead('ANALYTICS', 1) + `<div class="bd sbd"><div class="ttl">Analytics</div>${body}</div>`;
     }
+    if (v === 'status') {
+      const body = typeof Progress !== 'undefined' ? await Progress.statusHTML() : ''; if (!$('rpc')) return;
+      p.innerHTML = pcHead('STATUS', 1) + `<div class="bd sbd">${body}</div>`;
+    }
     if (v === 'mem') {
       const list = (await DB.all('album').catch(() => [])).sort((a, b) => b.at - a.at);
       Object.values(viewUrls).forEach(u => URL.revokeObjectURL(u));
@@ -338,15 +343,17 @@ const Room = (() => {
   }
   async function pcClick(e) {
     const rm = e.target.closest('[data-rm]');
-    if (rm) { e.stopPropagation(); if (!confirm('この曲をリストから消しますか？')) return; const id = rm.dataset.rm.slice(2); await DB.del('music', id); if (musicSel === 'c:' + id) setMusic(null); return pcView('music'); }
+    if (rm) { e.stopPropagation(); if (!(await Ask('この曲をリストから消しますか？', { danger:true }))) return; const id = rm.dataset.rm.slice(2); await DB.del('music', id); if (musicSel === 'c:' + id) setMusic(null); return pcView('music'); }
     const tr = e.target.closest('[data-tr]');
     if (tr) { const id = tr.dataset.tr; await setMusic(id === 'auto' ? null : id); return pcView('music'); }
     const st = e.target.closest('[data-st]');
     if (st) { sfx('tap'); Stats.setTab(st.dataset.st); return pcView('stats'); }
     const ph = e.target.closest('[data-ph]');
     if (ph) return viewPhoto(ph.dataset.ph);
+    const wr = e.target.closest('[data-wrap]'); if (wr) { sfx('tap'); return Wrapped.show(wr.dataset.wrap); }
     const b = e.target.closest('[data-pc]'); if (!b) return;
     const v = b.dataset.pc;
+    if (v === 'titles') return Progress.pickTitle(() => pcView('status'));
     if (v === 'addMusic') return pickFile('audio/*', true, addMusic);
     if (v === 'addPhoto') return pickFile('image/*', true, addPhotos);
     sfx('tap'); pcView(v);
@@ -385,7 +392,7 @@ const Room = (() => {
     $('rpc').appendChild(v);
     v.onclick = async e => {
       const x = e.target.closest('[data-x]'); if (!x) return; e.stopPropagation();
-      if (x.dataset.x === 'del') { if (!confirm('この写真を削除しますか？')) return; await DB.del('album', id); v.remove(); pcView('mem'); }
+      if (x.dataset.x === 'del') { if (!(await Ask('この写真を削除しますか？', { danger:true }))) return; await DB.del('album', id); v.remove(); pcView('mem'); }
       else v.remove();
     };
   }
@@ -454,7 +461,7 @@ const Room = (() => {
       ${ts.map(t => `<div class="it td"><i>Todo</i><span>${esc(t.title)}</span></div>`).join('')}
       ${!es.length && !ts.length ? '<div class="em">予定はありません</div>' : ''}`;
     $('rAddEv').onclick = () => addEvent(d);
-    box.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => { if (!confirm('この予定を消しますか？')) return; await DB.del('events', b.dataset.dev); drawCal(); });
+    box.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => { if (!(await Ask('この予定を消しますか？', { danger:true }))) return; await DB.del('events', b.dataset.dev); drawCal(); });
   }
   function addEvent(date, title = '', time = '') {
     const body = h('<div></div>');

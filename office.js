@@ -149,7 +149,7 @@ const Office = (() => {
       <div class="ofhud"><button class="ofback" id="ofBack">‹ 出る</button><div class="ofttl"><b>OFFICE</b><span>ユウカの銀行窓口</span></div>
         <button class="ofbtn" id="ofTalk">話す</button><button class="ofbtn ic" id="ofSet" aria-label="設定"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></button></div>
       <div class="ofw" id="ofW"><i class="tp1"></i><img class="sk1" src="dc_stk4.webp" alt=""><img class="sk2" src="dc_stk11.webp" alt="">
-        <div class="ofh"><span class="dot"></span><div class="ofts"><button data-tab="cash" class="on">Bank</button></div><span class="tm" id="ofTm"></span><button class="fold" id="ofFold" aria-label="たたむ">▾</button></div>
+        <div class="ofh"><span class="dot"></span><div class="ofts"><button data-tab="cash" class="on">Bank</button><button data-tab="review">Review</button><button data-tab="focus">Focus</button></div><span class="tm" id="ofTm"></span><button class="fold" id="ofFold" aria-label="たたむ">▾</button></div>
         <div class="ofb" id="ofB"></div></div>
       <div class="omw" id="ofMW"><div class="who"><b>ユウカ</b><span>セミナー</span></div><div class="tx" id="ofMT"></div><i class="nx"></i>
         <div class="ochips" id="ofChips"></div><div class="oinp" id="ofInp"><input id="ofIn" autocomplete="off" enterkeyhint="send"><button id="ofSend">送る</button></div></div>
@@ -227,7 +227,9 @@ const Office = (() => {
   async function draw(keep) {
     el.querySelectorAll('.ofts button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const b = $('ofB'), y = b.scrollTop;
-    b.innerHTML = tab === 'cash' ? await cashHTML() : await foodHTML();
+    b.onclick = null;
+    if (tab === 'focus') { Focus.mount(b); b.scrollTop = 0; return; }
+    b.innerHTML = tab === 'cash' ? await cashHTML() : tab === 'review' ? await reviewHTML() : await foodHTML();
     b.scrollTop = keep === true ? y : 0;
   }
   let sub = 'plan', calSel = null, wishKind = 'buy', locked0 = false;
@@ -464,6 +466,24 @@ const Office = (() => {
   const isPayday = async () => { await loadCfg(); return !!cfg.cash.income && paydayOf(cfg.cash, ym()) === D.today(); };
   const slipNow = async () => DB.get('room', 'slip-' + ym()).catch(() => null);
   // ほかの部屋から使う
+  // ===== 月次レビュー（今月と先月をくらべる） =====
+  async function reviewHTML() {
+    const m = ym(), d0 = new Date(+m.slice(0, 4), +m.slice(5, 7) - 2, 1), pm = `${d0.getFullYear()}-${p2(d0.getMonth() + 1)}`;
+    const a = await cashSum(m), b = await cashSum(pm);
+    const days = new Set(a.ents.map(e => e.date)).size, today = +D.today().slice(8, 10);
+    const cats = Object.entries(a.byCat).sort((x, y) => y[1] - x[1]).slice(0, 6), mx = Math.max(1, ...cats.map(c => c[1]));
+    const bSame = b.ents.filter(e => e.kind !== 'in' && +e.date.slice(8, 10) <= today).reduce((x, e) => x + e.amt, 0), diff = a.spent - bSame, pace = a.budget > 0 ? Math.round(a.spent / Math.max(1, a.budget) * 100) : null, dayPace = Math.round(today / daysIn(m) * 100);
+    const line = !a.ents.length ? '先生、今月はまだ記録がひとつもありませんよ？ まずは今日の分から、つけていきましょう！'
+      : pace != null && pace > dayPace + 15 ? `ペースが早いです！ 予算の${pace}%をもう使ってます（今日は月の${dayPace}%）。ここからは引きしめましょう`
+      : pace != null ? `予算の${pace}%で、月の${dayPace}%まで来ました。${pace <= dayPace ? 'いいペースです！ この調子で' : 'もう少しだけ、節約を意識しましょうね'}` : `今月は${yen(a.spent)}使っています。予算を設定すると、ペースもわかりますよ`;
+    return `<div class="orev">
+      <div class="ov-hd"><small>MONTHLY REVIEW</small><b>${+m.slice(5, 7)}月のふりかえり</b></div>
+      <div class="ov-big"><div><small>使ったお金</small><b>${yen(a.spent)}</b><em class="${diff > 0 ? 'up' : 'dn'}">先月の同じころより ${diff > 0 ? '+' : '−'}${yen(Math.abs(diff))}</em></div>
+        <div><small>記録した日</small><b>${days}<i>/${today}日</i></b></div></div>
+      ${pace != null ? `<div class="ov-pace"><i style="width:${Math.min(100, pace)}%" class="${pace > dayPace + 15 ? 'hi' : ''}"></i><u style="left:${dayPace}%"></u><span>予算の${pace}%</span></div>` : ''}
+      <div class="ov-cats">${cats.map(([n, v]) => { const c = CAT[n] || CAT['その他']; return `<div><span>${esc(n)}</span><i><u style="width:${v / mx * 100}%;background:${c.c}"></u></i><b>${yen(v)}</b></div>`; }).join('') || '<p class="oem">まだ記録がありません</p>'}</div>
+      <p class="ov-say"><b>ユウカ</b>${esc(line)}</p></div>`;
+  }
   async function summary() {
     await loadCfg(); const c = cfg.cash; if (!c.income) return null;
     const s = await cashSum(), wp = await walletPlan(), ar = (c.arrears || []).filter(a => !a.done);
@@ -583,7 +603,7 @@ const Office = (() => {
       { label:'金額を直す', fn:async () => { const v = prompt('金額', e.amt); const n = Math.round(+String(v || '').replace(/[^\d]/g, '')); if (n) { e.amt = n; await DB.put('room', e); draw(); } } },
       { label:'名前を直す', fn:async () => { const v = prompt('名前', e.title); if (v) { e.title = v.slice(0, 20); await DB.put('room', e); draw(); } } },
       { label:'分類を変える', fn:() => changeCat(e) },
-      { label:'この記録を消す', danger:true, fn:async () => { if (!confirm('この記録を消しますか？')) return; await DB.del('room', id); draw(); } },
+      { label:'この記録を消す', danger:true, fn:async () => { if (!(await Ask('この記録を消しますか？', { danger:true }))) return; await DB.del('room', id); draw(); } },
     ]);
   }
 
@@ -769,7 +789,7 @@ const Office = (() => {
     el.className = 'show'; document.body.classList.add('officeOn');
     document.querySelectorAll('#slides video').forEach(v => v.pause());
     const v = $('ofV'); v.currentTime = 0; v.play().catch(() => {});
-    active = true; syncBgm(0, .8); clock(); clearInterval(enter._t); enter._t = setInterval(clock, 15000);
+    active = true; Cast.note('yuuka'); syncBgm(0, .8); clock(); clearInterval(enter._t); enter._t = setInterval(clock, 15000);
     await draw();
     setTimeout(async () => { if (!active) return; await greet(); if (active && Interview.whoToday() === 'yuuka') Interview.meet('yuuka'); }, 900);
   }
@@ -786,6 +806,6 @@ const Office = (() => {
     isDoor:() => onDoor,
     active:() => active,
     bgm:() => active ? BGM : null,
-    summary, alerts, autoPay, autoFixed, isPayday, slipNow, slipHTML, quick, importMoney, setWallet, nextPayday:async () => { await loadCfg(); return nextPayday(cfg.cash); },
+    summary, monthSum:async m => { await loadCfg(); return cashSum(m); }, alerts, autoPay, autoFixed, isPayday, slipNow, slipHTML, quick, importMoney, setWallet, nextPayday:async () => { await loadCfg(); return nextPayday(cfg.cash); },
   };
 })();

@@ -112,15 +112,8 @@ const Talk = (() => {
     });
   }
   // AIとおしゃべり（どの子とも同じデータを見ている）
-  const FALL = {
-    hoshino:['うへ〜、先生。おじさん、ちゃんと聞いてるよ〜', 'AIの設定をしてくれたら、もっといっぱい話せるんだけどな〜'],
-    mika:['先生、なになに？☆', 'AIの設定をしてくれたら、もっとおしゃべりできるのにな〜'],
-    mari:['はい、先生。どうされましたか？', 'AIの設定をしていただければ、もっとお話しできます'],
-    hina:['……なに、先生？', 'AIの設定をしてくれたら、ちゃんと答えられるわ'],
-    miyako:['先生、ご用件をどうぞ', 'AIの設定が完了すれば、会話任務を開始できます'],
-    yuuka:['なんですか、先生？', 'AIの設定をしてくれれば、ちゃんと計算してお答えしますよ'],
-    noa:['なあに、ようへい？', 'AIの設定をしてくれたら、もっとちゃんとお話しできるよ'],
-  };
+  const FALL = new Proxy({}, { get:(o, w) => Cast.of(w).fall });   // 話し方は cast.js にまとめた
+
   async function chat(w, opt = {}) {
     open(w, opt);
     const L = log[w] || (log[w] = (await DB.get('room', 'tk-' + w).catch(() => null) || { id:'tk-' + w, log:[] }).log);
@@ -128,10 +121,10 @@ const Talk = (() => {
     for (;;) {
       const v = await ask(w, opt.prompt || '……', { ph:`${WHO[w].name}に話しかける`, noFocus:!!opt.first });
       if (!v) return close();
-      L.push({ who:'me', text:v, at:Date.now() });
+      L.push({ who:'me', text:v, at:Date.now() }); Cast.note(w);
       think();
       let r = null;
-      try { await Api.load(); r = await Api.call('chat', { who:w, now:Api.now(), text:v, log:L.slice(-14).map(x => ({ who:x.who, text:x.text })), snap:await Life.snapshot() }); } catch (e) {}
+      try { await Api.load(); r = await Api.call('chat', { who:w, now:Api.now(), text:v, note:Cast.aiNote(w), log:L.slice(-14).map(x => ({ who:x.who, text:x.text })), snap:await Life.snapshot() }); } catch (e) {}
       const lines = r && r.lines && r.lines.length ? r.lines : FALL[w];
       L.push({ who:w, text:lines.join(' '), at:Date.now() });
       while (L.length > 60) L.shift();
@@ -151,9 +144,12 @@ const Interview = (() => {
     hoshino:'ねえ先生〜、今日はおじさんが新聞の取材当番なんだ〜。なにかネタ、ない〜？', mika:'先生！今日は私が取材の日なの☆ 新聞のネタ、なにかちょうだい！',
     hina:'……先生。今日の新聞、私が記事を書く番なの。なにか話題、ある？', yuuka:'先生、今日は私が新聞の取材担当なんです。ネタ、ありませんか？',
     miyako:'先生、本日の取材任務はRABBIT1が担当します。ネタを一件、ご提供いただけますか', mari:'先生、今日は私が新聞のお当番なんです。なにかお話を聞かせていただけますか？',
-    noa:'ねえねえ、ようへい。今日は私が新聞の取材の日なんだ。なにか話してくれる？',
+    noa:'……ようへい。今日、私が新聞の取材当番なんだけど。なんか話して',
   };
-  const WRITE = { hoshino:'うへ〜、いいネタもらっちゃった。書いてくるね〜', mika:'ありがと☆ かわいく書いてくるね！', hina:'……わかった。書いてくるわ', yuuka:'了解です！手早くまとめます', miyako:'取材完了。記事を作成します', mari:'ありがとうございます。心をこめて書きますね', noa:'ありがと。ちゃんと書くね' };
+  const WRITE = { hoshino:'うへ〜、いいネタもらっちゃった。書いてくるね〜', mika:'ありがと☆ かわいく書いてくるね！', hina:'……わかった。書いてくるわ', yuuka:'了解です！手早くまとめます', miyako:'取材完了。記事を作成します', mari:'ありがとうございます。心をこめて書きますね', noa:'ん、ありがと。……ちゃんと書く' };
+  const GO = { hoshino:'うへ〜、ありがと〜。じゃあ、話題を教えて〜', mika:'やった！ じゃあ、話題を教えて☆', hina:'……ありがとう。じゃあ、話題を教えて', yuuka:'助かります！ では、話題をどうぞ', miyako:'感謝します。では、話題をお願いします', mari:'ありがとうございます。では、お話を聞かせてください', noa:'……ん。じゃあ、話して' };
+  const MORE = { hoshino:'うんうん、それで〜？', mika:'それで、それで？ もっと聞かせて☆', hina:'……それで？', yuuka:'それで、どうなったんですか？', miyako:'続けてください', mari:'まあ……それで、どうなったのですか？', noa:'……ふーん。それで？' };
+  const PASS = { hoshino:'うへ〜、了解〜。また来週聞かせてね〜', mika:'えー、残念！ また来週ね☆', hina:'……わかった。また来週', yuuka:'わかりました。また来週お願いしますね', miyako:'了解しました。次回に持ち越します', mari:'かしこまりました。また来週、お聞かせくださいね', noa:'……ん。じゃあ来週ね' };
   const today = () => D.today();
   const whoToday = () => IV_DAY[new Date().getDay()];
   async function rec() { return (await DB.get('room', 'iv-' + today()).catch(() => null)) || { id:'iv-' + today(), date:today(), who:whoToday(), status:'new', log:[] }; }
@@ -165,16 +161,16 @@ const Interview = (() => {
     const iv = await rec(); if (iv.status === 'skip' || iv.status === 'done') return false;
     const save = () => DB.put('room', iv).catch(() => {});
     const v = await Talk.choose(w, ASK[w], [{ label:'ネタを話す', v:'go' }, { label:'今日はパス', v:'skip', cls:'x' }]);
-    if (v === 'skip') { iv.status = 'skip'; save(); await Talk.say(w, ['わかった。また来週、聞かせてね']); Talk.close(); return true; }
+    if (v === 'skip') { iv.status = 'skip'; save(); await Talk.say(w, [PASS[w] || 'また来週ね']); Talk.close(); return true; }
     iv.status = 'active'; iv.log = []; save();
-    let q = 'やった！ じゃあ、話題を教えて！';
+    let q = GO[w] || 'じゃあ、話題を教えて';
     for (let turn = 0; turn < 3; turn++) {
       const t = await Talk.ask(w, q, { ph:'話したいこと' });
       if (!t) { save(); Talk.close(); return true; }
       iv.log.push({ who:'me', text:t }); save();
       if (turn === 2) break;
       Talk.think();
-      q = 'それで、それで？ もっと聞かせて！';
+      q = MORE[w] || 'それで？';
       try { const r = await Api.call('interview', { who:w, log:iv.log }); if (r.line) q = r.line; } catch (e) {}
       iv.log.push({ who:w, text:q });
     }
@@ -205,9 +201,11 @@ const Ambient = (() => {
   }
   async function paint() {
     if (!el) { el = h('<div id="ambient"></div>'); rainEl = h('<div id="rain"></div>'); document.body.append(el, rainEl); }
+    // メモロビ・ほかの部屋には重ねない（秘書室と廊下だけ。CSSで出し分け）
     const [c, m] = tone(new Date().getHours());
     el.style.background = c; el.style.mixBlendMode = m;
     const w = await Life.weather().catch(() => null), code = w ? w.code : 0;
+    document.body.classList.toggle('wxWet', code >= 51 && code <= 82 && !(code >= 71 && code <= 77));
     const wet = code >= 51 && code <= 82 && !(code >= 71 && code <= 77);
     rainEl.classList.toggle('on', wet);
     if (wet && !rainEl.children.length) for (let i = 0; i < 36; i++) { const d = document.createElement('i'); d.style.left = Math.random() * 100 + '%'; d.style.animationDelay = (-Math.random() * 1.2) + 's'; d.style.animationDuration = (.7 + Math.random() * .5) + 's'; d.style.opacity = .25 + Math.random() * .35; rainEl.appendChild(d); }
@@ -261,7 +259,7 @@ const Rooms = (() => {
   const pagesOf = () => [...pager.querySelectorAll(':scope > .page')];
   function enter(key) {
     room = key; const R = DEF[key];
-    document.body.classList.add('inRoom');
+    document.body.classList.add('inRoom'); document.body.dataset.room = key; Cast.note(R.who === 'yuuka' ? 'yuuka' : R.who);
     slidesEl.querySelectorAll('video').forEach(v => v.pause());
     pager.innerHTML = '';
     pager.appendChild(h(`<div class="page rexit"><img src="${R.door}" alt=""><div class="rx-h"><i></i>もどる</div></div>`));
@@ -285,7 +283,7 @@ const Rooms = (() => {
     pager.classList.remove('on');
     pagesOf().forEach(pg => { if (pg.id) { pg.classList.remove('inpager', 'show'); document.body.appendChild(pg); } });
     pager.innerHTML = ''; room = null; tab = 'favorite';
-    document.body.classList.remove('inRoom');
+    document.body.classList.remove('inRoom'); delete document.body.dataset.room;
     updateVideos(); syncBgm(200); paintDoors();
   }
   function settle() {
@@ -340,10 +338,8 @@ const Rooms = (() => {
       pg.querySelectorAll('.chibi.real, .noac').forEach(c => c.addEventListener('click', () => { if (!room) return; setTimeout(() => bubble(pg, PAGE[p].who), 300); }));
     });
   }
-  const GREET = {
-    hoshino:'うへ〜、どうしたの先生？', mika:'なになに、先生？☆', mari:'はい、先生。どうされましたか？', hina:'……なに、先生？',
-    miyako:'先生、ご用件をどうぞ', yuuka:'なんですか、先生？', noa:'なあに、ようへい？',
-  };
+  const GREET = new Proxy({}, { get:(o, w) => w === 'noa' && Cast.jealousy() ? Cast.jealousLine() : Cast.of(w).greet });
+
   const greetLine = w => GREET[w];
   async function paintDoors() {
     try {
@@ -377,7 +373,7 @@ const Backup = (() => {
     let r; try { r = await Api.call('backup', { list:true }); } catch (e) { return toast('控えの一覧を取れませんでした'); }
     if (!r.files || !r.files.length) return toast('ドライブに控えがありません');
     Menu.open('どの控えに戻しますか？', r.files.map(f => ({ label:new Date(f.at).toLocaleString('ja-JP'), sub:f.name, fn:async () => {
-      if (!confirm('今のデータを、この控えの内容で置き換えます。よろしいですか？')) return;
+      if (!(await Ask('今のデータを、この控えの内容で置き換えます。よろしいですか？', { danger:true }))) return;
       const g = await Api.call('backup', { get:f.id }); const blob = new Blob([g.data], { type:'application/json' });
       importData(new File([blob], f.name), true); } })));
   }

@@ -81,7 +81,7 @@ const Sec = (() => {
     const evs = (await DB.all('events').catch(() => [])).filter(e => e.date >= t && e.date <= D.add(t, 6)).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     const props = await rules(), ai = await Life.getS('ys-prop-' + t, null), done = await Life.getS('ys-propDone', { id:'ys-propDone', d:t, k:[] });
     const dk = done.d === t ? done.k : [];
-    const inbox = await Inbox.items(), sum = await Life.getS('ys-brief-' + t, null);
+    const inbox = await Inbox.items(), sum = await Life.getS('ys-brief-' + t, null), unread = typeof Chat !== 'undefined' ? await Chat.unread() : 0;
     const all = [...(ai ? ai.list.map((x, i) => ({ k:'ai' + i, t:x.text, todo:x.todo })) : []), ...props].filter(p => !dk.includes(p.k));
     const top = all.slice(0, 3);
     const n = today.length + late.length, slot = hr < 11 ? 'MORNING' : hr < 18 ? 'AFTERNOON' : 'NIGHT';
@@ -94,6 +94,10 @@ const Sec = (() => {
         <div class="u-big"><b>${n}</b><span>件</span><em>今日のやること${late.length ? `<u>うち期限切れ ${late.length}</u>` : ''}</em></div>
         <p class="u-say">${esc(line)}</p>
         ${w ? `<div class="u-wx"><b>${w.now}°</b><span>${esc(w.text)}</span><small>${w.days[0].max}° / ${w.days[0].min}°　雨 ${w.days[0].rain}%</small></div>` : ''}
+      </section>
+      <section class="u-sec">
+        <div class="u-sh"><b>けさの連絡</b><small>MORNING</small></div>
+        <div class="u-mc"><button data-x="call"><img src="av_hoshino.webp" alt=""><span>朝の電話<small>聞き直す</small></span></button><button data-x="wx"><img src="av_mika.webp" alt=""><span>天気予報<small>ミカのスタジオ</small></span></button><button data-x="chat"><img src="av_noa.webp" alt=""><span>チャット<small>${unread ? `未読 ${unread}件` : 'みんなと話す'}</small></span></button></div>
       </section>
       <section class="u-sec">
         <div class="u-sh"><b>提案書</b><small>PROPOSAL</small><button class="u-more" data-x="propose">AIで作る</button></div>
@@ -113,6 +117,9 @@ const Sec = (() => {
     const t = e.target.closest('button'); if (!t) return; haptic();
     const x = t.dataset.x;
     if (x === 'brief') return brief();
+    if (x === 'call') return Daily.replayCall();
+    if (x === 'wx') return Wx.open();
+    if (x === 'chat') return Chat.open();
     if (x === 'propose') return propose();
     if (x === 'ev') return evEdit(D.today());
     if (x === 'q') { const v = $('secQ').value.trim(); if (!v) return; const g = Inbox.guess(v); await Inbox.apply({ id:'none' }, g); toast(g.l.replace('する', 'しました').replace('入れる', '入れました')); $('secQ').value = ''; return render(); }
