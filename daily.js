@@ -157,21 +157,26 @@ const Daily = (() => {
     L.push([hr() < 12 ? 'じゃあ、いってらっしゃい、先生〜。おじさんも、もうちょっとだけ寝よっかな〜' : 'じゃあ、今日もほどほどにね、先生〜。おじさんはいつでも秘書室にいるよ〜', 'm']);
     return L;
   }
-  async function callCard(box) {
-    const L = await callLines();
-    LS.set('ys-call', JSON.stringify({ date:today(), lines:L }));
-    box.innerHTML = `<div class="call ring"><div class="cl-bg"></div>
-      <div class="cl-in"><div class="cl-top"><small>MORNING CALL</small><b>ホシノ</b><span class="cl-st">着信中…</span></div>
-        <div class="cl-av"><i></i><i></i><img src="av_hoshino.webp" alt=""></div>
-        <div class="cl-btns"><button class="cl-no" aria-label="あとで">${PH.down}<small>あとで</small></button><button class="cl-yes" aria-label="出る">${PH.up}<small>出る</small></button></div></div>
-      <div class="cl-talk"><img class="cl-pt s" src="call_hoshino_s.webp" alt=""><img class="cl-pt m" src="call_hoshino_m.webp" alt="">
-        <div class="cl-top2"><b>ホシノ</b><span class="cl-tm">00:00</span></div>
+  // 電話の画面（朝はホシノ、夜は曜日の当番）。o：{ who, kind:'morning'|'night', lines }
+  async function callCard(box, o = {}) {
+    const who = o.who || 'hoshino', night = o.kind === 'night', name = Cast.name(who);
+    const L = o.lines || await callLines();
+    if (!night) LS.set('ys-call', JSON.stringify({ date:today(), lines:L }));
+    const imS = night ? `nc_${who}_n.webp` : 'call_hoshino_s.webp', imM = night ? `nc_${who}_s.webp` : 'call_hoshino_m.webp';
+    const fin = night ? 'night' : 'morning';
+    box.innerHTML = `<div class="call ring${night ? ' nightcall' : ''}"><div class="cl-bg"${night ? ` style="background-image:url(${imS})"` : ''}></div>
+      <div class="cl-in"><div class="cl-top"><small>${night ? 'GOOD NIGHT CALL' : 'MORNING CALL'}</small><b>${esc(name)}</b><span class="cl-st">着信中…</span></div>
+        <div class="cl-av"><i></i><i></i><img src="${Cast.av(who)}" alt=""></div>
+        <div class="cl-btns"><button class="cl-no" aria-label="あとで">${PH.down}<small>${night ? '今日はいい' : 'あとで'}</small></button><button class="cl-yes" aria-label="出る">${PH.up}<small>出る</small></button></div></div>
+      <div class="cl-talk"><img class="cl-pt s" src="${imS}" alt=""><img class="cl-pt m" src="${imM}" alt="">
+        <div class="cl-top2"><b>${esc(name)}</b><span class="cl-tm">00:00</span></div>
         <div class="cl-sub"><p></p><i class="nx"></i></div>
         <button class="cl-end" aria-label="切る">${PH.down}</button></div></div>`;
     const root = box.querySelector('.call');
-    root.querySelector('.cl-no').onclick = e => { e.stopPropagation(); haptic(); stopRing(); finish('morning'); };
+    root._who = who;
+    root.querySelector('.cl-no').onclick = e => { e.stopPropagation(); haptic(); stopRing(); finish(fin); };
     root.querySelector('.cl-yes').onclick = e => { e.stopPropagation(); haptic(); answer(root, L); };
-    root._end = () => finish('morning');
+    root._end = () => finish(fin);
     root.querySelector('.cl-end').onclick = e => { e.stopPropagation(); haptic(); stopRing(); root._end(); };
   }
   const PH = {
@@ -188,8 +193,11 @@ const Daily = (() => {
   const stopRing = () => clearInterval(ringT);
   async function answer(root, L) {
     stopRing(); root.classList.remove('ring'); root.classList.add('talk');
-    Cast.note('hoshino'); Sfx.play('ok');
-    try { playVoice('hoshino'); } catch (e) {}
+    const who = root._who || 'hoshino';
+    if (root._count) { root._count = false; LS.set('ys-nightN', (+LS.get('ys-nightN') || 0) + 1); }
+    Cast.note(who); Sfx.play('ok');
+    const VO = { hoshino:'hoshino', mika:'mika', mari:'mari', miyako:'miyako', hina:'hina', yuuka:'office' };
+    try { if (VO[who]) playVoice(VO[who]); } catch (e) {}
     const t0 = Date.now(), tm = root.querySelector('.cl-tm');
     const tick = setInterval(() => { if (!ov) return clearInterval(tick); const s = Math.floor((Date.now() - t0) / 1000); tm.textContent = `${p2(Math.floor(s / 60))}:${p2(s % 60)}`; }, 500);
     const p = root.querySelector('.cl-sub p'); let i = 0, typing = 0;
@@ -224,8 +232,68 @@ const Daily = (() => {
     frame('night');
     const c = cards([
       { draw:(box, next) => recordCard(box, next), enter:() => Cast.note('noa') },
-      { draw:(box) => scratchCard(box) },
+      { draw:(box, next) => scratchCard(box, next) },
+      { draw:(box) => nightCall(box), enter:box => ring(box) },
     ]);
+  }
+  // ===== おやすみ電話（曜日の当番）。今日のふりかえり → 明日の予定と天気 → おやすみ =====
+  const NC = {
+    hoshino:{ open:'もしもし〜、先生？ うへ〜、もう寝るとこ〜？', good:'今日はいい日だったんだね〜。おじさんもうれしいよ〜', bad:'今日はしんどかったか〜。そういう日もあるよ〜', none:'今日もおつかれさま〜、先生',
+      done:n => `やること、${n}件も片付けたじゃん〜。えらいえらい〜`, ev:t => `明日は${t}だよ〜。忘れないでね〜`, evNo:'明日は予定なし〜。ゆっくりできるね〜',
+      wx:w => `天気は${w}って〜`, umb:'傘、玄関に出しとこっか〜', bye:'じゃあ、おやすみ〜先生。おじさんも寝よ〜っと' },
+    mika:{ open:'もしもし先生？ えへへ、寝る前に声が聞きたくなっちゃった☆', good:'今日いい日だったんだ？ よかったじゃん☆', bad:'しんどかった？ よしよし、今日はもう何も考えなくていいよ', none:'今日も一日おつかれさま、先生☆',
+      done:n => `やること${n}件も終わらせたんでしょ？ さすが先生☆`, ev:t => `明日は${t}だって。ちゃんと起きてね？`, evNo:'明日は予定なしだよ。ちょっとくらい寝坊してもいいかも☆',
+      wx:w => `明日の天気は${w}。かわいい服で行こうね☆`, umb:'あ、傘はいるからね！', bye:'じゃあね、先生。おやすみなさい☆ ……夢で会えたらいいな' },
+    hina:{ open:'……先生？ 起きてた？ 少しだけ、いいかしら', good:'……そう、いい一日だったのね。よかった', bad:'……無理しすぎないで。先生が倒れたら、困るから', none:'……今日もおつかれさま',
+      done:n => `やることを${n}件片付けたのね。……ちゃんと見てるわ`, ev:t => `明日は${t}。……準備は今のうちに`, evNo:'明日は予定、入ってないわ。……少しは休んで',
+      wx:w => `天気は${w}`, umb:'……傘、持っていきなさい', bye:'……おやすみなさい、先生。また明日' },
+    yuuka:{ open:'先生、夜分にすみません。今日の締めの確認です！', good:'いい一日だったなら何よりです。この調子でいきましょう', bad:'しんどい日もありますよね。今日は早く休んでください', none:'今日もお疲れさまでした',
+      done:n => `やることは${n}件完了。計画どおりですね！`, ev:t => `明日は${t}。時間の逆算、忘れずに`, evNo:'明日は予定なしです。……だからって夜更かしはダメですよ？',
+      wx:w => `天気は${w}です`, umb:'傘は必要です。コンビニで買うのは無駄遣いですからね', bye:'では、おやすみなさい、先生。……ちゃんと寝てくださいね' },
+    miyako:{ open:'先生、夜間の定時連絡です。少しよろしいですか', good:'本日の状態は良好、と記録します', bad:'消耗が見られます。今夜は休息を優先してください', none:'本日の任務、お疲れさまでした',
+      done:n => `タスクは${n}件完了しています。良い戦果です`, ev:t => `明日の予定は${t}です`, evNo:'明日の予定はありません。待機日ですね',
+      wx:w => `明日の天候は${w}です`, umb:'降水の可能性があります。傘を携行してください', bye:'以上です。おやすみなさい、先生' },
+    mari:{ open:'先生、こんばんは。今日も一日、おつかれさまでした', good:'よい一日だったのですね。主に感謝を', bad:'つらい日だったのですね……。先生のために、お祈りしておきます', none:'今日も無事に一日を終えられましたね',
+      done:n => `やるべきことを${n}つも。先生はよくがんばっています`, ev:t => `明日は${t}ですね`, evNo:'明日は予定がないようです。心を休める日にしましょう',
+      wx:w => `明日の天気は${w}だそうです`, umb:'傘をお忘れなく', bye:'それでは、おやすみなさい、先生。よい夢を' },
+    noa:{ open:'……ようへい。まだ起きてた。……別に、用はないけど', good:'……ふーん。いい日だったんだ。……よかったじゃん', bad:'……しんどかったんだ。今日はもう寝な。それがいちばん効く', none:'……今日もおつかれ',
+      done:n => `やること、${n}件終わらせたんだ。……えらいよ`, ev:t => `明日は${t}。……寝坊したら知らないから`, evNo:'明日は予定なし。……たまには保健室、来てもいいよ',
+      wx:w => `明日は${w}だって`, umb:'……傘。忘れたら濡れるよ', bye:'……おやすみ、ようへい。……ほかの子と電話してないよね？' },
+  };
+  const nightWho = () => IV_DAY[new Date(D.parse(nightDay()).getTime()).getDay()];
+  async function nightLines(who) {
+    const T = NC[who] || NC.hoshino, d = nightDay(), tm = D.add(d, 1), L = [[T.open, 's']];
+    const td = typeof Life !== 'undefined' ? await Life.day(d).catch(() => ({})) : {};
+    L.push([!td.mood ? T.none : td.mood >= 4 ? T.good : td.mood <= 2 ? T.bad : T.none, td.mood >= 4 ? 'm' : 's']);
+    const start = D.parse(d).getTime(), n = (await DB.all('todos').catch(() => [])).filter(x => x.done && x.doneAt >= start && x.doneAt < start + 864e5 + 3 * 36e5).length;
+    if (n) L.push([T.done(n), 'm']);
+    const evs = (await DB.all('events').catch(() => [])).filter(e => e.date === tm).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    L.push([evs.length ? T.ev(evs.slice(0, 2).map(e => `${e.time ? e.time + 'から' : ''}「${e.title}」`).join('と')) : T.evNo, 's']);
+    try {
+      const w = await Wx.get(); const t = w && (new Date().getHours() < 3 ? w.today : w.tomorrow);
+      if (t) { L.push([T.wx(`${t.text}、${t.max}度と${t.min}度`), 's']); if (t.rain >= 50) L.push([T.umb, 's']); }
+    } catch (e) {}
+    L.push([T.bye, 'm']);
+    return L;
+  }
+  async function nightCall(box) {
+    const who = nightWho(), L = await nightLines(who);
+    LS.set('ys-nc', JSON.stringify({ date:nightDay(), who, lines:L }));
+    await callCard(box, { who, kind:'night', lines:L });
+    box.querySelector('.call')._count = true;   // 出たら「おやすみ電話」の回数に数える
+  }
+  // 秘書室から：ゆうべのおやすみ電話を聞き直す
+  async function replayNight() {
+    let c = null; try { c = JSON.parse(LS.get('ys-nc') || 'null'); } catch (e) {}
+    if (!c) return toast('まだおやすみ電話がありません（夜の記録のあとにかかってきます）', 2600);
+    if (ov) return;
+    frame('replay'); ov.querySelector('.dl-skip').textContent = 'CLOSE';
+    ov.querySelector('.dl-skip').onclick = e => { e.stopPropagation(); haptic(); Wipe.mid(() => close()); };
+    const tr = ov.querySelector('.dl-track'); tr.innerHTML = '<section class="dl-card"></section>';
+    const box = tr.firstChild; await callCard(box, { who:c.who, kind:'night', lines:c.lines });
+    const root = box.querySelector('.call');
+    root._end = () => Wipe.mid(() => close());
+    answer(root, c.lines);
   }
   const MOOD = [[1, 'しんどい', '#8fa3c9'], [2, 'いまいち', '#a7b8e0'], [3, 'ふつう', '#c7c2e6'], [4, 'いい', '#ffb3cf'], [5, 'さいこう', '#ff7fb0']];
   const FACE_SVG = v => {
@@ -261,7 +329,7 @@ const Daily = (() => {
     draw();
   }
   // スクラッチ：銀色を指でけずる。半分以上けずれたら景品
-  async function scratchCard(box) {
+  async function scratchCard(box, next) {
     const prize = typeof Progress !== 'undefined' ? await Progress.drawPrize() : { kind:'msg', title:'おつかれさま', sub:'今日もよくがんばりました' };
     box.innerHTML = `<div class="scr"><div class="scr-bg"></div>
       <div class="dl-hd"><em>DAILY SCRATCH</em><b>今日のスクラッチ</b><span>指でけずってね</span></div>
@@ -296,13 +364,13 @@ const Daily = (() => {
       box.querySelector('.scr-card').classList.add('won');
       const b = box.querySelector('[data-end]'); b.disabled = false;
     });
-    box.querySelector('[data-end]').onclick = () => { haptic(); finish('night'); };
+    box.querySelector('[data-end]').onclick = () => { haptic(); if (next) next(); else finish('night'); };
   }
 
   function init() {
     document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(check, 900); });
     setInterval(check, 5 * 60e3);   // 開きっぱなしで22時をまたいだとき
   }
-  return { init, check, replayCall, again:k => { LS.set('ys-force', k); return check(); } };
+  return { init, check, replayCall, replayNight, nightWho, again:k => { LS.set('ys-force', k); return check(); } };
 })();
 App.modules.push(Daily);

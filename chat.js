@@ -38,6 +38,7 @@ const Chat = (() => {
   }
   // 画面の上に出るおしらせ
   function notify(w, text) {
+    if (document.body.classList.contains('dailyOn') || document.body.classList.contains('hlOn')) return;   // 電話中・ゲーム中は出さない（未読には残る）
     if (!banner) { banner = h('<button class="ch-ban"><img alt=""><span><b></b><em></em></span></button>'); document.body.appendChild(banner); banner.onclick = () => { banner.classList.remove('on'); open(banner.dataset.w); }; }
     banner.dataset.w = w; banner.querySelector('img').src = Cast.av(w); banner.querySelector('b').textContent = Cast.name(w); banner.querySelector('em').textContent = text;
     banner.classList.remove('on'); void banner.offsetWidth; banner.classList.add('on'); Sfx.play('pop'); haptic();

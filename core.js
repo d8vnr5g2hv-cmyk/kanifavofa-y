@@ -56,7 +56,7 @@ const TAB_BGM = (() => {   // 部屋ごとの曲（1枚目のメモロビもパ�
 
 const slidesEl = $('slides'), dotsEl = $('dots');
 let bgReady = false;   // BGMが鳴り始めたら、重い先読みを始めてよい
-const OFF = 3;   // 左に自室・保健室・執務室の扉があるので、メモロビは3枚ずれる
+const OFF = 4;   // 左にCard Shop・自室・保健室・執務室の扉があるので、メモロビは4枚ずれる
 const slideOf = i => slidesEl.children[i + OFF];
 let current = 0, tab = 'favorite', phase = 'lock';   // lock → splash → app
 
@@ -129,6 +129,7 @@ function wantedBgm() {
   if (typeof AppLock !== 'undefined' && AppLock.locked()) return TITLE_BGM;   // ロック画面からタイトルの曲
   if (phase === 'splash') return TITLE_BGM;
   if (phase !== 'app') return null;
+  if (document.body.classList.contains('hlOn')) return null;   // HALO LINK中はゲームの音だけ
   const fb = typeof Office !== 'undefined' && Office.bgm(); if (fb) return fb;   // 執務室
   const rb = typeof Room !== 'undefined' && Room.bgm(); if (rb) return rb;   // 自室・廊下
   if (tab === 'favorite') return bgmOn ? chars[current].bgm : null;
@@ -415,11 +416,11 @@ function toast(msg, ms = 1400) {
 
 // ===== データ保存（IndexedDB：この端末の中だけ） =====
 const DB = (() => {
-  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings', 'ops', 'room', 'events', 'album', 'music'];
-  const BLOBS = ['album', 'music'];   // 写真・曲は書き出しに入れない（大きいので）
+  const STORES = ['todos', 'loves', 'accounts', 'profile', 'settings', 'ops', 'room', 'events', 'album', 'music', 'cards'];
+  const BLOBS = ['album', 'music', 'cards'];   // カードも写真・動画を持つので書き出しに入れない   // 写真・曲は書き出しに入れない（大きいので）
   let dbp;
   const open = () => dbp || (dbp = new Promise((ok, ng) => {
-    const r = indexedDB.open('kani-favorite', 3);
+    const r = indexedDB.open('kani-favorite', 4);
     r.onupgradeneeded = () => STORES.forEach(s => { if (!r.result.objectStoreNames.contains(s)) r.result.createObjectStore(s, { keyPath:'id' }); });
     r.onsuccess = () => ok(r.result); r.onerror = () => ng(r.error);
   }));
@@ -467,7 +468,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '5.0';
+const VERSION = '5.1';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -579,7 +580,7 @@ const App = {
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
     // 左（メモロビに近い順）：執務室・保健室・自室／右：廊下・秘書室・ミカの部屋・マリーの部屋・ウサギ・生徒会室
-    safe('doorL', () => { Office.makeDoor(); Rooms.makeDoor('clinic', 'start'); Room.makeDoor(); });
+    safe('doorL', () => { Office.makeDoor(); Rooms.makeDoor('clinic', 'start'); Room.makeDoor(); Rooms.makeDoor('shop', 'start'); });
     safe('doorR', () => { Hall.makeSlide(); ['sec', 'mika', 'mari', 'rabbit', 'security'].forEach(k => Rooms.makeDoor(k)); });
     chars.forEach((c, i) => safe('lobby' + i, () => loadChar(i)));
     slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
@@ -596,9 +597,9 @@ const App = {
       const i = Math.round(f);
       const RIGHT = [null, 'sec', 'mika', 'mari', 'rabbit', 'security'];
       Hall.setOn(i === chars.length);
-      Rooms.setDoor(i === -2 ? 'clinic' : i > chars.length ? RIGHT[i - chars.length] : null);
+      Rooms.setDoor(i === -2 ? 'clinic' : i === -4 ? 'shop' : i > chars.length ? RIGHT[i - chars.length] : null);
       Office.setDoor(i === -1);          // メモロビの左隣は執務室
-      Room.setDoor(i === -3);            // いちばん左は自室
+      Room.setDoor(i === -3);            // 自室（そのさらに左がCard Shop）
       if (i !== current && i >= 0 && i < chars.length) { current = i; updateVideos(); syncBgm(250); prefetchNear(); setTimeout(trimBgmCache, 1500); }
     }, { passive:true });
     let tx = 0, ty = 0, tt = 0;
