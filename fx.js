@@ -55,26 +55,35 @@ const Sfx = (() => {
   return { play };
 })();
 
-// ===== 扉から部屋へ：斜めのワイプ（覆う → 中で切り替え → はける） =====
+// ===== 斜めのワイプ（3サイズ） =====
+// 大：扉から部屋へ（覆う → 中で切り替え → はける）／中：パネルや入力シートの切り替え（0.3秒未満）／小：保存・完了の光の一閃（画面は止めない）
 const Wipe = (() => {
-  let el = null;
+  let el = null, sl = null;
   function build() {
     el = h('<div id="wipe"><i class="w1"></i><i class="w2"></i><i class="w3"></i><b class="wl"></b></div>');
-    document.body.appendChild(el);
+    sl = h('<div id="slash"><i></i><i></i></div>');
+    document.body.append(el, sl);
   }
-  // fn は画面が覆われている間に呼ばれる
-  async function play(fn, label = '') {
+  // fn は画面が覆われている間に呼ばれる。size：'l'（大）／'m'（中）
+  async function play(fn, label = '', size = 'l') {
     if (!el) build();
-    el.querySelector('.wl').textContent = label;
-    el.className = 'in'; Sfx.play('door'); haptic();
-    await sleep(430);
+    const m = size === 'm';
+    el.querySelector('.wl').textContent = m ? '' : label;
+    el.className = m ? 'in m' : 'in'; if (!m) { Sfx.play('door'); haptic(); } else Sfx.play('page');
+    await sleep(m ? 120 : 430);
     try { await fn(); } catch (e) { console.warn(e); }
-    await sleep(120);
-    el.className = 'out';
-    await sleep(520);
+    await sleep(m ? 20 : 120);
+    el.className = m ? 'out m' : 'out';
+    await sleep(m ? 130 : 520);
     el.className = '';
   }
-  return { play };
+  // 小：右上から左下へ、光の筋がさっと走る
+  function slash() {
+    if (!el) build();
+    sl.className = ''; void sl.offsetWidth; sl.className = 'on';
+    clearTimeout(slash._t); slash._t = setTimeout(() => { sl.className = ''; }, 300);
+  }
+  return { play, slash, mid:fn => play(fn, '', 'm') };
 })();
 
 // ===== 画面に入るとき：上から順に、右から滑り込む =====

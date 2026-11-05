@@ -85,7 +85,7 @@ const AppLock = (() => {
     const paint = () => { $('lockTg').classList.toggle('on', enabled()); $('lockSub').textContent = enabled() ? 'オン：開くときにFace ID／マスターパスワード' : 'オフ：Accountsのマスターパスワードで使えます'; };
     paint();
     b.onclick = async () => {
-      if (enabled()) { if (!confirm('アプリのロックをオフにしますか？')) return; LS.set('kf-lock', '0'); paint(); return toast('ロックをオフにしました'); }
+      if (enabled()) { if (!(await Ask('アプリのロックをオフにしますか？', { danger:true }))) return; LS.set('kf-lock', '0'); paint(); return toast('ロックをオフにしました'); }
       if (!(await Accounts.gate.ready())) return toast('先にAccountsで、マスターパスワードを設定してください', 2800);
       // 本当に開けるかを一度確かめてからオンにする（締め出し防止）
       show(() => { LS.set('kf-lock', '1'); paint(); toast('ロックをオンにしました'); }, { cancel:true });

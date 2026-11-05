@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Support">
 <meta name="theme-color" content="#fde3ee">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=5.0">
 <link rel="apple-touch-icon" href="icon-ys-180.png">
 <link rel="icon" href="icon-ys-192.png">
 <title>Yohei Support</title>
@@ -22,12 +22,13 @@
 <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="launch-1284x2778.png">
 <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="launch-1290x2796.png">
 <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" href="launch-1320x2868.png">
-<link rel="stylesheet" href="app.css">
-<link rel="stylesheet" href="room.css">
-<link rel="stylesheet" href="deco.css">
-<link rel="stylesheet" href="office.css">
-<link rel="stylesheet" href="title.css">
-<link rel="stylesheet" href="ys.css">
+<link rel="stylesheet" href="app.css?v=5.0">
+<link rel="stylesheet" href="room.css?v=5.0">
+<link rel="stylesheet" href="deco.css?v=5.0">
+<link rel="stylesheet" href="office.css?v=5.0">
+<link rel="stylesheet" href="title.css?v=5.0">
+<link rel="stylesheet" href="ys.css?v=5.0">
+<link rel="stylesheet" href="ys5.css?v=5.0">
 </head>
 <body>
 
@@ -132,6 +133,7 @@
   <div id="appInfo"></div>
   <button class="row" id="exportBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを書き出す<small>生活DB・お金・記録・アカウントをまとめて保存（JSON）</small></span></button>
   <button class="row" id="importBtn"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 15V3M7 10l5 5 5-5M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></span><span>データを読み込む<small>書き出したJSON、または初期データ（JSON）を読み込みます</small></span></button>
+  <div id="featBox"></div>
   <button class="close" id="sheetClose">閉じる</button>
   <input type="file" id="importFile" accept="application/json,.json">
 </div>
@@ -147,27 +149,35 @@
 <!-- Loveの拡大表示 -->
 <div id="viewer"></div>
 
-<script src="core.js"></script>
-<script src="ui.js"></script>
-<script src="fx.js"></script>
-<script src="motion.js"></script>
-<script src="data.js"></script>
-<script src="rooms.js"></script>
-<script src="todo.js"></script>
-<script src="love.js"></script>
-<script src="accounts.js"></script>
-<script src="office.js"></script>
-<script src="room.js"></script>
-<script src="hall.js"></script>
-<script src="secretary.js"></script>
-<script src="life.js"></script>
-<script src="friends.js"></script>
-<script src="clinic.js"></script>
-<script src="rabbit.js"></script>
-<script src="applock.js"></script>
-<script src="title.js"></script>
-<script src="stats.js"></script>
-<script src="deco.js"></script>
+<script src="core.js?v=5.0"></script>
+<script src="ui.js?v=5.0"></script>
+<script src="fx.js?v=5.0"></script>
+<script src="cast.js?v=5.0"></script>
+<script src="motion.js?v=5.0"></script>
+<script src="data.js?v=5.0"></script>
+<script src="weather.js?v=5.0"></script>
+<script src="rooms.js?v=5.0"></script>
+<script src="todo.js?v=5.0"></script>
+<script src="love.js?v=5.0"></script>
+<script src="accounts.js?v=5.0"></script>
+<script src="office.js?v=5.0"></script>
+<script src="room.js?v=5.0"></script>
+<script src="hall.js?v=5.0"></script>
+<script src="secretary.js?v=5.0"></script>
+<script src="life.js?v=5.0"></script>
+<script src="friends.js?v=5.0"></script>
+<script src="clinic.js?v=5.0"></script>
+<script src="progress.js?v=5.0"></script>
+<script src="chat.js?v=5.0"></script>
+<script src="daily.js?v=5.0"></script>
+<script src="wrapped.js?v=5.0"></script>
+<script src="focus.js?v=5.0"></script>
+<script src="push.js?v=5.0"></script>
+<script src="rabbit.js?v=5.0"></script>
+<script src="applock.js?v=5.0"></script>
+<script src="title.js?v=5.0"></script>
+<script src="stats.js?v=5.0"></script>
+<script src="deco.js?v=5.0"></script>
 <script>App.boot();</script>
 </body>
 </html>

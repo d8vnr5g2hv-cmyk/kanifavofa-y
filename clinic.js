@@ -60,8 +60,8 @@ const Clinic = (() => {
     const b = e.target.closest('button'); if (!b) return; haptic();
     const t = D.today();
     if (b.dataset.sl) { $('kBed').value = b.dataset.sl; if (!$('kWake').value) $('kWake').value = '07:45'; return; }
-    if (b.dataset.x === 'sleep') { const bed = $('kBed').value, wake = $('kWake').value; if (!bed || !wake) return toast('寝た時刻と起きた時刻を入れてね'); await Life.setDay(t, { sleep:{ bed, wake } }); const h = Life.sleepH({ bed, wake }); body(); return react(h < 6 ? ['……' + h + '時間しか寝てないの？', '今日は早めに布団に入ってね。約束だよ'] : ['うん、' + h + '時間。ちゃんと寝られたね'], h < 6 ? 'worry' : 'smile'); }
-    if (b.dataset.cd) { await Life.setDay(t, { cond:+b.dataset.cd }); body(); return react(+b.dataset.cd <= 2 ? ['しんどいんだね……無理しないで。何かあったら、すぐ言ってね'] : ['よかった。その調子だよ'], +b.dataset.cd <= 2 ? 'worry' : 'smile'); }
+    if (b.dataset.x === 'sleep') { const bed = $('kBed').value, wake = $('kWake').value; if (!bed || !wake) return toast('寝た時刻と起きた時刻を入れてね'); await Life.setDay(t, { sleep:{ bed, wake } }); const h = Life.sleepH({ bed, wake }); body(); return react(h < 6 ? ['……' + h + '時間でしょ。少ない', '今夜は早く寝て。……約束ね'] : ['ん、' + h + '時間。……まあ、寝れたんじゃない'], h < 6 ? 'worry' : 'smile'); }
+    if (b.dataset.cd) { await Life.setDay(t, { cond:+b.dataset.cd }); body(); return react(+b.dataset.cd <= 2 ? ['……しんどいんだ。無理しないで。なんかあったら、ここ来て'] : ['ん。……ならいい'], +b.dataset.cd <= 2 ? 'worry' : 'smile'); }
     if (b.dataset.x === 'wt') { const v = parseFloat($('kWt').value); if (!v || v < 30) return toast('体重を数字で入れてね'); await Life.setDay(t, { weight:v }); const bd = await Life.getS('ys-body', { id:'ys-body', w:90, h:177, age:25, act:1.4, cut:true }); bd.id = 'ys-body'; bd.w = v; await Life.putS(bd); toast('記入しました'); return body(); }
     if (b.dataset.x === 'rx') return writeRx();
   }
@@ -80,7 +80,7 @@ const Clinic = (() => {
     }
     await Life.putS({ id:'ys-rx-' + t, lines:lines.slice(0, 6) });
     if (tab === 'body') body();
-    await Talk.say('noa', ['はい、処方箋。ちゃんと守ってね？'], 'smile'); Talk.close();
+    await Talk.say('noa', ['はい、処方箋。……ちゃんと守ってよね'], 'smile'); Talk.close();
   }
 
   // ===== こころ =====
@@ -101,7 +101,7 @@ const Clinic = (() => {
     for (const [q, o] of qs) { const v = await Talk.choose('noa', q, o.map((l, i) => ({ label:l, v:i }))); ans.push(v); }
     await Life.setDay(D.today(), { chk:ans });
     const s = ans.reduce((a, b) => a + b, 0);
-    await Talk.say('noa', s >= 9 ? ['……けっこうしんどそう。今日はがんばらなくていいよ', '話したくなったら、いつでもここに来て'] : s >= 5 ? ['ちょっと疲れてるね。今夜は早めに休もう'] : ['うん、元気そうでよかった'], s >= 9 ? 'worry' : 'smile');
+    await Talk.say('noa', s >= 9 ? ['……けっこうしんどそう。今日はがんばらなくていいよ', '話したくなったら、いつでもここに来て'] : s >= 5 ? ['……ちょっと疲れてる。今夜は早めに休んで'] : ['ん。元気そう。……ならいい'], s >= 9 ? 'worry' : 'smile');
     Talk.close(); mind();
   }
   // 質問用紙（カルテ風のシート）
@@ -119,7 +119,7 @@ const Clinic = (() => {
   async function doK6() {
     paper('K6（この30日の気持ち）', K6.map(q => [q, K6A]), null, async r => {
       const v = r.reduce((a, b) => a + b, 0); await Life.saveCheck('k6', Life.k6Key(D.today()), v); mind();
-      await Talk.say('noa', v >= 13 ? ['……正直に答えてくれてありがとう。点数、高めだよ', 'ひとりで抱えこまないでね。' + HELP + ' にも相談できるよ'] : v >= 10 ? ['少し、こころが疲れてるみたい', '今週は、やることを減らそう。ホシノにも伝えておくね'] : ['うん、大丈夫そう。でも無理はしないでね'], v >= 10 ? 'worry' : 'smile');
+      await Talk.say('noa', v >= 13 ? ['……正直に答えてくれてありがとう。点数、高めだよ', 'ひとりで抱えこまないでね。' + HELP + ' にも相談できるよ'] : v >= 10 ? ['少し、こころが疲れてるみたい', '今週は、やることを減らそう。ホシノにも伝えておくね'] : ['ん、大丈夫そう。……でも無理はしないで'], v >= 10 ? 'worry' : 'smile');
       Talk.close();
     });
   }
@@ -130,7 +130,7 @@ const Clinic = (() => {
       const a = sc.slice(0, 6).reduce((x, y) => x + y, 0), b = sc.slice(6, 17).reduce((x, y) => x + y, 0), c = sc.slice(17).reduce((x, y) => x + y, 0);
       const high = b >= 31 || (b >= 23 && a + c >= 39);
       await Life.saveCheck('bj', Life.bjKey(D.today()), { a, b, c, ac:a + c, high, at:D.today() }); mind();
-      await Talk.say('noa', high ? ['結果は「高ストレス」だったよ', 'お医者さんに相談するのも、ちゃんとした選択肢だからね', HELP] : ['結果は「問題なし」。よかった', 'でも、しんどい日はちゃんと言ってね'], high ? 'worry' : 'smile');
+      await Talk.say('noa', high ? ['結果は「高ストレス」だったよ', 'お医者さんに相談するのも、ちゃんとした選択肢だからね', HELP] : ['結果は「問題なし」。……よかった', 'でも、しんどい日はちゃんと言って'], high ? 'worry' : 'smile');
       Talk.close();
     });
   }
@@ -146,7 +146,7 @@ const Clinic = (() => {
     const b = e.target.closest('button'); if (!b) return; haptic();
     const x = b.dataset.x;
     if (x === 'daily') return daily(); if (x === 'k6') return doK6(); if (x === 'bj') return doBJ(); if (x === 'breath') return breath();
-    if (x === 'talk') return Talk.chat('noa', { first:'うん、聞くよ。なんでも話して', onFace:face });
+    if (x === 'talk') return Talk.chat('noa', { first:'……ん。聞くよ。話して', onFace:face });
   }
 
   // ===== カルテ =====
@@ -168,7 +168,8 @@ const Clinic = (() => {
       <div class="kc kt"><table><tr><th></th><th>睡眠</th><th>体調</th><th>酒</th><th>煙</th><th>3問</th></tr>
         ${ds.slice().reverse().map(d => { const h = Life.sleepH(d.sleep); return `<tr><td>${D.md(d.date)}<small>${D.dow(d.date)}</small></td><td class="${h != null && h < 6 ? 'r' : ''}">${h ?? '·'}</td><td>${d.cond || '·'}</td><td>${d.drink ?? '·'}</td><td>${d.smoke ?? '·'}</td><td>${d.chk ? d.chk.reduce((a, b) => a + b, 0) : '·'}</td></tr>`; }).join('')}</table></div>
       <div class="kc"><h6>K6の推移<em>8週</em></h6><div class="kk6">${weeks.map(w => { const v = c.k6[w]; return `<div><i style="height:${v != null ? Math.max(4, v / 24 * 100) : 0}%" class="${v >= 13 ? 'hi' : v >= 10 ? 'mid' : ''}"></i><span>${D.md(w)}</span></div>`; }).join('')}<u style="bottom:${10 / 24 * 100}%"></u></div></div>
-      <div class="kc kf"><h6>所見</h6>${find.length ? find.map(f => `<p>${esc(f)}</p>`).join('') : '<p>記録が増えると、ここに所見を書きます</p>'}<i class="kst">乃亜</i></div>`;
+      <div class="kc kf"><h6>所見</h6>${find.length ? find.map(f => `<p>${esc(f)}</p>`).join('') : '<p>記録が増えると、ここに所見を書きます</p>'}<i class="kst">乃亜</i></div>
+      ${typeof MoodYear !== 'undefined' ? await MoodYear.html() : ''}`;
   }
 
   function init() {
@@ -182,8 +183,8 @@ const Clinic = (() => {
   // 乃亜をタップ：ひとこと
   function tapNoa() {
     const hr = new Date().getHours();
-    const L = resting() && tab === 'sc_clinic' ? [['……あ、ようへい。今ちょっと休憩中', 'normal'], ['ふぁ……保健室、今日はひまだったよ', 'normal']] : hr >= 23 || hr < 4 ? [['ようへい、もう寝る時間だよ？', 'pout']] : [['どうしたの？ 体調、大丈夫？', 'think'], ['ふふ、来てくれたんだ', 'happy'], ['ちゃんとご飯食べた？', 'surprise'], ['……あんまり見られると、照れるんだけど', 'worry']];
-    const [l, f] = L[Math.floor(Math.random() * L.length)]; react([l], f);
+    const L = resting() && tab === 'sc_clinic' ? [['……あ、ようへい。今ちょっと休憩中', 'normal'], ['ふぁ……保健室、今日はひまだったよ', 'normal']] : hr >= 23 || hr < 4 ? [['……ようへい、もう寝る時間でしょ', 'pout']] : (typeof Cast !== 'undefined' && Cast.jealousy() ? [[Cast.jealousLine(), 'pout']] : [['……どしたの。体調、平気？', 'think'], ['……ん。来たんだ', 'happy'], ['……ご飯、ちゃんと食べた？', 'surprise'], ['……あんまり見られると、照れるんだけど', 'worry']]);
+    const [l, f] = L[Math.floor(Math.random() * L.length)]; if (typeof Cast !== 'undefined') Cast.note('noa'); react([l], f);
   }
   return { init, face, tapNoa, sceneEnter, reload:() => { if (tab === 'body') body(); if (tab === 'mind') mind(); if (tab === 'karte') karte(); } };
 })();

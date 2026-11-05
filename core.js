@@ -467,7 +467,7 @@ async function exportData() {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000); LS.set('kf-lastExport', Date.now()); fillInfo(); toast('書き出しました');
 }
 // 設定の下の情報（件数・容量・最後に書き出した日）
-const VERSION = '4.0';
+const VERSION = '5.0';
 async function fillInfo() {
   const el = $('appInfo'); if (!el) return;
   const n = {}; for (const s of ['todos', 'loves', 'profile', 'accounts']) n[s] = (await DB.all(s)).length;
@@ -483,11 +483,11 @@ async function importData(file, skip) {
     const data = JSON.parse(await file.text());
     // 初期データ（秘書アプリの初期データ／Yohei Supportの初期データ）
     if (data.kind === 'seed' && ['life-partner', 'yohei-support'].includes(data.app)) {
-      if (!confirm('初期データ（生活DB・お金・ひと・家事など）を読み込みます。よろしいですか？')) return;
+      if (!(await Ask('初期データ（生活DB・お金・ひと・家事など）を読み込みます。よろしいですか？'))) return;
       await Life.importSeed(data); App.reloadAll(); return toast('初期データを読み込みました');
     }
     if (!['kani-favorite', 'yohei-support'].includes(data.app) || !data.stores) throw new Error('format');
-    if (!skip && !confirm('今のデータを、このファイルの内容で置き換えます。よろしいですか？')) return;
+    if (!skip && !(await Ask('今のデータを、このファイルの内容で置き換えます。よろしいですか？', { danger:true }))) return;
     for (const s of DB.STORES) { if (DB.BLOBS.includes(s) || !data.stores[s] && ['room', 'events'].includes(s)) continue; await DB.clear(s); await DB.putMany(s, data.stores[s] || []); }
     App.reloadAll();
     toast('読み込みました');
@@ -551,13 +551,27 @@ function buildLogo() {
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(place); addEventListener('resize', place);
 }
 
+// ===== 起動の安全装置：ひとつの初期化が失敗しても、ほかは動かす。エラーは画面の下に出す =====
+const BootErr = [];
+function safe(name, fn) {
+  try { const r = fn(); if (r && typeof r.catch === 'function') r.catch(e => showErr(name, e)); return r; } catch (e) { showErr(name, e); }
+}
+function showErr(name, e) {
+  const msg = `${name}: ${(e && e.message) || e}`; BootErr.push(msg); console.warn(msg);
+  let bar = document.getElementById('errbar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'errbar'; bar.innerHTML = '<b>エラー</b><span></span><button>×</button>'; document.body.appendChild(bar); bar.querySelector('button').onclick = () => bar.remove(); }
+  bar.querySelector('span').textContent = BootErr.slice(-3).join(' ／ ');
+}
+addEventListener('error', e => { if (e.message && !/ResizeObserver|Script error/.test(e.message)) showErr('JS', e.error || e.message); });
+addEventListener('unhandledrejection', e => { const r = e.reason; if (r && /abort|network|Failed to fetch|Load failed|noapi|NotAllowed/i.test(r.message || r)) return; showErr('Promise', r); });
+
 // ===== 起動 =====
 const App = {
   modules: [],
   reloadAll() { this.modules.forEach(m => m.reload && m.reload()); },
   boot() {
     document.body.appendChild(probe);
-    tick(); drawIcons(); buildLogo(); buildSplash();
+    safe('clock', tick); safe('icons', drawIcons); safe('logo', buildLogo); safe('splash', buildSplash);
     // タイトル曲を最優先で展開（タップした瞬間に鳴らすため）
     const titleReady = loadBuf(TITLE_BGM.src).then(() => { $('loadState').textContent = ''; })
       .catch(() => { $('loadState').textContent = 'BGMの読み込みに失敗しました'; });
@@ -565,9 +579,9 @@ const App = {
 
     chars.forEach(() => { slidesEl.appendChild(Object.assign(document.createElement('div'), { className:'slide' })); dotsEl.appendChild(document.createElement('span')); });
     // 左（メモロビに近い順）：執務室・保健室・自室／右：廊下・秘書室・ミカの部屋・マリーの部屋・ウサギ・生徒会室
-    Office.makeDoor(); Rooms.makeDoor('clinic', 'start'); Room.makeDoor();
-    Hall.makeSlide(); ['sec', 'mika', 'mari', 'rabbit', 'security'].forEach(k => Rooms.makeDoor(k));
-    chars.forEach((c, i) => loadChar(i));
+    safe('doorL', () => { Office.makeDoor(); Rooms.makeDoor('clinic', 'start'); Room.makeDoor(); });
+    safe('doorR', () => { Hall.makeSlide(); ['sec', 'mika', 'mari', 'rabbit', 'security'].forEach(k => Rooms.makeDoor(k)); });
+    chars.forEach((c, i) => safe('lobby' + i, () => loadChar(i)));
     slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF);
     requestAnimationFrame(() => { slidesEl.scrollLeft = slidesEl.clientWidth * (current + OFF); });
     updateVideos();
@@ -612,7 +626,7 @@ const App = {
 
     // 設定
     const sheet = $('sheet'), sheetBg = $('sheetBg');
-    const openSheet = () => { sheet.classList.add('show'); sheetBg.classList.add('show'); fillInfo(); };
+    const openSheet = () => { sheet.classList.add('show'); sheetBg.classList.add('show'); fillInfo(); if (typeof Setup !== 'undefined') Setup.paint(); };
     const closeSheet = () => { sheet.classList.remove('show'); sheetBg.classList.remove('show'); };
     ['pointerdown','click'].forEach(ev => $('gearBtn').addEventListener(ev, e => e.stopPropagation()));
     $('gearBtn').addEventListener('click', openSheet);
@@ -624,18 +638,19 @@ const App = {
     // タイトル：スプラッシュ →（タッチ：タイトル曲）→ 1枚目 →（タッチ：ロックがオンなら Face ID）→ 2枚目 →（タッチ）→ アプリへ
     const splash = $('splash');
     const enterApp = () => {
-      phase = 'app';
+      phase = 'app'; document.body.classList.add('appOn');
       splash.classList.add('go');
       stopBgm(0.7);
       const v = slideOf(current).querySelector('video'); if (v) v.play().catch(() => {});
       setTimeout(() => { splash.classList.add('hide'); syncBgm(0, 0.9); prefetchNear(); wake(); chars.forEach((c, i) => sizeMedia(i)); }, 800);
+      setTimeout(async () => { await safe('daily', () => Daily.check()); if (!document.body.classList.contains('dailyOn')) safe('wrapped', () => Wrapped.check()); safe('hud', () => Progress.paintHud()); }, 1300);
       setTimeout(() => Room.warmup(), 8000);   // 前日の日報を裏で用意しておく
       // 重い先読み（となりの動画・止め絵）は、今のメモロビのBGMが鳴り始めてから
       loadBuf(chars[current].bgm.src).catch(() => {}).then(() => sleep(1500)).then(() => { bgReady = true; updateVideos(); setTimeout(preloadPosters, 1500); });
       setTimeout(() => Motion.preloadAll(), 2500);   // 動きの画像は、落ち着いてから先読み
       setTimeout(() => { splash.style.display = 'none'; }, 1500);
     };
-    Title.init({
+    safe('title', () => Title.init({
       start:() => { ctx.resume(); phase = 'splash'; if (buffers[TITLE_BGM.src]) syncBgm(0, 0.12); else titleReady.then(() => syncBgm(0, 0.25)); },
       lock:() => AppLock.needAtBoot(),
       // Face ID が使えればその場で。だめなら（またはパスワードだけなら）ロック画面
@@ -645,13 +660,13 @@ const App = {
         fallback();
       },
       enter:enterApp,
-    });
+    }));
 
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => console.log('sw', e.message));
-    this.modules.forEach(m => m.init && m.init());
-    Rooms.init(); Ambient.init(); Hall.paint(); Rooms.paintDoors();
-    Office.autoPay().then(async n => { await Office.autoFixed(); if (n) setTimeout(() => toast('給料の入金と引き落としを記録しました', 2600), 4000); }).catch(() => {});
-    Inbox.pull().catch(() => {}); setTimeout(() => Backup.auto(), 15000);
-    AppLock.init();
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=' + VERSION).catch(e => console.log('sw', e.message));
+    this.modules.forEach((m, i) => safe('module' + i, () => m.init && m.init()));
+    safe('rooms', () => Rooms.init()); safe('ambient', () => Ambient.init()); safe('hall', () => Hall.paint()); safe('doors', () => Rooms.paintDoors());
+    safe('pay', () => Office.autoPay().then(async n => { await Office.autoFixed(); if (n) setTimeout(() => toast('給料の入金と引き落としを記録しました', 2600), 4000); }).catch(() => {}));
+    safe('inbox', () => { Inbox.pull().catch(() => {}); setTimeout(() => Backup.auto(), 15000); });
+    safe('lock', () => AppLock.init());
   },
 };
