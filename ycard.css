@@ -1,0 +1,55 @@
+/* 自作カードの見た目（Card Shop と HALO LINK で共通） */
+.ycard{--en:'Barlow Condensed','Barlow',sans-serif;position:relative;aspect-ratio:2/3;container-type:inline-size;border-radius:7cqw;padding:2.4cqw;color:#f2f5ff;font-family:'Noto Sans JP',sans-serif;
+  background:linear-gradient(160deg,#dfe6f5,#7c879f 45%,#c8d0e2 70%,#5f6a83);box-shadow:0 6px 16px rgba(0,0,0,.45);text-align:left;letter-spacing:.02em}
+.ycard.r2{background:linear-gradient(160deg,#ffffff,#9aa6c2 40%,var(--tc) 75%,#5f6a83)}
+.ycard.r3{background:linear-gradient(135deg,#fff5c8,#d9a640 25%,#fff0a8 45%,#b07c22 65%,#ffe58a 85%,#c99232);background-size:200% 200%;animation:ycGold 4s linear infinite;box-shadow:0 6px 18px rgba(0,0,0,.5),0 0 14px rgba(255,215,106,.45)}
+.ycard.r4{background:conic-gradient(from var(--ycang,0deg),#ff7ad9,#ffd76a,#7affc8,#5ff2ff,#a07bff,#ff7ad9);animation:ycHolo 5s linear infinite;box-shadow:0 6px 20px rgba(0,0,0,.5),0 0 18px rgba(255,122,217,.5)}
+@property --ycang{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes ycHolo{to{--ycang:360deg}}
+@keyframes ycGold{to{background-position:200% 200%}}
+.yc-in{position:relative;width:100%;height:100%;border-radius:5cqw;overflow:hidden;background:#0b1430;box-shadow:inset 0 0 0 .8cqw rgba(0,0,0,.5)}
+.yc-art{position:absolute;inset:0;overflow:hidden}
+.yc-m{position:absolute;max-width:none;object-fit:cover;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+/* 止まった写真も、ゆっくり寄って流れる */
+.yc-art.kb .yc-m{animation:ycKB 16s ease-in-out infinite alternate;transform-origin:50% 40%}
+.yc-art.mv .yc-m{animation:ycDrift 12s ease-in-out infinite alternate}
+@keyframes ycKB{0%{transform:scale(1.02) translate(0,0)}50%{transform:scale(1.1) translate(-2%,-1.5%)}100%{transform:scale(1.06) translate(2%,1%)}}
+@keyframes ycDrift{to{transform:scale(1.04)}}
+.ycard.still .yc-m{animation:none!important}
+.yc-v{opacity:0;transition:opacity .4s}.yc-v.on{opacity:1}
+.yc-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(6,10,26,.55) 0,transparent 22%,transparent 46%,rgba(6,10,26,.88) 64%,rgba(6,10,26,.97))}
+.yc-foil{position:absolute;inset:0;pointer-events:none;mix-blend-mode:color-dodge;opacity:.5;
+  background:linear-gradient(115deg,transparent 20%,rgba(255,240,180,.55) 40%,transparent 55%,rgba(255,255,255,.35) 70%,transparent 80%);background-size:250% 250%;animation:ycFoil 5s linear infinite}
+.ycard.r4 .yc-foil{background:linear-gradient(115deg,transparent 15%,rgba(255,120,220,.5) 30%,rgba(120,255,230,.45) 45%,rgba(160,130,255,.5) 60%,transparent 78%);background-size:250% 250%;opacity:.55}
+@keyframes ycFoil{from{background-position:120% 0}to{background-position:-120% 0}}
+/* 光の筋（ときどき横切る） */
+.yc-shine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);background-size:300% 100%;animation:ycShine 6s ease-in-out infinite;mix-blend-mode:screen}
+@keyframes ycShine{0%,70%{background-position:130% 0}100%{background-position:-30% 0}}
+.yc-cost{position:absolute;left:3cqw;top:3cqw;width:21cqw;height:21cqw;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,#fff,#7ff5ff 30%,#1b8fc9 70%,#0b3d6e);box-shadow:0 0 0 1cqw rgba(6,10,26,.7),0 0 4cqw rgba(95,242,255,.6)}
+.yc-cost b{font:italic 800 15cqw/1 var(--en);color:#032036;text-shadow:0 1px 0 rgba(255,255,255,.6)}
+.yc-type{position:absolute;right:3cqw;top:4cqw;font:italic 800 6.6cqw/1 var(--en);letter-spacing:.14em;padding:1.6cqw 3cqw 1.4cqw 3.6cqw;background:var(--tc);color:#08101f;clip-path:polygon(2.4cqw 0,100% 0,100% 100%,0 100%)}
+.yc-who{position:absolute;left:5cqw;right:5cqw;top:57%;display:flex;align-items:center;gap:1.6cqw;font-size:6.2cqw;font-weight:700;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-shadow:0 1px 3px #000}
+.yc-who i{flex:none;width:3.6cqw;height:3.6cqw;border-radius:50%;box-shadow:0 0 2cqw currentColor}
+.yc-name{position:absolute;left:5cqw;right:5cqw;top:63.5%;font-size:10.4cqw;font-weight:900;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 3px #000}
+.yc-text{position:absolute;left:5cqw;right:5cqw;top:75%;bottom:12cqw;font-size:7.4cqw;line-height:1.38;color:#dfe7ff;overflow:hidden;border-top:.5cqw solid color-mix(in srgb,var(--tc) 70%,transparent);padding-top:1.8cqw}
+.yc-none{opacity:.5}
+.yc-rm{position:absolute;right:4.5cqw;bottom:3.6cqw;display:flex;align-items:center;gap:1cqw}
+.yc-rm.dia i{width:4.2cqw;height:4.2cqw;transform:rotate(45deg);background:linear-gradient(135deg,#fff,#9fb3d9);box-shadow:0 0 1.5cqw rgba(255,255,255,.5)}
+.yc-rm.star{font-size:9cqw;line-height:1;color:#ffd76a;text-shadow:0 0 3cqw rgba(255,215,106,.9)}
+.yc-rm.crown{width:12cqw;color:#ffd76a;filter:drop-shadow(0 0 2cqw rgba(255,122,217,.9))}
+.yc-rm.crown svg{width:100%;display:block}
+.yc-n{position:absolute;left:4.5cqw;bottom:3cqw;font:italic 800 8cqw var(--en);color:#5ff2ff;text-shadow:0 0 2cqw rgba(0,0,0,.9)}
+
+/* フルアート：絵を全面に。効果欄は半透明（透け具合 v1うすい／v2ふつう／v3こい） */
+.ycard.full .yc-shade{background:linear-gradient(180deg,rgba(6,10,26,.35) 0,transparent 16%,transparent 58%,rgba(6,10,26,var(--vs,.6)) 76%,rgba(6,10,26,var(--ve,.82)))}
+.ycard.full.v1{--vs:.35;--ve:.55}.ycard.full.v2{--vs:.55;--ve:.78}.ycard.full.v3{--vs:.75;--ve:.92}
+.ycard.full .yc-who{top:66%}
+.ycard.full .yc-name{top:71%}
+.ycard.full .yc-text{top:81%;border-top:none;padding-top:0;color:#fff;
+  text-shadow:0 0 2cqw rgba(0,0,0,.95),0 0 .6cqw #000,0 .4cqw 1cqw rgba(0,0,0,.8)}
+.ycard.full .yc-name,.ycard.full .yc-who{text-shadow:0 0 2cqw rgba(0,0,0,.95),0 0 .6cqw #000}
+.ycard.full .yc-type{opacity:.9}
+
+/* 詳細表示の光 */
+.ycard.tilt::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(circle at var(--mx,50%) var(--my,30%),rgba(255,255,255,.35),transparent 45%);mix-blend-mode:soft-light}

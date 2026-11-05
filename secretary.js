@@ -97,7 +97,7 @@ const Sec = (() => {
       </section>
       <section class="u-sec">
         <div class="u-sh"><b>けさの連絡</b><small>MORNING</small></div>
-        <div class="u-mc"><button data-x="call"><img src="av_hoshino.webp" alt=""><span>朝の電話<small>聞き直す</small></span></button><button data-x="wx"><img src="av_mika.webp" alt=""><span>天気予報<small>ミカのスタジオ</small></span></button><button data-x="chat"><img src="av_noa.webp" alt=""><span>チャット<small>${unread ? `未読 ${unread}件` : 'みんなと話す'}</small></span></button></div>
+        <div class="u-mc"><button data-x="call"><img src="av_hoshino.webp" alt=""><span>朝の電話<small>聞き直す</small></span></button><button data-x="ncall"><img src="av_${(() => { try { return JSON.parse(LS.get('ys-nc')).who; } catch (e) { return Daily.nightWho(); } })()}.webp" alt=""><span>ゆうべの電話<small>おやすみ</small></span></button><button data-x="wx"><img src="av_mika.webp" alt=""><span>天気予報<small>ミカのスタジオ</small></span></button><button data-x="chat"><img src="av_noa.webp" alt=""><span>チャット<small>${unread ? `未読 ${unread}件` : 'みんなと話す'}</small></span></button></div>
       </section>
       <section class="u-sec">
         <div class="u-sh"><b>提案書</b><small>PROPOSAL</small><button class="u-more" data-x="propose">AIで作る</button></div>
@@ -118,6 +118,7 @@ const Sec = (() => {
     const x = t.dataset.x;
     if (x === 'brief') return brief();
     if (x === 'call') return Daily.replayCall();
+    if (x === 'ncall') return Daily.replayNight();
     if (x === 'wx') return Wx.open();
     if (x === 'chat') return Chat.open();
     if (x === 'propose') return propose();

@@ -30,6 +30,7 @@ const WHO = {
   miyako: { name:'ミヤコ', club:'RABBIT小隊', voice:'miyako', stand:'o_miyako_stand.webp', talk:'o_miyako_talk.webp', color:'#8fb8ff' },
   yuuka:  { name:'ユウカ', club:'セミナー', voice:'office', stand:'o_yuuka_stand.webp', talk:'o_yuuka_talk.webp', color:'#5c9cff' },
   noa:    { name:'乃亜',   club:'保健室', voice:null, stand:null, talk:null, color:'#ff8fb6', face:'noa_face.webp' },
+  kisaki: { name:'キサキ', club:'玄龍門', voice:null, stand:null, talk:null, color:'#e6b24f', face:'av_kisaki.webp' },
 };
 // 取材の担当（曜日）：日 乃亜／月 ミカ／火 ヒナ／水 ユウカ／木 ミヤコ／金 マリー／土 ホシノ
 const IV_DAY = ['noa', 'mika', 'hina', 'yuuka', 'miyako', 'mari', 'hoshino'];
@@ -223,6 +224,7 @@ const Rooms = (() => {
     rabbit:  { name:'屋外エリア', door:'door_rabbit.jpg', pages:['sc_rabbit', 'rabbit'], who:'miyako' },
     security:{ name:'風紀委員室', door:'door_security.jpg', pages:['sc_security', 'accounts'], who:'hina' },
     clinic:  { name:'乃亜の保健室', door:'door_clinic.jpg', pages:['sc_clinic', 'body', 'mind', 'karte'], who:'noa' },
+    shop:    { name:'Card Shop', door:'door_shop.jpg', pages:['sc_shop', 'shop'], who:'kisaki' },
   };
   const PAGE = {};
   Object.values(DEF).forEach(R => R.pages.forEach(p => PAGE[p] = { who:R.who, sc:p.startsWith('sc_') }));

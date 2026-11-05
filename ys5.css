@@ -467,3 +467,8 @@ body.inRoom .ys-hud, body.land .ys-hud { display:none; }
 #sheet h3::before { content:''; display:inline-block; width:5px; height:16px; margin-right:8px; vertical-align:-2px; transform:skewX(-14deg); background:linear-gradient(#ff5f9e,#1fa3ff); }
 .toast { border-radius:3px 14px 3px 14px; color:#24314d; font-weight:700; box-shadow:0 10px 26px rgba(30,50,100,.22); }
 .toast::before { background:linear-gradient(135deg,#ff5f9e,#1fa3ff); }
+
+/* ===== v5.1 おやすみ電話 ===== */
+.call.nightcall { background:#0c1230; }
+.call.nightcall .cl-bg { filter:blur(26px) saturate(1.1) brightness(.35) hue-rotate(-12deg); }
+.call.nightcall::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(120% 60% at 50% 0%, rgba(120,140,255,.18), transparent 60%); }

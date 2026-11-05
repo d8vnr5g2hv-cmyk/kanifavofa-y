@@ -139,6 +139,13 @@ const Progress = (() => {
     ['focus600', 'ゾーンの住人', '集中タイマーで合計10時間', c => c.focus >= 600],
     ['ticket', '計画的おやすみ', 'お休み券を初めて使った', c => c.used >= 1],
     ['lv5', '才能開花', 'どれかのステータスがLv5', c => c.lv5 >= 1],
+    ['card1', 'はじめての現像', 'カードを初めて作った', c => c.cards >= 1],
+    ['card10', 'コレクター', 'カードを10枚作った', c => c.cards >= 10],
+    ['card30', 'キサキのお得意さま', 'カードを30枚作った', c => c.cards >= 30],
+    ['card4', '王冠のカード', '♛のカードを作った', c => c.crown >= 1],
+    ['hl1', 'HALO LINK 突破', 'HALO LINKのステージを初めてクリアした', c => c.hl >= 1],
+    ['hl12', '夜を越える者', 'HALO LINKの12ステージをすべてクリアした', c => c.hl >= 12],
+    ['night7', 'おやすみの常連', 'おやすみ電話を7回聞いた', c => c.night >= 7],
   ];
   let achAt = 0;
   async function ctxAch() {
@@ -148,9 +155,12 @@ const Progress = (() => {
     let chat = 0, focus = 0; const who = new Set(JSON.parse(LS.get('ys-chatWho') || '[]'));
     for (let i = 0; i < 400; i++) { const d = D.add(t, -i); chat += lsNum('ys-chat-' + d); focus += lsNum('ys-focus-' + d); }
     const st = await streak(), sts = Feat.on('stats') ? await stats() : [];
+    const cards = await DB.all('cards').catch(() => []);
+    let hl = 0; try { hl = (JSON.parse(localStorage.getItem('hl-save-v1') || '{}').cleared || []).length; } catch (e) {}
     return { morning:lsNum('ys-morningN'), sleepDays:days.filter(x => x.sleep).length, good:days.filter(x => (Life.sleepH(x.sleep) || 0) >= 6).length, best:st.best,
       mall:Object.keys(P.mdone).length, cashDays, todo:todos.filter(z => z.done).length + (P.todoArch || 0), chat, who:who.size, moodDays:days.filter(x => x.mood).length,
-      scratch:P.scratch || 0, focus, used:P.used.length, lv5:sts.filter(s => s.lv >= 5).length };
+      scratch:P.scratch || 0, focus, used:P.used.length, lv5:sts.filter(s => s.lv >= 5).length,
+      cards:cards.length, crown:cards.filter(x => x.rank >= 4).length, hl, night:lsNum('ys-nightN') };
   }
   async function checkAch(quiet) {
     if (!Feat.on('ach') || Date.now() - achAt < 3000) return [];
