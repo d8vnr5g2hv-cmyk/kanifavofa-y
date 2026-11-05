@@ -33,10 +33,11 @@
 #errbar b { flex:none; color:#ff9ab8; font-size:11px; } #errbar span { flex:1; word-break:break-all; } #errbar button { flex:none; border:none; background:rgba(255,255,255,.15); color:#fff; width:26px; height:26px; border-radius:50%; }
 
 /* ===== 天気の光：秘書室と廊下だけ ===== */
-#ambient, #rain { display:none; }
-body.atHall #ambient, body[data-room="sec"] #ambient { display:block; }
-body.atHall.wxWet #rain, body[data-room="sec"].wxWet #rain { display:block; }
-body.officeOn #ambient, body.officeOn #rain, body.roomOn #ambient, body.roomOn #rain { display:none !important; }
+/* もとの ys.css の「#rain.on」より強く効くように !important で上書きする */
+#ambient, #rain, #rain.on { display:none !important; }
+body.atHall #ambient, body[data-room="sec"] #ambient { display:block !important; }
+body.atHall #rain.on, body[data-room="sec"] #rain.on { display:block !important; }
+body.officeOn #ambient, body.officeOn #rain.on, body.roomOn #ambient, body.roomOn #rain.on, body.dailyOn #rain.on, body.chatOn #rain.on, body.inRoom:not([data-room="sec"]) #rain.on, body.inRoom:not([data-room="sec"]) #ambient { display:none !important; }
 
 /* ===== 右上のチャット ===== */
 #chatBtn { position:fixed; z-index:30; top:calc(env(safe-area-inset-top) + 12px); right:14px; width:38px; height:38px; border:none; border-radius:50%; display:none; align-items:center; justify-content:center;
