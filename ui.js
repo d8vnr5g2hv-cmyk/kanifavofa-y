@@ -62,14 +62,15 @@ const Editor = (() => {
       body.appendChild(opts.body);
       if (opts.del) {
         const d = h(`<button class="del">${esc(opts.delLabel || '削除する')}</button>`);
-        d.onclick = async () => { if (!confirm(opts.delConfirm || 'このデータを削除しますか？')) return; haptic(); await opts.del(); close(); };
+        d.onclick = async () => { if (!(await Ask(opts.delConfirm || 'このデータを削除しますか？', { ok:'削除する', danger:true }))) return; haptic(); await opts.del(); close(); };
         body.appendChild(d);
       }
       const sv = e.querySelector('.save'); sv.textContent = opts.saveLabel || '保存'; sv.style.visibility = opts.save ? '' : 'hidden';
       ['--accent', '--title', '--soft', '--line'].forEach(k => e.style.removeProperty(k));
       if (opts.theme) Object.entries(opts.theme).forEach(([k, v]) => e.style.setProperty(k, v));
       onSave = opts.save; onClose = opts.onClose || null;
-      e.classList.add('show'); bg().classList.add('show');
+      const show = () => { e.classList.add('show'); bg().classList.add('show'); };
+      if (opts.instant || typeof Wipe === 'undefined') show(); else Wipe.mid(show);
       if (opts.focus) { try { opts.focus.focus({ preventScroll:true }); } catch(err) { opts.focus.focus(); } }
     },
     close,
@@ -78,11 +79,24 @@ const Editor = (() => {
       bg().onclick = close;
       ed().querySelector('.save').onclick = async () => {
         if (!onSave) return close();
-        const ok = await onSave(); if (ok !== false) { haptic(); close(); }
+        const ok = await onSave(); if (ok !== false) { haptic(); close(); if (typeof Wipe !== 'undefined') Wipe.slash(); }
       };
     },
   };
 })();
+
+// ===== 確認ダイアログ（ブラウザ標準の confirm の代わり） =====
+// await Ask('消しますか？', { ok:'消す', cancel:'やめる', danger:true }) → true / false
+function Ask(msg, o = {}) {
+  return new Promise(res => {
+    const el = h(`<div class="askBg"><div class="askBox${o.danger ? ' danger' : ''}" role="dialog"><i class="askBar"></i>
+      ${o.title ? `<b class="askT">${esc(o.title)}</b>` : ''}<p>${esc(msg).replace(/\n/g, '<br>')}</p>
+      <div class="askB"><button class="cancel" data-a="0">${esc(o.cancel || 'やめる')}</button><button class="ok" data-a="1">${esc(o.ok || 'OK')}</button></div></div></div>`);
+    document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+    const done = v => { el.classList.remove('on'); setTimeout(() => el.remove(), 220); res(v); };
+    el.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (b) { haptic(); done(b.dataset.a === '1'); } else if (e.target === el) done(false); });
+  });
+}
 
 // ===== 選択メニュー（下から） =====
 const Menu = {

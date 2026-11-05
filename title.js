@@ -107,8 +107,8 @@ const Title = (() => {
     if (busy || e.target.closest('.gear') || e.target.closest('#gate')) return;
     const r = root.getBoundingClientRect(); if (step >= 1) burst(e.clientX - r.left, e.clientY - r.top);
     if (step === 0) {          // スプラッシュ → 1枚目（ここでタイトル曲）
-      busy = true; hooks.start(); root.className = 'tt-s1'; step = 1; touch('TOUCH', 2200);
-      await sleep(1500); busy = false;
+      busy = true; hooks.start(); root.className = 'tt-s1'; step = 1; touch('TOUCH', 1400);
+      await sleep(650); busy = false;
     } else if (step === 1) {   // 1枚目 →（ロックがオンなら解除）→ 2枚目
       if (hooks.lock()) { busy = true; hooks.unlock(() => { busy = false; smile(); }, () => { busy = false; }); return; }
       smile();
@@ -123,8 +123,8 @@ const Title = (() => {
     const b = root.querySelector('.tt-bloom'); b.classList.remove('on'); void b.offsetWidth; b.classList.add('on');
     root.className = 'tt-s2'; step = 2;
     try { if (FX[k].voice) playVoice(FX[k].voice); } catch (e) {}
-    touch('TOUCH TO ENTER', 1800);
-    await sleep(1200); busy = false;
+    touch('TOUCH TO ENTER', 1200);
+    await sleep(600); busy = false;
   }
   return { init, step:() => step, setLoad:t => { const s = $('ttState'); if (s) s.textContent = t || 'TAP TO START'; } };
 })();
