@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Support">
 <meta name="theme-color" content="#fde3ee">
-<link rel="manifest" href="manifest.json?v=5.0">
+<link rel="manifest" href="manifest.json?v=5.1">
 <link rel="apple-touch-icon" href="icon-ys-180.png">
 <link rel="icon" href="icon-ys-192.png">
 <title>Yohei Support</title>
@@ -22,13 +22,15 @@
 <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" href="launch-1284x2778.png">
 <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="launch-1290x2796.png">
 <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" href="launch-1320x2868.png">
-<link rel="stylesheet" href="app.css?v=5.0">
-<link rel="stylesheet" href="room.css?v=5.0">
-<link rel="stylesheet" href="deco.css?v=5.0">
-<link rel="stylesheet" href="office.css?v=5.0">
-<link rel="stylesheet" href="title.css?v=5.0">
-<link rel="stylesheet" href="ys.css?v=5.0">
-<link rel="stylesheet" href="ys5.css?v=5.0.1">
+<link rel="stylesheet" href="app.css?v=5.1">
+<link rel="stylesheet" href="room.css?v=5.1">
+<link rel="stylesheet" href="deco.css?v=5.1">
+<link rel="stylesheet" href="office.css?v=5.1">
+<link rel="stylesheet" href="title.css?v=5.1">
+<link rel="stylesheet" href="ys.css?v=5.1">
+<link rel="stylesheet" href="ys5.css?v=5.1">
+<link rel="stylesheet" href="ycard.css?v=5.1">
+<link rel="stylesheet" href="cardshop.css?v=5.1">
 </head>
 <body>
 
@@ -71,6 +73,9 @@
 <div class="page scenep" id="page-sc_mari" data-v="mari" data-who="mari"><img class="sp" src="mari_tall_poster.jpg" alt=""><video class="sv" muted playsinline loop preload="none"></video></div>
 <div class="page scenep" id="page-sc_rabbit" data-v="miyako" data-who="miyako"><img class="sp" src="miyako_tall_poster.jpg" alt=""><video class="sv" muted playsinline loop preload="none"></video></div>
 <div class="page scenep" id="page-sc_security" data-v="08_rest" data-who="hina"><img class="sp" src="08_rest_tall_poster.jpg" alt=""><video class="sv" muted playsinline loop preload="none"></video></div>
+<div class="page scenep kisaki" id="page-sc_shop" data-who="kisaki"><img class="sp" src="shop_kisaki.jpg" alt=""></div>
+<div class="page shopp" id="page-shop"><div id="shWrap"><img src="shop_in.jpg" alt=""></div><div class="sh-top"><small>CARD SHOP</small><b>キサキのカード店</b></div><div class="sh-info" id="shInfo"></div>
+  <div class="sh-btns"><button data-sh="make"><small>WORKBENCH</small>作る</button><button data-sh="case"><small>SHOWCASE</small>集める</button><button data-sh="game"><small>HALO LINK</small>あそぶ</button></div></div>
 <div class="page scenep noa" id="page-sc_clinic" data-who="noa"><img class="sp nb" src="nurse_normal.webp" alt=""><img class="sp nf" alt=""></div>
 <!-- ===== 秘書室（ホシノ） ===== -->
 <div class="page bandBottom ysp ui2" id="page-brief">
@@ -149,35 +154,37 @@
 <!-- Loveの拡大表示 -->
 <div id="viewer"></div>
 
-<script src="core.js?v=5.0"></script>
-<script src="ui.js?v=5.0"></script>
-<script src="fx.js?v=5.0"></script>
-<script src="cast.js?v=5.0"></script>
-<script src="motion.js?v=5.0"></script>
-<script src="data.js?v=5.0"></script>
-<script src="weather.js?v=5.0"></script>
-<script src="rooms.js?v=5.0"></script>
-<script src="todo.js?v=5.0"></script>
-<script src="love.js?v=5.0"></script>
-<script src="accounts.js?v=5.0"></script>
-<script src="office.js?v=5.0"></script>
-<script src="room.js?v=5.0"></script>
-<script src="hall.js?v=5.0"></script>
-<script src="secretary.js?v=5.0"></script>
-<script src="life.js?v=5.0"></script>
-<script src="friends.js?v=5.0"></script>
-<script src="clinic.js?v=5.0"></script>
-<script src="progress.js?v=5.0"></script>
-<script src="chat.js?v=5.0"></script>
-<script src="daily.js?v=5.0"></script>
-<script src="wrapped.js?v=5.0"></script>
-<script src="focus.js?v=5.0"></script>
-<script src="push.js?v=5.0"></script>
-<script src="rabbit.js?v=5.0"></script>
-<script src="applock.js?v=5.0"></script>
-<script src="title.js?v=5.0"></script>
-<script src="stats.js?v=5.0"></script>
-<script src="deco.js?v=5.0"></script>
+<script src="core.js?v=5.1"></script>
+<script src="ui.js?v=5.1"></script>
+<script src="fx.js?v=5.1"></script>
+<script src="cast.js?v=5.1"></script>
+<script src="motion.js?v=5.1"></script>
+<script src="data.js?v=5.1"></script>
+<script src="weather.js?v=5.1"></script>
+<script src="rooms.js?v=5.1"></script>
+<script src="todo.js?v=5.1"></script>
+<script src="love.js?v=5.1"></script>
+<script src="accounts.js?v=5.1"></script>
+<script src="office.js?v=5.1"></script>
+<script src="room.js?v=5.1"></script>
+<script src="hall.js?v=5.1"></script>
+<script src="secretary.js?v=5.1"></script>
+<script src="life.js?v=5.1"></script>
+<script src="friends.js?v=5.1"></script>
+<script src="clinic.js?v=5.1"></script>
+<script src="progress.js?v=5.1"></script>
+<script src="chat.js?v=5.1"></script>
+<script src="daily.js?v=5.1"></script>
+<script src="wrapped.js?v=5.1"></script>
+<script src="focus.js?v=5.1"></script>
+<script src="push.js?v=5.1"></script>
+<script src="ycard.js?v=5.1"></script>
+<script src="cardshop.js?v=5.1"></script>
+<script src="rabbit.js?v=5.1"></script>
+<script src="applock.js?v=5.1"></script>
+<script src="title.js?v=5.1"></script>
+<script src="stats.js?v=5.1"></script>
+<script src="deco.js?v=5.1"></script>
 <script>App.boot();</script>
 </body>
 </html>
